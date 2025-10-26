@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  geowhisper-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: geowhisper-backend
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      # Database configuration (update with your values)
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/geowhisper
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=your_password
+      # Firebase configuration path
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/config/firebase-key.json
+      # Add other environment variables as needed
+      # - SPRING_AI_OPENAI_API_KEY=your_openai_key
+    volumes:
+      # Mount Firebase key from host (create this file locally)
+      - ./firebase-key.json:/app/config/firebase-key.json:ro
+    depends_on:
+      - db
+    restart: unless-stopped
+    networks:
+      - geowhisper-network
+
+  db:
+    image: postgres:16-alpine
+    container_name: geowhisper-db
+    environment:
+      - POSTGRES_DB=geowhisper
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=your_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - geowhisper-network
+
+networks:
+  geowhisper-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

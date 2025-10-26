@@ -1,0 +1,35 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.idea
+.vscode
+*.iml
+*.iws
+
+# Maven
+target/
+!target/*.jar
+.mvn/wrapper/maven-wrapper.jar
+
+# Build files
+*.log
+*.tmp
+
+# Documentation
+*.md
+HELP.md
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+application-local.properties
+
+# Firebase (don't copy to build context, will be mounted at runtime)
+firebase-key.json
+*-firebase-*.json

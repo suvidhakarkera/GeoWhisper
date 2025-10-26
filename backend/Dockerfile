@@ -8,9 +8,6 @@ WORKDIR /app
 
 # Copy Maven files for dependency caching
 COPY pom.xml .
-COPY mvnw .
-COPY mvnw.cmd .
-COPY .mvn .mvn
 
 # Download dependencies (this layer will be cached if pom.xml doesn't change)
 RUN mvn dependency:go-offline -B
@@ -18,10 +15,7 @@ RUN mvn dependency:go-offline -B
 # Copy source code
 COPY src ./src
 
-# Copy Firebase key (if needed for build)
-# COPY src/main/resources/firebase-key.json ./src/main/resources/
-
-# Build the application
+# Build the application (skip tests for faster builds)
 RUN mvn clean package -DskipTests
 
 # Stage 2: Create the runtime image
@@ -33,8 +27,8 @@ WORKDIR /app
 # Copy the built JAR from the build stage
 COPY --from=build /app/target/*.jar app.jar
 
-# Copy Firebase key to runtime image
-COPY src/main/resources/firebase-key.json /app/firebase-key.json
+# Note: Firebase key should be mounted as a volume or passed as environment variable at runtime
+# Example: docker run -v /path/to/firebase-key.json:/app/firebase-key.json ...
 
 # Expose the port your application runs on
 EXPOSE 8080
@@ -45,6 +39,6 @@ ENV SPRING_PROFILES_ACTIVE=prod
 # Run the application
 ENTRYPOINT ["java", "-jar", "app.jar"]
 
-# Optional: Add health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1
+# Optional: Add health check (requires wget to be installed)
+# HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
+#   CMD wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1
