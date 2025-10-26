@@ -1,0 +1,14 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-GeowhisperbackendnewApplication<geowhisperbackendnew>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.geowhisper.geowhisperbackendnew.GeowhisperbackendnewApplication",
+            "projectName": "geowhisperbackendnew",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}
