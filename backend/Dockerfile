@@ -37,8 +37,12 @@ EXPOSE 8080
 # Set environment variables (optional - can be overridden at runtime)
 ENV SPRING_PROFILES_ACTIVE=prod
 
-# Run the application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Run the application with JVM options to avoid native library issues
+ENTRYPOINT ["java", \
+    "-Dio.netty.native.workdir=/tmp", \
+    "-Dfile.encoding=UTF-8", \
+    "-Djava.security.egd=file:/dev/./urandom", \
+    "-jar", "app.jar"]
 
 # Optional: Add health check (requires wget to be installed)
 # HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \

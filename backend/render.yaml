@@ -1,0 +1,41 @@
+services:
+  - type: web
+    name: geowhisper-backend
+    runtime: docker
+    plan: free
+    region: oregon
+    
+    # Build settings
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    
+    # Environment variables
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: PORT
+        sync: false
+        # Render automatically provides PORT variable
+      
+      # Add your Firebase credentials as environment variable
+      # Option 1: Upload firebase-key.json content as FIREBASE_CONFIG
+      # - key: FIREBASE_CONFIG
+      #   sync: false
+      
+      # Add your OpenAI key
+      - key: SPRING_AI_OPENAI_API_KEY
+        sync: false
+      
+      # Database configuration (if using external DB)
+      # - key: SPRING_DATASOURCE_URL
+      #   sync: false
+      # - key: SPRING_DATASOURCE_USERNAME
+      #   sync: false
+      # - key: SPRING_DATASOURCE_PASSWORD
+      #   sync: false
+    
+    # Health check endpoint
+    healthCheckPath: /actuator/health
+    
+    # Auto-deploy on git push
+    autoDeploy: true

@@ -80,22 +80,39 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-validation</artifactId>
+	<dependency>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-validation</artifactId>
+	</dependency>
+	<dependency>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-actuator</artifactId>
+	</dependency>
+	<dependency>
+			<groupId>org.springframework.ai</groupId>
+			<artifactId>spring-ai-bom</artifactId>
+			<version>${spring-ai.version}</version>
+			<type>pom</type>
+			<scope>import</scope>
 		</dependency>
-		<dependency>
-				<groupId>org.springframework.ai</groupId>
-				<artifactId>spring-ai-bom</artifactId>
-				<version>${spring-ai.version}</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
 				<dependency>
-				<groupId>com.google.firebase</groupId>
-				<artifactId>firebase-admin</artifactId>
-				<version>9.2.0</version> <!-- or latest -->
-			</dependency>
+			<groupId>com.google.firebase</groupId>
+			<artifactId>firebase-admin</artifactId>
+			<version>9.2.0</version>
+			<exclusions>
+				<!-- Exclude netty tcnative to avoid native library crash on Linux -->
+				<exclusion>
+					<groupId>io.grpc</groupId>
+					<artifactId>grpc-netty-shaded</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<!-- Add grpc-okhttp as replacement (pure Java, no native dependencies) -->
+		<dependency>
+			<groupId>io.grpc</groupId>
+			<artifactId>grpc-okhttp</artifactId>
+			<version>1.62.2</version>
+		</dependency>
 		<dependency>
 			<groupId>org.springdoc</groupId>
 			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>

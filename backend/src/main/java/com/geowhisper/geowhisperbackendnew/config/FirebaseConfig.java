@@ -11,7 +11,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 
 import jakarta.annotation.PostConstruct;
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.util.Base64;
 
 @Configuration
 public class FirebaseConfig {
@@ -19,9 +21,21 @@ public class FirebaseConfig {
     @PostConstruct
     public void initialize() {
         try {
-            // Use ClassPathResource to load from classpath (works in all environments)
-            ClassPathResource resource = new ClassPathResource("firebase-key.json");
-            InputStream serviceAccount = resource.getInputStream();
+            InputStream serviceAccount;
+            
+            // Try to load from environment variable first (for cloud deployment like Render)
+            String firebaseConfig = System.getenv("FIREBASE_CONFIG");
+            if (firebaseConfig != null && !firebaseConfig.isEmpty()) {
+                // Decode base64 encoded Firebase config from environment
+                byte[] decodedKey = Base64.getDecoder().decode(firebaseConfig);
+                serviceAccount = new ByteArrayInputStream(decodedKey);
+                System.out.println("✅ Loading Firebase config from environment variable");
+            } else {
+                // Fallback to classpath resource (for local development)
+                ClassPathResource resource = new ClassPathResource("firebase-key.json");
+                serviceAccount = resource.getInputStream();
+                System.out.println("✅ Loading Firebase config from classpath");
+            }
 
             FirebaseOptions options = FirebaseOptions.builder()
                     .setCredentials(GoogleCredentials.fromStream(serviceAccount))
