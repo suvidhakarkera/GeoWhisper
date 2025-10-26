@@ -1,5 +1,5 @@
 {
-  "name": "nextjs",
+  "name": "geowhispers-client",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -14,10 +14,7 @@
     "next": "16.0.0"
   },
   "devDependencies": {
-    "typescript": "^5",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
+    "babel-plugin-react-compiler": "1.0.0",
     "@tailwindcss/postcss": "^4",
     "tailwindcss": "^4",
     "eslint": "^9",
