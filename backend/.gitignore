@@ -1,6 +1,6 @@
 # Firebase
-firebase-key.json
-*-firebase-*.json
+# firebase-key.json
+# *-firebase-*.json
 
 # Compiled files
 target/
