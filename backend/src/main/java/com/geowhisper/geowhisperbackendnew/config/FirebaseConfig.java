@@ -22,8 +22,9 @@ public class FirebaseConfig {
     public void initialize() {
         try {
             InputStream serviceAccount;
-            
-            // Try to load from environment variable first (for cloud deployment like Render)
+
+            // Try to load from environment variable first (for cloud deployment like
+            // Render)
             String firebaseConfig = System.getenv("FIREBASE_CONFIG");
             if (firebaseConfig != null && !firebaseConfig.isEmpty()) {
                 // Decode base64 encoded Firebase config from environment
@@ -60,6 +61,14 @@ public class FirebaseConfig {
 
     @Bean
     public Firestore firestore() {
-        return FirestoreClient.getFirestore();
+        try {
+            if (FirebaseApp.getApps().isEmpty()) {
+                throw new IllegalStateException("Firebase must be initialized first");
+            }
+            return FirestoreClient.getFirestore();
+        } catch (Exception e) {
+            System.err.println("❌ Firestore initialization failed: " + e.getMessage());
+            throw new RuntimeException("Failed to initialize Firestore", e);
+        }
     }
 }

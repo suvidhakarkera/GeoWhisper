@@ -8,15 +8,13 @@ import lombok.Data;
 @AllArgsConstructor
 @Schema(description = "Standard API response wrapper")
 public class ApiResponse {
-    
-    @Schema(description = "Indicates if the request was successful", 
-            example = "true")
+
+    @Schema(description = "Indicates if the request was successful", example = "true")
     private boolean success;
-    
-    @Schema(description = "Human-readable message describing the result", 
-            example = "Profile created successfully")
+
+    @Schema(description = "Human-readable message describing the result", example = "Profile created successfully")
     private String message;
-    
+
     @Schema(description = "Response payload data (varies by endpoint)")
     private Object data;
 
@@ -26,5 +24,10 @@ public class ApiResponse {
 
     public static ApiResponse error(String message) {
         return new ApiResponse(false, message, null);
+    }
+
+    public ApiResponse(boolean success, String message) {
+        this.success = success;
+        this.message = message;
     }
 }

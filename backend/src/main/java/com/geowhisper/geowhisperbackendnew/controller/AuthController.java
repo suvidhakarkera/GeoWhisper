@@ -32,24 +32,18 @@ public class AuthController {
     }
 
     @PostMapping("/signup")
-    @Operation(
-        summary = "Sign up with email and password",
-        description = "Create a new user account using email and password. Creates user in Firebase Auth and Firestore."
-    )
+    @Operation(summary = "Sign up with email and password", description = "Create a new user account using email and password. Creates user in Firebase Auth and Firestore.")
     @ApiResponses(value = {
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "200",
-            description = "Sign up successful",
-            content = @Content(schema = @Schema(implementation = AuthResponse.class))
-        ),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "400",
-            description = "Invalid request or user already exists",
-            content = @Content(schema = @Schema(implementation = com.geowhisper.geowhisperbackendnew.dto.ApiResponse.class))
-        )
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Sign up successful", content = @Content(schema = @Schema(implementation = AuthResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid request or user already exists", content = @Content(schema = @Schema(implementation = com.geowhisper.geowhisperbackendnew.dto.ApiResponse.class)))
     })
     public ResponseEntity<?> signUp(@Valid @RequestBody SignUpRequest request) {
         try {
+            // Check if the email already exists before creating a new user
+            if (authService.emailExists(request.getEmail())) {
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "Email already in use."));
+            }
+
             AuthResponse response = authService.signUpWithEmail(request);
             return ResponseEntity.ok(response);
         } catch (FirebaseAuthException e) {
@@ -58,26 +52,16 @@ public class AuthController {
                     .body(com.geowhisper.geowhisperbackendnew.dto.ApiResponse.error(errorMessage));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(com.geowhisper.geowhisperbackendnew.dto.ApiResponse.error("Sign up failed: " + e.getMessage()));
+                    .body(com.geowhisper.geowhisperbackendnew.dto.ApiResponse
+                            .error("Sign up failed: " + e.getMessage()));
         }
     }
 
     @PostMapping("/signin")
-    @Operation(
-        summary = "Sign in with email",
-        description = "Sign in existing user with email. Note: Password validation should be done on the client side with Firebase Client SDK. This endpoint verifies user existence and returns user data."
-    )
+    @Operation(summary = "Sign in with email", description = "Sign in existing user with email. Note: Password validation should be done on the client side with Firebase Client SDK. This endpoint verifies user existence and returns user data.")
     @ApiResponses(value = {
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "200",
-            description = "Sign in successful",
-            content = @Content(schema = @Schema(implementation = AuthResponse.class))
-        ),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "401",
-            description = "Invalid credentials or user not found",
-            content = @Content(schema = @Schema(implementation = com.geowhisper.geowhisperbackendnew.dto.ApiResponse.class))
-        )
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Sign in successful", content = @Content(schema = @Schema(implementation = AuthResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Invalid credentials or user not found", content = @Content(schema = @Schema(implementation = com.geowhisper.geowhisperbackendnew.dto.ApiResponse.class)))
     })
     public ResponseEntity<?> signIn(@Valid @RequestBody SignInRequest request) {
         try {
@@ -85,29 +69,20 @@ public class AuthController {
             return ResponseEntity.ok(response);
         } catch (FirebaseAuthException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(com.geowhisper.geowhisperbackendnew.dto.ApiResponse.error("Invalid credentials or user not found"));
+                    .body(com.geowhisper.geowhisperbackendnew.dto.ApiResponse
+                            .error("Invalid credentials or user not found"));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(com.geowhisper.geowhisperbackendnew.dto.ApiResponse.error("Sign in failed: " + e.getMessage()));
+                    .body(com.geowhisper.geowhisperbackendnew.dto.ApiResponse
+                            .error("Sign in failed: " + e.getMessage()));
         }
     }
 
     @PostMapping("/google")
-    @Operation(
-        summary = "Sign in/up with Google",
-        description = "Authenticate user with Google Sign-In using Firebase ID token. Creates user profile if first time sign in."
-    )
+    @Operation(summary = "Sign in/up with Google", description = "Authenticate user with Google Sign-In using Firebase ID token. Creates user profile if first time sign in.")
     @ApiResponses(value = {
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "200",
-            description = "Google authentication successful",
-            content = @Content(schema = @Schema(implementation = AuthResponse.class))
-        ),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "401",
-            description = "Invalid ID token",
-            content = @Content(schema = @Schema(implementation = com.geowhisper.geowhisperbackendnew.dto.ApiResponse.class))
-        )
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Google authentication successful", content = @Content(schema = @Schema(implementation = AuthResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Invalid ID token", content = @Content(schema = @Schema(implementation = com.geowhisper.geowhisperbackendnew.dto.ApiResponse.class)))
     })
     public ResponseEntity<?> googleSignIn(@Valid @RequestBody GoogleAuthRequest request) {
         try {
@@ -118,29 +93,19 @@ public class AuthController {
                     .body(com.geowhisper.geowhisperbackendnew.dto.ApiResponse.error("Invalid Google ID token"));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(com.geowhisper.geowhisperbackendnew.dto.ApiResponse.error("Google sign in failed: " + e.getMessage()));
+                    .body(com.geowhisper.geowhisperbackendnew.dto.ApiResponse
+                            .error("Google sign in failed: " + e.getMessage()));
         }
     }
 
     @PostMapping("/verify")
-    @Operation(
-        summary = "Verify Firebase ID token",
-        description = "Verify a Firebase ID token and return user information"
-    )
+    @Operation(summary = "Verify Firebase ID token", description = "Verify a Firebase ID token and return user information")
     @ApiResponses(value = {
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "200",
-            description = "Token verified successfully",
-            content = @Content(schema = @Schema(implementation = AuthResponse.class))
-        ),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "401",
-            description = "Invalid or expired token"
-        )
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Token verified successfully", content = @Content(schema = @Schema(implementation = AuthResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Invalid or expired token")
     })
     public ResponseEntity<?> verifyToken(
-            @Parameter(description = "Firebase ID token", required = true)
-            @RequestHeader("Authorization") String authHeader) {
+            @Parameter(description = "Firebase ID token", required = true) @RequestHeader("Authorization") String authHeader) {
         try {
             String idToken = authHeader.replace("Bearer ", "");
             AuthResponse response = authService.verifyToken(idToken);
@@ -150,123 +115,93 @@ public class AuthController {
                     .body(com.geowhisper.geowhisperbackendnew.dto.ApiResponse.error("Invalid or expired token"));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(com.geowhisper.geowhisperbackendnew.dto.ApiResponse.error("Token verification failed: " + e.getMessage()));
+                    .body(com.geowhisper.geowhisperbackendnew.dto.ApiResponse
+                            .error("Token verification failed: " + e.getMessage()));
         }
     }
 
     @GetMapping("/profile/{firebaseUid}")
-    @Operation(
-        summary = "Get user profile",
-        description = "Retrieve user profile by Firebase UID"
-    )
+    @Operation(summary = "Get user profile", description = "Retrieve user profile by Firebase UID")
     @ApiResponses(value = {
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "200",
-            description = "Profile found",
-            content = @Content(schema = @Schema(implementation = com.geowhisper.geowhisperbackendnew.dto.ApiResponse.class))
-        ),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "404",
-            description = "User profile not found"
-        )
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Profile found", content = @Content(schema = @Schema(implementation = com.geowhisper.geowhisperbackendnew.dto.ApiResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "User profile not found")
     })
     public ResponseEntity<?> getProfile(
-            @Parameter(description = "Firebase UID of the user", required = true)
-            @PathVariable String firebaseUid) {
+            @Parameter(description = "Firebase UID of the user", required = true) @PathVariable String firebaseUid) {
         try {
             Map<String, Object> userData = authService.getUserProfile(firebaseUid);
             return ResponseEntity.ok(
-                com.geowhisper.geowhisperbackendnew.dto.ApiResponse.success("Profile found", userData)
-            );
+                    com.geowhisper.geowhisperbackendnew.dto.ApiResponse.success("Profile found", userData));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(com.geowhisper.geowhisperbackendnew.dto.ApiResponse.error("User profile not found: " + e.getMessage()));
+                    .body(com.geowhisper.geowhisperbackendnew.dto.ApiResponse
+                            .error("User profile not found: " + e.getMessage()));
         }
     }
 
     @PatchMapping("/profile/{firebaseUid}")
-    @Operation(
-        summary = "Update user profile",
-        description = "Update user profile information. Cannot update email, firebaseUid, or createdAt fields."
-    )
+    @Operation(summary = "Update user profile", description = "Update user profile information. Cannot update email, firebaseUid, or createdAt fields.")
     @ApiResponses(value = {
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "200",
-            description = "Profile updated successfully"
-        ),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "404",
-            description = "User profile not found"
-        )
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Profile updated successfully"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "User profile not found")
     })
     public ResponseEntity<?> updateProfile(
-            @Parameter(description = "Firebase UID of the user", required = true)
-            @PathVariable String firebaseUid,
+            @Parameter(description = "Firebase UID of the user", required = true) @PathVariable String firebaseUid,
             @RequestBody Map<String, Object> updates) {
         try {
             Map<String, Object> userData = authService.updateUserProfile(firebaseUid, updates);
             return ResponseEntity.ok(
-                com.geowhisper.geowhisperbackendnew.dto.ApiResponse.success("Profile updated successfully", userData)
-            );
+                    com.geowhisper.geowhisperbackendnew.dto.ApiResponse.success("Profile updated successfully",
+                            userData));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(com.geowhisper.geowhisperbackendnew.dto.ApiResponse.error("Failed to update profile: " + e.getMessage()));
+                    .body(com.geowhisper.geowhisperbackendnew.dto.ApiResponse
+                            .error("Failed to update profile: " + e.getMessage()));
         }
     }
 
     @DeleteMapping("/profile/{firebaseUid}")
-    @Operation(
-        summary = "Delete user account",
-        description = "Permanently delete user account from both Firebase Auth and Firestore"
-    )
+    @Operation(summary = "Delete user account", description = "Permanently delete user account from both Firebase Auth and Firestore")
     @ApiResponses(value = {
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "200",
-            description = "Account deleted successfully"
-        ),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "404",
-            description = "User not found"
-        )
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Account deleted successfully"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "User not found")
     })
     public ResponseEntity<?> deleteAccount(
-            @Parameter(description = "Firebase UID of the user", required = true)
-            @PathVariable String firebaseUid) {
+            @Parameter(description = "Firebase UID of the user", required = true) @PathVariable String firebaseUid) {
         try {
             authService.deleteUserAccount(firebaseUid);
             return ResponseEntity.ok(
-                com.geowhisper.geowhisperbackendnew.dto.ApiResponse.success("Account deleted successfully", null)
-            );
+                    com.geowhisper.geowhisperbackendnew.dto.ApiResponse.success("Account deleted successfully", null));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(com.geowhisper.geowhisperbackendnew.dto.ApiResponse.error("Failed to delete account: " + e.getMessage()));
+                    .body(com.geowhisper.geowhisperbackendnew.dto.ApiResponse
+                            .error("Failed to delete account: " + e.getMessage()));
         }
     }
 
     @PostMapping("/profile")
-    @Operation(
-        summary = "Create user profile (Legacy)",
-        description = "Create user profile in Firestore. This is a legacy endpoint maintained for backward compatibility."
-    )
+    @Operation(summary = "Create user profile (Legacy)", description = "Create user profile in Firestore. This is a legacy endpoint maintained for backward compatibility.")
     @Deprecated
     public ResponseEntity<?> createProfile(@Valid @RequestBody CreateUserRequest request) {
         try {
             Map<String, Object> userData = authService.getUserProfile(request.getFirebaseUid());
             return ResponseEntity.ok(
-                com.geowhisper.geowhisperbackendnew.dto.ApiResponse.success("User profile retrieved/created", userData)
-            );
+                    com.geowhisper.geowhisperbackendnew.dto.ApiResponse.success("User profile retrieved/created",
+                            userData));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(com.geowhisper.geowhisperbackendnew.dto.ApiResponse.error("Failed to create profile: " + e.getMessage()));
+                    .body(com.geowhisper.geowhisperbackendnew.dto.ApiResponse
+                            .error("Failed to create profile: " + e.getMessage()));
         }
     }
 
     /**
-     * Helper method to get user-friendly error messages from Firebase Auth exceptions
+     * Helper method to get user-friendly error messages from Firebase Auth
+     * exceptions
      */
     private String getFirebaseAuthErrorMessage(FirebaseAuthException e) {
         String errorCode = e.getErrorCode().toString();
-        
+
         if (errorCode.equals("EMAIL_ALREADY_EXISTS")) {
             return "Email address is already in use";
         } else if (errorCode.equals("INVALID_EMAIL")) {
