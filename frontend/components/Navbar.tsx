@@ -66,7 +66,7 @@ export default function Navbar() {
                 <motion.button
                   whileHover={{ scale: 1.05, boxShadow: "0 0 20px rgba(6, 182, 212, 0.3)" }}
                   whileTap={{ scale: 0.95 }}
-                  className="relative px-6 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-lg text-sm font-bold transition-all shadow-lg shadow-cyan-500/20 overflow-hidden group"
+                  className="relative px-6 py-2.5  bg-black border-2 border-gray-600 hover:border-[#7B3FBF] text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all  hover:shadow-[#7B3FBF]/10 overflow-hidden group"
                 >
                   <span className="relative z-10 flex items-center gap-1.5">
                     Get Started

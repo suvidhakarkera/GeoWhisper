@@ -6,6 +6,7 @@ import { Mail, Lock, ArrowRight, Chrome, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import { FcGoogle } from 'react-icons/fc';
 
 export default function SignIn() {
   const [email, setEmail] = useState('');
@@ -50,7 +51,7 @@ export default function SignIn() {
         >
           {/* Header */}
           <div className="text-center mb-6 sm:mb-8 lg:mb-10">
-            <h1 className="text-4xl font-bold mb-3 bg-linear-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+            <h1 className="text-4xl font-bold mb-3  text-[#F2F3F5]">
               Welcome Back
             </h1>
             <p className="text-gray-400">
@@ -125,10 +126,10 @@ export default function SignIn() {
                 type="submit"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="w-full bg-linear-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-cyan-500/50"
-              >
+                   className="w-full bg-black border-2 border-gray-600 hover:border-[#7B3FBF] text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all  hover:shadow-[#7B3FBF]/10"
+>
                 Sign In
-                <ArrowRight className="w-5 h-5" />
+                < ArrowRight className="w-5 h-5" />
               </motion.button>
             </form>
 
@@ -147,9 +148,9 @@ export default function SignIn() {
               onClick={handleGoogleSignIn}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="w-full bg-black border-2 border-gray-600 hover:border-cyan-500 text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all hover:shadow-cyan-500/20"
+              className="w-full bg-black border-2 border-gray-600 hover:border-[#7B3FBF] text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all hover:shadow-[#7B3FBF]/10"
             >
-              <Chrome className="w-5 h-5" />
+              <FcGoogle  className="w-5 h-5" />
               Sign in with Google
             </motion.button>
 
