@@ -126,8 +126,7 @@ export default function SignIn() {
                 type="submit"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                   className="w-full bg-black border-2 border-gray-600 hover:border-[#7B3FBF] text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all  hover:shadow-[#7B3FBF]/10"
->
+                className="w-full bg-black border-2 border-gray-600 hover:bg-[#BDE0FE]/10 text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all  hover:shadow-[#7B3FBF]/10">
                 Sign In
                 < ArrowRight className="w-5 h-5" />
               </motion.button>
@@ -148,7 +147,7 @@ export default function SignIn() {
               onClick={handleGoogleSignIn}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="w-full bg-black border-2 border-gray-600 hover:border-[#7B3FBF] text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all hover:shadow-[#7B3FBF]/10"
+              className="w-full bg-black border-2 border-gray-600 hover:bg-[#BDE0FE]/10 text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all hover:shadow-[#7B3FBF]/10"
             >
               <FcGoogle  className="w-5 h-5" />
               Sign in with Google

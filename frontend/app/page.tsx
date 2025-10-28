@@ -49,7 +49,7 @@ export default function Home() {
             <h1 className="text-6xl md:text-8xl font-black mb-8 tracking-tight leading-tight">
               Your Voice,
               <br />
-              <span className="text-transparent bg-clip-text bg-linear-to-r from-cyan-400 via-blue-500 to-purple-600">
+              <span className="text-transparent bg-clip-text bg-linear-to-r from-blue-400/70 via-blue-400/70 to-blue-400/70">
                 Your Location
               </span>
             </h1>
@@ -64,13 +64,13 @@ export default function Home() {
               <motion.button
                 whileHover={{ scale: 1.05, boxShadow: "0 0 30px rgba(6, 182, 212, 0.4)" }}
                 whileTap={{ scale: 0.95 }}
-                className="group px-10 py-5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-xl font-bold text-lg transition-all shadow-xl shadow-cyan-500/20 relative overflow-hidden"
+                className="px-10 py-5 bg-white/5 hover:bg-white/10 backdrop-blur-sm border-2 border-gray-700 hover:border-cyan-500 rounded-xl font-bold text-lg transition-all"
               >
                 <span className="relative z-10 flex items-center gap-2">
                   <MapPin className="w-5 h-5" />
                   Explore the Map
                 </span>
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-cyan-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div className="absolute inset-0 bg-blue-700 opacity-0 group-hover:opacity-100 transition-opacity"></div>
               </motion.button>
               
               <motion.button

@@ -6,6 +6,7 @@ import { Mail, Lock, User, ArrowRight, Chrome, Eye, EyeOff, Check, X } from 'luc
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import { FcGoogle } from 'react-icons/fc';
 
 export default function SignUp() {
   const [name, setName] = useState('');
@@ -70,7 +71,7 @@ export default function SignUp() {
         >
           {/* Header */}
           <div className="text-center mb-6 sm:mb-8 lg:mb-10">
-            <h1 className="text-4xl font-bold mb-3 bg-linear-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+            <h1 className="text-4xl font-bold mb-3 bg-[#FFFFE0]/1000 bg-clip-text text-transparent">
               Create Account
             </h1>
             <p className="text-gray-400">
@@ -213,7 +214,7 @@ export default function SignUp() {
                 type="submit"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="w-full bg-linear-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-cyan-500/50"
+                className="w-full bg-black hover:bg-[#BDE0FE]/10 border-2 border-gray-600 text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all  "
               >
                 Create Account
                 <ArrowRight className="w-5 h-5" />
@@ -235,9 +236,9 @@ export default function SignUp() {
               onClick={handleGoogleSignUp}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="w-full bg-black border-2 border-gray-600 hover:border-cyan-500 text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all hover:shadow-cyan-500/20"
+              className="w-full bg-black border-2 border-gray-600 hover:bg-[#BDE0FE]/10 text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all "
             >
-              <Chrome className="w-5 h-5" />
+              <FcGoogle className="w-5 h-5" />
               Sign up with Google
             </motion.button>
 
