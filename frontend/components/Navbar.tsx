@@ -27,16 +27,12 @@ export default function Navbar() {
                 <span className="text-2xl font-black tracking-tight bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
                   GeoWhisper
                 </span>
-                <div className="flex items-center gap-1.5 -mt-1">
-                  <div className="w-1 h-1 rounded-full bg-cyan-400 animate-pulse"></div>
-                  <span className="text-[10px] text-cyan-400 font-semibold uppercase tracking-wider">Beta</span>
-                </div>
-              </div>
+                 </div>
             </motion.div>
           </Link>
 
           {/* Desktop Navigation Links */}
-          <div className="hidden md:flex items-center gap-1">
+          <div className="hidden md:flex items-center gap-2">
             <NavLink href="/">Home</NavLink>
             <NavLink href="/hot-zones">Hot Zones</NavLink>
             <NavLink href="/my-posts">My Posts</NavLink>
@@ -57,7 +53,8 @@ export default function Navbar() {
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="px-5 py-2.5 text-sm font-bold text-gray-300 hover:text-white transition-colors"
+                  className="relative px-6 py-2.5 bg-black border-2 border-gray-600 text-white hover:border-cyan-500 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all overflow-hidden group"
+
                 >
                   Sign In
                 </motion.button>
@@ -66,7 +63,7 @@ export default function Navbar() {
                 <motion.button
                   whileHover={{ scale: 1.05, boxShadow: "0 0 20px rgba(6, 182, 212, 0.3)" }}
                   whileTap={{ scale: 0.95 }}
-                  className="relative px-6 py-2.5  bg-black border-2 border-gray-600 hover:border-[#7B3FBF] text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all  hover:shadow-[#7B3FBF]/10 overflow-hidden group"
+                  className="relative px-6 py-2.5  bg-black border-2 border-gray-600 hover:border-cyan-500  text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all  hover:border-cyan-500 overflow-hidden group"
                 >
                   <span className="relative z-10 flex items-center gap-1.5">
                     Get Started

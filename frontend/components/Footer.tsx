@@ -29,10 +29,7 @@ export default function Footer() {
             <p className="text-sm text-gray-400 leading-relaxed mb-4">
               Hyperlocal AI-powered communities. Your voice, your location, your neighborhood.
             </p>
-            <div className="flex items-center gap-2 text-xs text-gray-500">
-              <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></div>
-              <span>Beta • 2025</span>
-            </div>
+            
           </div>
 
           {/* Product Column */}

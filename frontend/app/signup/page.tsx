@@ -9,7 +9,8 @@ import Footer from '@/components/Footer';
 import { FcGoogle } from 'react-icons/fc';
 
 export default function SignUp() {
-  const [name, setName] = useState('');
+  const [firstname, setFirstName] = useState('');
+  const [lastname, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -29,7 +30,8 @@ export default function SignUp() {
 
   const validateForm = () => {
     const newErrors: {name?: string; email?: string; password?: string; confirmPassword?: string} = {};
-    if (!name.trim()) newErrors.name = 'Full name is required';
+    if (!firstname.trim()) newErrors.name = 'First name is required';
+    if (!lastname.trim()) newErrors.name = 'Last name is required';
     if (!email) newErrors.email = 'Email is required';
     else if (!/\S+@\S+\.\S+/.test(email)) newErrors.email = 'Email is invalid';
     if (!password) newErrors.password = 'Password is required';
@@ -45,7 +47,7 @@ export default function SignUp() {
     e.preventDefault();
     if (validateForm()) {
       // Handle sign up logic here
-      console.log('Sign up:', { name, email, password });
+      console.log('Sign up:', { firstname,lastname, email, password });
     }
   };
 
@@ -82,16 +84,18 @@ export default function SignUp() {
           {/* Sign Up Form */}
           <div className="bg-linear-to-br from-gray-900 to-gray-800 rounded-2xl border border-gray-700 p-6 sm:p-8 lg:p-10 shadow-2xl">
             <form onSubmit={handleSubmit} className="space-y-6 lg:space-y-8">
-              {/* Name Input */}
+              {/* Name Inputs */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6"/>
+               {/* First Name Input */}
               <div>
-                <label className="block text-sm font-medium mb-2 text-gray-300">Full Name</label>
+                <label className="block text-sm font-medium mb-2 text-gray-300">First Name</label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
                     type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="John Doe"
+                    value={firstname}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    placeholder="John"
                     className="w-full pl-11 pr-4 py-3 bg-black border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all text-white placeholder-gray-500"
                     required
                   />
@@ -99,6 +103,22 @@ export default function SignUp() {
                 {errors.name && <p className="text-red-400 text-sm mt-1">{errors.name}</p>}
               </div>
 
+              {/* Last Name Input */}
+              <div>
+                <label className="block text-sm font-medium mb-2 text-gray-300">Last Name</label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    value={lastname}
+                    onChange={(e) => setLastName(e.target.value)}
+                    placeholder="Doe"
+                    className="w-full pl-11 pr-4 py-3 bg-black border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all text-white placeholder-gray-500"
+                    required
+                  />
+                </div>
+                {errors.name && <p className="text-red-400 text-sm mt-1">{errors.name}</p>}
+              </div>
               {/* Email Input */}
               <div>
                 <label className="block text-sm font-medium mb-2 text-gray-300">Email</label>
