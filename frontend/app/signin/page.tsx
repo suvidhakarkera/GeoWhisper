@@ -10,6 +10,8 @@ import Footer from '@/components/Footer';
 import { FcGoogle } from 'react-icons/fc';
 import { authService } from '@/services/authService';
 import type { AuthResponse } from '@/types/auth';
+import { auth, googleProvider, isFirebaseConfigured } from '@/config/firebase';
+import { signInWithPopup } from 'firebase/auth';
 
 export default function SignIn() {
   const router = useRouter();
@@ -73,9 +75,57 @@ export default function SignIn() {
     }
   };
 
-  const handleGoogleSignIn = () => {
-    // Handle Google sign in
-    console.log('Google sign in');
+  const handleGoogleSignIn = async () => {
+    setApiError('');
+
+    // Check if Firebase is configured
+    if (!isFirebaseConfigured()) {
+      setApiError('Google Sign-In is not configured. Please contact the administrator.');
+      return;
+    }
+
+    if (!auth || !googleProvider) {
+      setApiError('Google Sign-In is not available. Please try again later.');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Sign in with Google using Firebase
+      const result = await signInWithPopup(auth, googleProvider);
+      const user = result.user;
+
+      // Get Firebase ID token
+      const idToken = await user.getIdToken();
+
+      // Send token to backend for verification and user creation
+      const response: AuthResponse = await authService.googleAuth({
+        idToken,
+      });
+
+      // Store auth data
+      const storage = rememberMe ? localStorage : sessionStorage;
+      storage.setItem('authToken', response.idToken);
+      storage.setItem('firebaseUid', response.firebaseUid);
+      storage.setItem('userEmail', response.email);
+      storage.setItem('username', response.username);
+
+      // Redirect to home
+      router.push('/');
+    } catch (error: any) {
+      if (error.code === 'auth/popup-closed-by-user') {
+        setApiError('Sign-in cancelled. Please try again.');
+      } else if (error.code === 'auth/popup-blocked') {
+        setApiError('Popup blocked. Please allow popups for this site.');
+      } else if (error instanceof Error) {
+        setApiError(error.message);
+      } else {
+        setApiError('Google sign-in failed. Please try again.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -202,12 +252,22 @@ export default function SignIn() {
             {/* Google Sign In */}
             <motion.button
               onClick={handleGoogleSignIn}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="w-full bg-black border-2 border-gray-600 hover:bg-[#BDE0FE]/10 text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all hover:shadow-[#7B3FBF]/10"
+              disabled={isLoading}
+              whileHover={{ scale: isLoading ? 1 : 1.02 }}
+              whileTap={{ scale: isLoading ? 1 : 0.98 }}
+              className="w-full bg-black border-2 border-gray-600 hover:bg-[#BDE0FE]/10 text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all hover:shadow-[#7B3FBF]/10 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <FcGoogle  className="w-5 h-5" />
-              Sign in with Google
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Signing in...
+                </>
+              ) : (
+                <>
+                  <FcGoogle className="w-5 h-5" />
+                  Sign in with Google
+                </>
+              )}
             </motion.button>
 
             {/* Sign Up Link */}
