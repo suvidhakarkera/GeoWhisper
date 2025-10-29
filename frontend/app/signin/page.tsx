@@ -2,18 +2,24 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Lock, ArrowRight, Chrome, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Chrome, Eye, EyeOff, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { FcGoogle } from 'react-icons/fc';
+import { authService } from '@/services/authService';
+import type { AuthResponse } from '@/types/auth';
 
 export default function SignIn() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [errors, setErrors] = useState<{email?: string; password?: string}>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [apiError, setApiError] = useState<string>('');
 
   const validateForm = () => {
     const newErrors: {email?: string; password?: string} = {};
@@ -25,11 +31,45 @@ export default function SignIn() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (validateForm()) {
-      // Handle sign in logic here
-      console.log('Sign in:', { email, password, rememberMe });
+    setApiError('');
+    
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const response: AuthResponse = await authService.signIn({
+        email,
+        password,
+      });
+
+      // Store auth data in localStorage
+      if (rememberMe) {
+        localStorage.setItem('authToken', response.idToken);
+        localStorage.setItem('firebaseUid', response.firebaseUid);
+        localStorage.setItem('userEmail', response.email);
+        localStorage.setItem('username', response.username);
+      } else {
+        sessionStorage.setItem('authToken', response.idToken);
+        sessionStorage.setItem('firebaseUid', response.firebaseUid);
+        sessionStorage.setItem('userEmail', response.email);
+        sessionStorage.setItem('username', response.username);
+      }
+
+      // Redirect to home or dashboard
+      router.push('/');
+    } catch (error) {
+      if (error instanceof Error) {
+        setApiError(error.message);
+      } else {
+        setApiError('An unexpected error occurred. Please try again.');
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -61,6 +101,13 @@ export default function SignIn() {
 
           {/* Sign In Form */}
           <div className="bg-linear-to-br from-gray-900 to-gray-800 rounded-2xl border border-gray-700 p-6 sm:p-8 lg:p-10 shadow-2xl">
+            {/* API Error Message */}
+            {apiError && (
+              <div className="mb-4 p-4 bg-red-500/10 border border-red-500/50 rounded-lg">
+                <p className="text-red-400 text-sm">{apiError}</p>
+              </div>
+            )}
+            
             <form onSubmit={handleSubmit} className="space-y-6 lg:space-y-8">
               {/* Email Input */}
               <div>
@@ -124,11 +171,21 @@ export default function SignIn() {
               {/* Submit Button */}
               <motion.button
                 type="submit"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="w-full bg-black border-2 border-gray-600 hover:bg-[#BDE0FE]/10 text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all  hover:shadow-[#7B3FBF]/10">
-                Sign In
-                < ArrowRight className="w-5 h-5" />
+                disabled={isLoading}
+                whileHover={{ scale: isLoading ? 1 : 1.02 }}
+                whileTap={{ scale: isLoading ? 1 : 0.98 }}
+                className="w-full bg-black border-2 border-gray-600 hover:bg-[#BDE0FE]/10 text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all hover:shadow-[#7B3FBF]/10 disabled:opacity-50 disabled:cursor-not-allowed">
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Signing In...
+                  </>
+                ) : (
+                  <>
+                    Sign In
+                    <ArrowRight className="w-5 h-5" />
+                  </>
+                )}
               </motion.button>
             </form>
 

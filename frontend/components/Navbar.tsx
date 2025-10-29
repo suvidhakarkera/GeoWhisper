@@ -1,12 +1,19 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { MapPin, Sparkles, Menu, X, ChevronRight } from 'lucide-react';
+import { MapPin, Sparkles, Menu, X, ChevronRight, Moon, Sun } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useTheme } from 'next-themes';
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const { theme, setTheme } = useTheme();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <nav className="fixed top-0 w-full bg-black/60 backdrop-blur-xl z-50 border-b border-gray-800/50">
@@ -47,14 +54,30 @@ export default function Navbar() {
 
           {/* Right Section: Auth + Mobile Menu */}
           <div className="flex items-center gap-3">
-            {/* Auth Buttons - Desktop */}
+            {/* Auth Buttons and Theme Toggle - Desktop */}
             <div className="hidden md:flex items-center gap-3">
+              {/* Theme Toggle */}
+              {mounted && (
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                  className="p-2.5 rounded-lg bg-black/20 backdrop-blur-lg border border-gray-600 hover:border-cyan-500 text-white transition-all"
+                  aria-label="Toggle theme"
+                >
+                  {theme === 'dark' ? (
+                    <Sun className="w-5 h-5 text-cyan-400" />
+                  ) : (
+                    <Moon className="w-5 h-5 text-cyan-400" />
+                  )}
+                </motion.button>
+              )}
+              
               <Link href="/signin">
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="relative px-6 py-2.5 bg-black border-2 border-gray-600 text-white hover:border-cyan-500 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all overflow-hidden group"
-
+                  className="relative px-6 py-2.5 bg-black/20 backdrop-blur-lg border-2 border-gray-600 text-white hover:border-cyan-500 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all overflow-hidden group"
                 >
                   Sign In
                 </motion.button>
@@ -63,7 +86,7 @@ export default function Navbar() {
                 <motion.button
                   whileHover={{ scale: 1.05, boxShadow: "0 0 20px rgba(6, 182, 212, 0.3)" }}
                   whileTap={{ scale: 0.95 }}
-                  className="relative px-6 py-2.5  bg-black border-2 border-gray-600 hover:border-cyan-500  text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all  hover:border-cyan-500 overflow-hidden group"
+                  className="relative px-6 py-2.5 bg-black/20 backdrop-blur-lg border-2 border-gray-600 hover:border-cyan-500 text-white rounded-lg font-semibold flex items-center justify-center gap-2 transition-all overflow-hidden group"
                 >
                   <span className="relative z-10 flex items-center gap-1.5">
                     Get Started
@@ -118,8 +141,21 @@ export default function Navbar() {
                   <span className="text-xs font-bold text-cyan-400 uppercase tracking-wide">AI Active</span>
                 </div>
 
-                {/* Auth Buttons - Mobile */}
+                {/* Theme Toggle and Auth Buttons - Mobile */}
                 <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-gray-800">
+                  {mounted && (
+                    <button
+                      onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                      className="w-full px-4 py-3 text-sm font-bold text-gray-300 hover:text-white bg-gray-800/50 hover:bg-gray-700/50 rounded-lg transition-all border border-gray-700 flex items-center justify-between"
+                    >
+                      <span>Toggle Theme</span>
+                      {theme === 'dark' ? (
+                        <Sun className="w-4 h-4 text-cyan-400" />
+                      ) : (
+                        <Moon className="w-4 h-4 text-cyan-400" />
+                      )}
+                    </button>
+                  )}
                   <Link href="/signin" onClick={() => setMobileMenuOpen(false)}>
                     <button className="w-full px-4 py-3 text-sm font-bold text-gray-300 hover:text-white bg-gray-800/50 hover:bg-gray-700/50 rounded-lg transition-all border border-gray-700">
                       Sign In

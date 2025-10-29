@@ -2,13 +2,17 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Lock, User, ArrowRight, Chrome, Eye, EyeOff, Check, X } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight, Chrome, Eye, EyeOff, Check, X, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { FcGoogle } from 'react-icons/fc';
+import { authService } from '@/services/authService';
+import type { AuthResponse } from '@/types/auth';
 
 export default function SignUp() {
+  const router = useRouter();
   const [firstname, setFirstName] = useState('');
   const [lastname, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -17,6 +21,8 @@ export default function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState<{name?: string; email?: string; password?: string; confirmPassword?: string}>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [apiError, setApiError] = useState<string>('');
 
   const getPasswordStrength = (pwd: string) => {
     let strength = 0;
@@ -43,11 +49,42 @@ export default function SignUp() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (validateForm()) {
-      // Handle sign up logic here
-      console.log('Sign up:', { firstname,lastname, email, password });
+    setApiError('');
+    
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Create username from firstname and lastname
+      const username = `${firstname.toLowerCase()}_${lastname.toLowerCase()}`;
+      
+      const response: AuthResponse = await authService.signUp({
+        email,
+        password,
+        username,
+      });
+
+      // Store auth data in localStorage
+      localStorage.setItem('authToken', response.idToken);
+      localStorage.setItem('firebaseUid', response.firebaseUid);
+      localStorage.setItem('userEmail', response.email);
+      localStorage.setItem('username', response.username);
+
+      // Redirect to home or dashboard
+      router.push('/');
+    } catch (error) {
+      if (error instanceof Error) {
+        setApiError(error.message);
+      } else {
+        setApiError('An unexpected error occurred. Please try again.');
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -83,6 +120,13 @@ export default function SignUp() {
 
           {/* Sign Up Form */}
           <div className="bg-linear-to-br from-gray-900 to-gray-800 rounded-2xl border border-gray-700 p-6 sm:p-8 lg:p-10 shadow-2xl">
+            {/* API Error Message */}
+            {apiError && (
+              <div className="mb-4 p-4 bg-red-500/10 border border-red-500/50 rounded-lg">
+                <p className="text-red-400 text-sm">{apiError}</p>
+              </div>
+            )}
+            
             <form onSubmit={handleSubmit} className="space-y-6 lg:space-y-8">
               {/* Name Inputs */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6"/>
@@ -232,12 +276,22 @@ export default function SignUp() {
               {/* Submit Button */}
               <motion.button
                 type="submit"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="w-full bg-black hover:bg-[#BDE0FE]/10 border-2 border-gray-600 text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all  "
+                disabled={isLoading}
+                whileHover={{ scale: isLoading ? 1 : 1.02 }}
+                whileTap={{ scale: isLoading ? 1 : 0.98 }}
+                className="w-full bg-black hover:bg-[#BDE0FE]/10 border-2 border-gray-600 text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Create Account
-                <ArrowRight className="w-5 h-5" />
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Creating Account...
+                  </>
+                ) : (
+                  <>
+                    Create Account
+                    <ArrowRight className="w-5 h-5" />
+                  </>
+                )}
               </motion.button>
             </form>
 
