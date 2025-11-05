@@ -1,5 +1,6 @@
 package com.geowhisper.geowhisperbackendnew.controller;
 
+import com.geowhisper.geowhisperbackendnew.config.SecurityConfig;
 import com.geowhisper.geowhisperbackendnew.dto.*;
 import com.geowhisper.geowhisperbackendnew.service.AuthService;
 import com.google.firebase.auth.FirebaseAuthException;
@@ -22,8 +23,14 @@ import java.util.Map;
 @Tag(name = "Authentication", description = "Authentication endpoints for email/password and Google Sign-In")
 public class AuthController {
 
+    private final SecurityConfig securityConfig;
+
     @Autowired
     private AuthService authService;
+
+    AuthController(SecurityConfig securityConfig) {
+        this.securityConfig = securityConfig;
+    }
 
     @GetMapping("/health")
     @Operation(summary = "Health check", description = "Check if the authentication service is running")
@@ -66,6 +73,7 @@ public class AuthController {
     public ResponseEntity<?> signIn(@Valid @RequestBody SignInRequest request) {
         try {
             AuthResponse response = authService.signInWithEmail(request);
+           
             return ResponseEntity.ok(response);
         } catch (FirebaseAuthException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
