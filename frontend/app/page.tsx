@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Sparkles, Shield, TrendingUp, MapPin, Zap, Globe, Users, MessageSquare, Lock, Compass } from 'lucide-react';
+import { Sparkles, Shield, TrendingUp, MapPin, Zap, Globe, Users, MessageSquare, Lock, Compass, Link } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
@@ -270,6 +270,7 @@ export default function Home() {
             <p className="text-xl text-gray-400 mb-8 max-w-2xl mx-auto">
               Join thousands discovering what's happening right around them. Your location. Your community. Your AI agent.
             </p>
+            
             <motion.button
               whileHover={{ scale: 1.05, boxShadow: "0 0 30px rgba(6, 182, 212, 0.4)" }}
               whileTap={{ scale: 0.95 }}
