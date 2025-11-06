@@ -6,6 +6,10 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
 export default function Home() {
+
+  if (typeof window !== 'undefined') {
+    console.log(sessionStorage.getItem('zonesVisited'));
+  }
   return (
     <div className="min-h-screen bg-black text-white transition-colors duration-300">
       <Navbar />

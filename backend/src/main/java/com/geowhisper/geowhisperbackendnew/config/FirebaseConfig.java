@@ -18,6 +18,9 @@ import java.util.Base64;
 @Configuration
 public class FirebaseConfig {
 
+    // Singleton instance to prevent Firestore from being garbage collected
+    private static Firestore firestoreInstance = null;
+
     @PostConstruct
     public void initialize() {
         try {
@@ -67,7 +70,18 @@ public class FirebaseConfig {
             if (FirebaseApp.getApps().isEmpty()) {
                 throw new IllegalStateException("Firebase must be initialized first");
             }
-            return FirestoreClient.getFirestore();
+            
+            // Use singleton pattern - only create Firestore instance once
+            if (firestoreInstance == null) {
+                synchronized (FirebaseConfig.class) {
+                    if (firestoreInstance == null) {
+                        firestoreInstance = FirestoreClient.getFirestore();
+                        System.out.println("✅ Firestore instance created and cached");
+                    }
+                }
+            }
+            
+            return firestoreInstance;
         } catch (Exception e) {
             System.err.println("❌ Firestore initialization failed: " + e.getMessage());
             throw new RuntimeException("Failed to initialize Firestore", e);

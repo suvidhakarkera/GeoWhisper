@@ -16,6 +16,7 @@ export interface GoogleAuthRequest {
 }
 
 export interface AuthResponse {
+ 
   firebaseUid: string;
   idToken: string;
   email: string;
@@ -23,6 +24,7 @@ export interface AuthResponse {
   isNewUser: boolean;
   userData?: Record<string, any>;
   message: string;
+  
 }
 
 export interface ApiResponse<T = any> {
