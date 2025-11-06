@@ -20,9 +20,11 @@ import { authService } from "@/services/authService";
 import type { AuthResponse } from "@/types/auth";
 import { auth, googleProvider, isFirebaseConfigured } from "@/config/firebase";
 import { signInWithPopup } from "firebase/auth";
+import { useUser, type UserData } from "@/contexts/UserContext";
 
 export default function SignIn() {
   const router = useRouter();
+  const { login } = useUser();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -60,21 +62,29 @@ export default function SignIn() {
         password,
       });
       console.log("Sign-in response:", response);
-      // Store auth data in localStorage
+      
+      // Store rememberMe preference
       if (rememberMe) {
-        localStorage.setItem("authToken", response.idToken);
-        localStorage.setItem("firebaseUid", response.firebaseUid);
-        localStorage.setItem("userEmail", response.email);
-        localStorage.setItem("username", response.username);
+        localStorage.setItem('rememberMe', 'true');
       } else {
-        sessionStorage.setItem("authToken", response.idToken);
-        sessionStorage.setItem("firebaseUid", response.firebaseUid);
-        sessionStorage.setItem("userEmail", response.email);
-        sessionStorage.setItem("username", response.username);
-        sessionStorage.setItem("zonesVisited",response.userData?.zonesVisited);
-
-        // Redirect to home or dashboard
+        sessionStorage.setItem('rememberMe', 'false');
       }
+
+      // Prepare user data for context
+      const userData: UserData = {
+        firebaseUid: response.firebaseUid,
+        email: response.email,
+        username: response.username,
+        createdAt: response.userData?.createdAt,
+        totalPosts: response.userData?.totalPosts || 0,
+        totalReactions: response.userData?.totalReactions || 0,
+        zonesVisited: response.userData?.zonesVisited || 0,
+      };
+
+      // Use context to store user data
+      login(response.idToken, userData);
+
+      // Redirect to home or dashboard
       router.push("/");
     } catch (error) {
       if (error instanceof Error) {
@@ -118,12 +128,26 @@ export default function SignIn() {
         idToken,
       });
 
-      // Store auth data
-      const storage = rememberMe ? localStorage : sessionStorage;
-      storage.setItem("authToken", response.idToken);
-      storage.setItem("firebaseUid", response.firebaseUid);
-      storage.setItem("userEmail", response.email);
-      storage.setItem("username", response.username);
+      // Store rememberMe preference
+      if (rememberMe) {
+        localStorage.setItem('rememberMe', 'true');
+      } else {
+        sessionStorage.setItem('rememberMe', 'false');
+      }
+
+      // Prepare user data for context
+      const userData: UserData = {
+        firebaseUid: response.firebaseUid,
+        email: response.email,
+        username: response.username,
+        createdAt: response.userData?.createdAt,
+        totalPosts: response.userData?.totalPosts || 0,
+        totalReactions: response.userData?.totalReactions || 0,
+        zonesVisited: response.userData?.zonesVisited || 0,
+      };
+
+      // Use context to store user data
+      login(response.idToken, userData);
 
       // Redirect to home
       router.push("/");

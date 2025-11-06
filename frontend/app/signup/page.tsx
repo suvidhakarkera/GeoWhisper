@@ -12,9 +12,11 @@ import { authService } from '@/services/authService';
 import type { AuthResponse } from '@/types/auth';
 import { auth, googleProvider, isFirebaseConfigured } from '@/config/firebase';
 import { signInWithPopup } from 'firebase/auth';
+import { useUser, type UserData } from '@/contexts/UserContext';
 
 export default function SignUp() {
   const router = useRouter();
+  const { login } = useUser();
   const [firstname, setFirstName] = useState('');
   const [lastname, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -71,11 +73,22 @@ export default function SignUp() {
         username,
       });
 
-      // Store auth data in localStorage
-      localStorage.setItem('authToken', response.idToken);
-      localStorage.setItem('firebaseUid', response.firebaseUid);
-      localStorage.setItem('userEmail', response.email);
-      localStorage.setItem('username', response.username);
+      // Always remember new users
+      localStorage.setItem('rememberMe', 'true');
+
+      // Prepare user data for context
+      const userData: UserData = {
+        firebaseUid: response.firebaseUid,
+        email: response.email,
+        username: response.username,
+        createdAt: response.userData?.createdAt,
+        totalPosts: response.userData?.totalPosts || 0,
+        totalReactions: response.userData?.totalReactions || 0,
+        zonesVisited: response.userData?.zonesVisited || 0,
+      };
+
+      // Use context to store user data
+      login(response.idToken, userData);
 
       // Redirect to home or dashboard
       router.push('/');
@@ -119,11 +132,22 @@ export default function SignUp() {
         idToken,
       });
 
-      // Store auth data in localStorage
-      localStorage.setItem('authToken', response.idToken);
-      localStorage.setItem('firebaseUid', response.firebaseUid);
-      localStorage.setItem('userEmail', response.email);
-      localStorage.setItem('username', response.username);
+      // Always remember new users
+      localStorage.setItem('rememberMe', 'true');
+
+      // Prepare user data for context
+      const userData: UserData = {
+        firebaseUid: response.firebaseUid,
+        email: response.email,
+        username: response.username,
+        createdAt: response.userData?.createdAt,
+        totalPosts: response.userData?.totalPosts || 0,
+        totalReactions: response.userData?.totalReactions || 0,
+        zonesVisited: response.userData?.zonesVisited || 0,
+      };
+
+      // Use context to store user data
+      login(response.idToken, userData);
 
       // Redirect to home
       router.push('/');

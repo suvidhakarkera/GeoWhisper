@@ -6,45 +6,54 @@ import { motion } from 'framer-motion';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { User as UserIcon, CalendarDays, BarChart3, MapPinned } from 'lucide-react';
+import { useUser } from '@/contexts/UserContext';
 
 export default function ProfilePage() {
   const router = useRouter();
-  const [username, setUsername] = useState<string>('');
-  const [email, setEmail] = useState<string>('');
-  const [isLoading, setIsLoading] = useState(true);
+  const { user, isAuthenticated, isLoading: authLoading, refreshUserProfile } = useUser();
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
-    // Check if user is authenticated
-    const authToken = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-    
-    if (!authToken) {
-      // Redirect to signup if not authenticated
+    // Redirect to signup if not authenticated
+    if (!authLoading && !isAuthenticated) {
       router.push('/signup');
       return;
     }
 
-    // Load user data from storage
-    const storedUsername = localStorage.getItem('username') || sessionStorage.getItem('username') || 'Anonymous User';
-    const storedEmail = localStorage.getItem('userEmail') || sessionStorage.getItem('userEmail') || '';
-    
-    setUsername(storedUsername);
-    setEmail(storedEmail);
-    setIsLoading(false);
-  }, [router]);
+    // Refresh user profile data from backend on mount
+    if (isAuthenticated && user) {
+      setIsRefreshing(true);
+      refreshUserProfile().finally(() => setIsRefreshing(false));
+    }
+  }, [authLoading, isAuthenticated, router]);
 
-  // Static placeholders for now – wire up to backend later
+  // Stats from user data
   const stats = [
-    { label: 'Posts', value: 0 },
-    { label: 'Zones Visited', value: 0 },
-    { label: 'Reactions', value: 0 },
-    { label: 'Hot Zones Found', value: 0 },
+    { label: 'Posts', value: user?.totalPosts || 0 },
+    { label: 'Zones Visited', value: user?.zonesVisited || 0 },
+    { label: 'Reactions', value: user?.totalReactions || 0 },
+    { label: 'Hot Zones Found', value: 0 }, // Placeholder for future implementation
   ];
 
   // Placeholder skeleton items for recent zones
   const recentSkeleton = Array.from({ length: 3 });
 
+  // Format the member since date
+  const getMemberSince = () => {
+    if (!user?.createdAt) {
+      return new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    }
+    try {
+      // Parse the createdAt timestamp
+      const date = new Date(user.createdAt);
+      return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    } catch {
+      return new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    }
+  };
+
   // Show loading state while checking auth
-  if (isLoading) {
+  if (authLoading || !user) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
         <div className="text-gray-400">Loading...</div>
@@ -75,12 +84,12 @@ export default function ProfilePage() {
               <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-linear-to-br from-purple-700/50 to-indigo-700/50 border border-gray-600 flex items-center justify-center shadow-inner">
                 <UserIcon className="w-14 h-14 sm:w-16 sm:h-16 text-purple-300" />
               </div>
-              <h2 className="mt-5 text-2xl sm:text-3xl font-bold">{username}</h2>
-              <p className="mt-1 text-sm text-gray-400">@{username.toLowerCase().replace(/\s+/g, '_')}</p>
+              <h2 className="mt-5 text-2xl sm:text-3xl font-bold">{user.username}</h2>
+              <p className="mt-1 text-sm text-gray-400">@{user.username.toLowerCase().replace(/\s+/g, '_')}</p>
 
               <div className="mt-2 inline-flex items-center gap-2 text-gray-400 text-xs sm:text-sm">
                 <CalendarDays className="w-4 h-4" />
-                <span>Member since {new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
+                <span>Member since {getMemberSince()}</span>
               </div>
             </div>
 
