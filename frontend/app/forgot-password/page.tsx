@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Mail, ArrowRight, ArrowLeft, CheckCircle, Loader2 } from 'lucide-react';
 import Link from 'next/link';
@@ -8,11 +9,26 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
 export default function ForgotPassword() {
+  const router = useRouter();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [email, setEmail] = useState('');
   const [errors, setErrors] = useState<{email?: string}>({});
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [apiError, setApiError] = useState<string>('');
+
+  useEffect(() => {
+    // Check authentication - if already logged in, redirect to profile
+    const authToken = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+    
+    if (authToken) {
+      // If already authenticated, redirect to profile instead
+      router.push('/profile');
+      return;
+    }
+
+    setIsAuthenticated(true);
+  }, [router]);
 
   const validateForm = () => {
     const newErrors: {email?: string} = {};
@@ -51,6 +67,15 @@ export default function ForgotPassword() {
       setIsLoading(false);
     }
   };
+
+  // Show loading while checking auth
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-gray-400">Loading...</div>
+      </div>
+    );
+  }
 
   if (isSuccess) {
     return (

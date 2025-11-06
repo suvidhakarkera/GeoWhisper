@@ -8,11 +8,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { auth, googleProvider, isFirebaseConfigured } from '@/config/firebase';
 import GoogleSignInButton from '@/components/GoogleSignInButton';
 import { User } from 'firebase/auth';
 
 export default function TestFirebasePage() {
+  const router = useRouter();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [configStatus, setConfigStatus] = useState<{
     isConfigured: boolean;
     apiKey: string;
@@ -28,6 +31,16 @@ export default function TestFirebasePage() {
   } | null>(null);
 
   useEffect(() => {
+    // Check authentication first
+    const authToken = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+    
+    if (!authToken) {
+      router.push('/signup');
+      return;
+    }
+
+    setIsAuthenticated(true);
+
     // Check configuration on mount
     const configured = isFirebaseConfigured();
     
@@ -38,7 +51,7 @@ export default function TestFirebasePage() {
       projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'NOT SET',
       appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || 'NOT SET',
     });
-  }, []);
+  }, [router]);
 
   const handleSuccess = async (user: any, idToken: string) => {
     console.log('✅ Sign-in successful!');
@@ -64,6 +77,15 @@ export default function TestFirebasePage() {
       error: error.message,
     });
   };
+
+  // Show loading while checking auth
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-gray-600">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4">

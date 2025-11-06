@@ -1,11 +1,37 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { User as UserIcon, CalendarDays, BarChart3, MapPinned } from 'lucide-react';
 
 export default function ProfilePage() {
+  const router = useRouter();
+  const [username, setUsername] = useState<string>('');
+  const [email, setEmail] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Check if user is authenticated
+    const authToken = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+    
+    if (!authToken) {
+      // Redirect to signup if not authenticated
+      router.push('/signup');
+      return;
+    }
+
+    // Load user data from storage
+    const storedUsername = localStorage.getItem('username') || sessionStorage.getItem('username') || 'Anonymous User';
+    const storedEmail = localStorage.getItem('userEmail') || sessionStorage.getItem('userEmail') || '';
+    
+    setUsername(storedUsername);
+    setEmail(storedEmail);
+    setIsLoading(false);
+  }, [router]);
+
   // Static placeholders for now – wire up to backend later
   const stats = [
     { label: 'Posts', value: 0 },
@@ -16,6 +42,15 @@ export default function ProfilePage() {
 
   // Placeholder skeleton items for recent zones
   const recentSkeleton = Array.from({ length: 3 });
+
+  // Show loading state while checking auth
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-gray-400">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -40,12 +75,12 @@ export default function ProfilePage() {
               <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-linear-to-br from-purple-700/50 to-indigo-700/50 border border-gray-600 flex items-center justify-center shadow-inner">
                 <UserIcon className="w-14 h-14 sm:w-16 sm:h-16 text-purple-300" />
               </div>
-              <h2 className="mt-5 text-2xl sm:text-3xl font-bold">Anonymous User</h2>
-              <p className="mt-1 text-sm text-gray-400">@geo_explorer_2547</p>
+              <h2 className="mt-5 text-2xl sm:text-3xl font-bold">{username}</h2>
+              <p className="mt-1 text-sm text-gray-400">@{username.toLowerCase().replace(/\s+/g, '_')}</p>
 
               <div className="mt-2 inline-flex items-center gap-2 text-gray-400 text-xs sm:text-sm">
                 <CalendarDays className="w-4 h-4" />
-                <span>Member since Oct 2025</span>
+                <span>Member since {new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
               </div>
             </div>
 
