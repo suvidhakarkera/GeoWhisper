@@ -51,8 +51,9 @@ const isFirebaseConfigured = (): boolean => {
       console.log('📝 Project ID:', firebaseConfig.projectId);
       console.log('📝 Auth Domain:', firebaseConfig.authDomain);
     } else {
-      console.error('❌ Firebase is NOT configured!');
-      console.error('Missing values:', {
+      // Use warn instead of error to avoid Next.js red error overlay during local dev
+      console.warn('❌ Firebase is NOT configured!');
+      console.warn('Missing values:', {
         apiKey: !!firebaseConfig.apiKey,
         authDomain: !!firebaseConfig.authDomain,
         projectId: !!firebaseConfig.projectId,
