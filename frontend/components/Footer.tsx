@@ -82,14 +82,6 @@ export default function Footer() {
               <span>© 2025 GeoWhisper. All rights reserved.</span>
               
             </div>
-            
-            <div className="flex items-center gap-6 text-xs text-gray-500">
-              <a href="#" className="hover:text-cyan-400 transition-colors">Status</a>
-              <span>•</span>
-              <a href="#" className="hover:text-cyan-400 transition-colors">API</a>
-              <span>•</span>
-              <a href="#" className="hover:text-cyan-400 transition-colors">Docs</a>
-            </div>
           </div>
         </div>
       </div>
