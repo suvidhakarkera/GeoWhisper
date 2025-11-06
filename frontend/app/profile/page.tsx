@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { User as UserIcon, CalendarDays, BarChart3, MapPinned } from 'lucide-react';
+import { User as UserIcon, CalendarDays, BarChart3, MapPinned, LogOut } from 'lucide-react';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -42,6 +42,21 @@ export default function ProfilePage() {
 
   // Placeholder skeleton items for recent zones
   const recentSkeleton = Array.from({ length: 3 });
+
+  const handleSignOut = () => {
+    // Clear all authentication data from storage
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('firebaseUid');
+    localStorage.removeItem('userEmail');
+    localStorage.removeItem('username');
+    sessionStorage.removeItem('authToken');
+    sessionStorage.removeItem('firebaseUid');
+    sessionStorage.removeItem('userEmail');
+    sessionStorage.removeItem('username');
+    
+    // Redirect to home page
+    router.push('/');
+  };
 
   // Show loading state while checking auth
   if (isLoading) {
@@ -126,6 +141,19 @@ export default function ProfilePage() {
                   </div>
                 ))}
               </div>
+            </div>
+
+            {/* Sign Out Button */}
+            <div className="mt-8 pt-6 border-t border-gray-700">
+              <motion.button
+                onClick={handleSignOut}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-red-500/30"
+              >
+                <LogOut className="w-5 h-5" />
+                Sign Out
+              </motion.button>
             </div>
           </div>
         </motion.div>
