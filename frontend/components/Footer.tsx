@@ -6,13 +6,13 @@ import Link from 'next/link';
 
 export default function Footer() {
   return (
-    <footer className="relative border-t border-gray-800/50 bg-gradient-to-b from-black to-gray-900/50 mt-32">
+    <footer className="relative border-t border-gray-800/50 bg-gradient-to-b from-black to-gray-900/50 mt-24">
       {/* Decorative top border */}
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent"></div>
       
-      <div className="max-w-7xl mx-auto px-6 py-16">
+      <div className="max-w-7xl mx-auto px-6 py-12">
         {/* Main Footer Content */}
-        <div className="grid md:grid-cols-4 gap-12 mb-12">
+        <div className="grid md:grid-cols-2 gap-12 mb-8">
           {/* Brand Column */}
           <div className="md:col-span-1">
             <Link href="/">
@@ -26,85 +26,51 @@ export default function Footer() {
                 </span>
               </div>
             </Link>
-            <p className="text-sm text-gray-400 leading-relaxed mb-4">
-              Hyperlocal AI-powered communities. Your voice, your location, your neighborhood.
+            <p className="text-sm text-gray-400 leading-relaxed">
+              Hyperlocal AI-powered communities.<br />
+              <span className="flex flex-col mt-1 gap-1 ml-2">
+                <span>Your Voice</span>
+                <span>Your Location</span>
+                <span>Your Neighborhood</span>
+              </span>
             </p>
             
           </div>
 
-          {/* Product Column */}
-          <div>
-            <h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider">Product</h3>
-            <ul className="space-y-3">
-              <FooterLink href="/features">Features</FooterLink>
-              <FooterLink href="/hot-zones">Hot Zones</FooterLink>
-              <FooterLink href="/pricing">Pricing</FooterLink>
-              <FooterLink href="/roadmap">Roadmap</FooterLink>
-            </ul>
-          </div>
-
-          {/* Company Column */}
-          <div>
-            <h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider">Company</h3>
-            <ul className="space-y-3">
-              <FooterLink href="/about">About Us</FooterLink>
-              <FooterLink href="/blog">Blog</FooterLink>
-              <FooterLink href="/careers">Careers</FooterLink>
-              <FooterLink href="/contact">Contact</FooterLink>
-            </ul>
-          </div>
-
-          {/* Legal Column */}
-          <div>
-            <h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider">Legal</h3>
-            <ul className="space-y-3">
-              <FooterLink href="/privacy">Privacy Policy</FooterLink>
-              <FooterLink href="/terms">Terms of Service</FooterLink>
-              <FooterLink href="/cookies">Cookie Policy</FooterLink>
-              <FooterLink href="/guidelines">Community Guidelines</FooterLink>
-            </ul>
-          </div>
-        </div>
-
-        {/* Social Links Section */}
-        <div className="border-t border-gray-800/50 pt-8 mb-8">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-500">Follow us:</span>
-              <div className="flex items-center gap-3">
-                <SocialIcon 
-                  href="https://github.com" 
-                  icon={<Github className="w-5 h-5" />}
-                  label="GitHub"
-                />
-                <SocialIcon 
-                  href="https://twitter.com" 
-                  icon={<Twitter className="w-5 h-5" />}
-                  label="Twitter"
-                />
-                <SocialIcon 
-                  href="https://discord.com" 
-                  icon={<MessageCircle className="w-5 h-5" />}
-                  label="Discord"
-                />
-              </div>
+          {/* Right Column - Features and Social Links */}
+          <div className="flex flex-col justify-end gap-6 items-end">
+            {/* Product Links */}
+            <div>
+              <ul className="flex flex-row gap-6 justify-end">
+                <FooterLink href="/features">Features</FooterLink>
+                <FooterLink href="/hot-zones">Hot Zones</FooterLink>
+                <FooterLink href="/pricing">Pricing</FooterLink>
+                <FooterLink href="/roadmap">Roadmap</FooterLink>
+              </ul>
             </div>
-
-            {/* Newsletter Signup */}
-            <div className="flex items-center gap-2">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                className="px-4 py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-transparent transition-all w-64"
-              />
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="px-6 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-lg text-sm font-bold transition-all shadow-lg shadow-cyan-500/20 flex items-center gap-2"
-              >
-                Subscribe
-                <ExternalLink className="w-4 h-4" />
-              </motion.button>
+            
+            {/* Social Links */}
+            <div className="flex justify-end">
+              <div className="flex items-center gap-4">
+                <span className="text-sm text-gray-500">Follow us:</span>
+                <div className="flex items-center gap-3">
+                  <SocialIcon 
+                    href="https://github.com" 
+                    icon={<Github className="w-5 h-5" />}
+                    label="GitHub"
+                  />
+                  <SocialIcon 
+                    href="https://twitter.com" 
+                    icon={<Twitter className="w-5 h-5" />}
+                    label="Twitter"
+                  />
+                  <SocialIcon 
+                    href="https://discord.com" 
+                    icon={<MessageCircle className="w-5 h-5" />}
+                    label="Discord"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -114,10 +80,7 @@ export default function Footer() {
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="text-sm text-gray-500 flex items-center gap-2">
               <span>© 2025 GeoWhisper. All rights reserved.</span>
-              <span className="hidden md:inline">•</span>
-              <span className="flex items-center gap-1">
-                Made with <Heart className="w-3.5 h-3.5 text-red-500 fill-red-500" /> for local communities
-              </span>
+              
             </div>
             
             <div className="flex items-center gap-6 text-xs text-gray-500">
