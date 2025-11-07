@@ -18,7 +18,7 @@ import Footer from "@/components/Footer";
 import { FcGoogle } from "react-icons/fc";
 import { authService } from "@/services/authService";
 import type { AuthResponse } from "@/types/auth";
-import { auth, googleProvider, isFirebaseConfigured } from "@/config/firebase";
+import { auth, googleProvider, isFirebaseConfigured, firebaseConfigStatus } from "@/config/firebase";
 import { signInWithPopup } from "firebase/auth";
 import { useUser, type UserData } from "@/contexts/UserContext";
 
@@ -102,8 +102,9 @@ export default function SignIn() {
 
     // Check if Firebase is configured
     if (!isFirebaseConfigured()) {
+      const status = firebaseConfigStatus();
       setApiError(
-        "Google Sign-In is not configured. Please contact the administrator."
+        `Google Sign-In is not configured. Missing/invalid Firebase env. ProjectId: ${status.projectId || 'N/A'}`
       );
       return;
     }
@@ -193,6 +194,18 @@ export default function SignIn() {
             {apiError && (
               <div className="mb-4 p-4 bg-red-500/10 border border-red-500/50 rounded-lg">
                 <p className="text-red-400 text-sm">{apiError}</p>
+                {!isFirebaseConfigured() && (
+                  <div className="mt-3 text-xs text-gray-400">
+                    <div className="font-semibold mb-1">Firebase config checklist:</div>
+                    <ul className="list-disc pl-5 space-y-1">
+                      <li>Set NEXT_PUBLIC_FIREBASE_API_KEY</li>
+                      <li>Set NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN</li>
+                      <li>Set NEXT_PUBLIC_FIREBASE_PROJECT_ID</li>
+                      <li>Set NEXT_PUBLIC_FIREBASE_APP_ID</li>
+                      <li>Then restart: stop dev server and run npm run dev</li>
+                    </ul>
+                  </div>
+                )}
               </div>
             )}
 

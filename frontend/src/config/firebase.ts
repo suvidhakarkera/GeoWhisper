@@ -37,27 +37,34 @@ const firebaseConfig = {
  * Returns true only if all required config values are present
  */
 const isFirebaseConfigured = (): boolean => {
-  const isConfigured = !!(
-    firebaseConfig.apiKey &&
-    firebaseConfig.authDomain &&
-    firebaseConfig.projectId &&
-    firebaseConfig.appId
-  );
+  const { apiKey, authDomain, projectId, appId, storageBucket, messagingSenderId } = firebaseConfig;
+
+  // Basic presence checks
+  const hasAll = !!(apiKey && authDomain && projectId && appId);
+
+  // Guard against placeholder or obviously invalid values
+  const looksReal =
+    /^AIza[A-Za-z0-9_\-]{10,}$/.test(apiKey) && // API keys from Firebase start with AIza
+    !/your-/.test(authDomain + projectId + (storageBucket || '') + (messagingSenderId || '') + appId) &&
+    /\./.test(authDomain) &&
+    /^1:\d+:web:/.test(appId);
+
+  const isConfigured = hasAll && looksReal;
 
   // Log configuration status for debugging
   if (typeof window !== 'undefined') {
     if (isConfigured) {
       console.log('✅ Firebase is properly configured');
-      console.log('📝 Project ID:', firebaseConfig.projectId);
-      console.log('📝 Auth Domain:', firebaseConfig.authDomain);
+      console.log('📝 Project ID:', projectId);
+      console.log('📝 Auth Domain:', authDomain);
     } else {
       // Use warn instead of error to avoid Next.js red error overlay during local dev
       console.warn('❌ Firebase is NOT configured!');
-      console.warn('Missing values:', {
-        apiKey: !!firebaseConfig.apiKey,
-        authDomain: !!firebaseConfig.authDomain,
-        projectId: !!firebaseConfig.projectId,
-        appId: !!firebaseConfig.appId,
+      console.warn('Missing/invalid values:', {
+        apiKeyLooksValid: /^AIza/.test(apiKey),
+        authDomain,
+        projectId,
+        appIdStartsWith1Web: /^1:\d+:web:/.test(appId),
       });
     }
   }
@@ -130,3 +137,20 @@ if (typeof window !== 'undefined') {
  * const result = await signInWithPopup(auth, googleProvider);
  */
 export { auth, googleProvider, isFirebaseConfigured };
+
+// Extra: export a status helper for UI diagnostics
+export const firebaseConfigStatus = () => {
+  const keys = {
+    NEXT_PUBLIC_FIREBASE_API_KEY: !!firebaseConfig.apiKey,
+    NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: !!firebaseConfig.authDomain,
+    NEXT_PUBLIC_FIREBASE_PROJECT_ID: !!firebaseConfig.projectId,
+    NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: !!firebaseConfig.storageBucket,
+    NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: !!firebaseConfig.messagingSenderId,
+    NEXT_PUBLIC_FIREBASE_APP_ID: !!firebaseConfig.appId,
+  };
+  return {
+    ok: isFirebaseConfigured(),
+    projectId: firebaseConfig.projectId,
+    keys,
+  };
+};
