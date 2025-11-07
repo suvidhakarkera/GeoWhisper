@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Flame, Activity } from 'lucide-react';
@@ -74,9 +75,7 @@ export default function HotZonesPage() {
                   Trend Detector Active
                 </h2>
               </div>
-              <p className="text-gray-300 text-sm sm:text-base">
-                Analyzing activity across campus... Found <span className="text-red-400 font-semibold">5 hot zones</span> with high engagement!
-              </p>
+              
             </div>
           </motion.div>
 
@@ -121,8 +120,17 @@ export default function HotZonesPage() {
           </div>
 
           <div className="text-center mt-12 text-gray-500">
-            <Activity className="w-12 h-12 mx-auto mb-3 opacity-50" />
-            <p className="text-sm">Hot zones data will be loaded from backend</p>
+
+            {/* Linker button - replace the href value with your target page address */}
+            <div className="mt-4">
+              <Link
+                href="/profile"
+                id="hotzones-link"
+                className="inline-block px-6 py-3 rounded-2xl bg-gradient-to-r from-orange-500 to-orange-400 text-white font-semibold shadow-lg hover:from-orange-600 hover:to-orange-500 transition-all"
+              >
+                see what's happening
+              </Link>
+            </div>
           </div>
         </motion.div>
       </div>
