@@ -59,25 +59,8 @@ export default function Navbar() {
 
           {/* Right Section: Auth + Mobile Menu */}
           <div className="flex items-center gap-3">
-            {/* Auth Buttons and Theme Toggle - Desktop */}
+            {/* Auth Buttons - Desktop */}
             <div className="hidden md:flex items-center gap-3">
-              {/* Theme Toggle */}
-              {mounted && (
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                  className="p-2.5 rounded-lg bg-black/20 backdrop-blur-lg border border-gray-600 hover:border-cyan-500 text-white transition-all"
-                  aria-label="Toggle theme"
-                >
-                  {theme === 'dark' ? (
-                    <Sun className="w-5 h-5 text-cyan-400" />
-                  ) : (
-                    <Moon className="w-5 h-5 text-cyan-400" />
-                  )}
-                </motion.button>
-              )}
-              
               {isAuthenticated && user ? (
                 <>
                   {/* User Profile Button */}
@@ -171,22 +154,8 @@ export default function Navbar() {
                   Maps
                 </MobileNavLink>
 
-                {/* Theme Toggle and Auth Buttons - Mobile */}
+                {/* Auth Buttons - Mobile */}
                 <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-gray-800">
-                  {mounted && (
-                    <button
-                      onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                      className="w-full px-4 py-3 text-sm font-bold text-gray-300 hover:text-white bg-gray-800/50 hover:bg-gray-700/50 rounded-lg transition-all border border-gray-700 flex items-center justify-between"
-                    >
-                      <span>Toggle Theme</span>
-                      {theme === 'dark' ? (
-                        <Sun className="w-4 h-4 text-cyan-400" />
-                      ) : (
-                        <Moon className="w-4 h-4 text-cyan-400" />
-                      )}
-                    </button>
-                  )}
-                  
                   {isAuthenticated && user ? (
                     <>
                       <Link href="/profile" onClick={() => setMobileMenuOpen(false)}>
@@ -211,8 +180,9 @@ export default function Navbar() {
                         </button>
                       </Link>
                       <Link href="/signup" onClick={() => setMobileMenuOpen(false)}>
-                        <button className="w-full px-4 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-lg text-sm font-bold transition-all shadow-lg shadow-cyan-500/20">
+                        <button className="w-full px-4 py-3 bg-black/20 backdrop-blur-lg border-2 border-gray-600 hover:border-cyan-500 text-white rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-1.5">
                           Get Started
+                          <ChevronRight className="w-4 h-4" />
                         </button>
                       </Link>
                     </>
