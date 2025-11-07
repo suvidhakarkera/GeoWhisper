@@ -89,7 +89,7 @@ export default function Home() {
             {/* Stats */}
             <div className="grid grid-cols-3 gap-8 mt-20 max-w-3xl mx-auto">
               <div className="text-center">
-                <div className="text-4xl font-bold text-cyan-400 mb-2">50m</div>
+                <div className="text-4xl font-bold text-cyan-400 mb-2">500m</div>
                 <div className="text-sm text-gray-500 uppercase tracking-wide">Range Radius</div>
               </div>
               <div className="text-center border-x border-gray-800">
@@ -175,7 +175,7 @@ export default function Home() {
               number="01"
               icon={<Compass className="w-8 h-8" />}
               title="Drop Your Pin"
-              description="Share your location and see what's happening within 50 meters of you"
+              description="Share your location and see what's happening within 500 meters of you"
               delay={0.1}
             />
             <StepCard
@@ -245,7 +245,7 @@ export default function Home() {
                 <div className="h-full flex items-center justify-center">
                   <div className="text-center">
                     <MapPin className="w-32 h-32 text-cyan-400 mx-auto mb-6" />
-                    <p className="text-2xl font-bold text-cyan-400">50 Meter Radius</p>
+                    <p className="text-2xl font-bold text-cyan-400">500 Meter Radius</p>
                     <p className="text-gray-400 mt-2">Your hyperlocal community zone</p>
                   </div>
                 </div>
@@ -276,9 +276,9 @@ export default function Home() {
             </p>
             
             <motion.button
-              whileHover={{ scale: 1.05, boxShadow: "0 0 30px rgba(6, 182, 212, 0.4)" }}
+              whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="px-12 py-5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-xl font-bold text-lg transition-all shadow-xl shadow-cyan-500/20"
+              className="px-12 py-5 bg-black/20 backdrop-blur-lg border-2 border-gray-600 text-white hover:border-cyan-500 rounded-xl font-bold text-lg transition-all"
             >
               Get Started Now
             </motion.button>
