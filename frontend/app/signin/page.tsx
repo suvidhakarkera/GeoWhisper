@@ -84,8 +84,8 @@ export default function SignIn() {
       // Use context to store user data
       login(response.idToken, userData);
 
-      // Redirect to home or dashboard
-      router.push("/");
+      // Redirect to home or dashboard - use window.location for hard refresh
+      window.location.href = "/";
     } catch (error) {
       if (error instanceof Error) {
         setApiError(error.message);
@@ -150,8 +150,8 @@ export default function SignIn() {
       // Use context to store user data
       login(response.idToken, userData);
 
-      // Redirect to home
-      router.push("/");
+      // Redirect to home - use window.location for hard refresh
+      window.location.href = "/";
     } catch (error: any) {
       if (error.code === "auth/popup-closed-by-user") {
         setApiError("Sign-in cancelled. Please try again.");
