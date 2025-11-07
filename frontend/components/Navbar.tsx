@@ -54,12 +54,7 @@ export default function Navbar() {
             <NavLink href="/hot-zones">Hot Zones</NavLink>
             <NavLink href="/my-posts">My Posts</NavLink>
             <NavLink href="/profile">Profile</NavLink>
-            
-            {/* AI Status Indicator */}
-            <div className="ml-4 flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/20">
-              <Sparkles className="w-4 h-4 text-cyan-400 animate-pulse" />
-              <span className="text-xs font-bold text-cyan-400 uppercase tracking-wide">AI Active</span>
-            </div>
+            <NavLink href="/maps">Maps</NavLink>
           </div>
 
           {/* Right Section: Auth + Mobile Menu */}
@@ -172,12 +167,9 @@ export default function Navbar() {
                 <MobileNavLink href="/profile" onClick={() => setMobileMenuOpen(false)}>
                   Profile
                 </MobileNavLink>
-                
-                {/* AI Status - Mobile */}
-                <div className="flex items-center gap-2 px-4 py-3 mt-2 rounded-lg bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/20">
-                  <Sparkles className="w-4 h-4 text-cyan-400 animate-pulse" />
-                  <span className="text-xs font-bold text-cyan-400 uppercase tracking-wide">AI Active</span>
-                </div>
+                <MobileNavLink href="/maps" onClick={() => setMobileMenuOpen(false)}>
+                  Maps
+                </MobileNavLink>
 
                 {/* Theme Toggle and Auth Buttons - Mobile */}
                 <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-gray-800">

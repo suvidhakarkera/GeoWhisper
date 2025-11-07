@@ -38,16 +38,10 @@ export default function Home() {
             transition={{ duration: 0.8 }}
             className="text-center mb-16"
           >
-            {/* Badge */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5 }}
-              className="inline-flex items-center gap-2 px-4 py-2 mb-8 rounded-full bg-cyan-500/10 border border-cyan-500/20 backdrop-blur-sm"
-            >
-              <Sparkles className="w-4 h-4 text-cyan-400" />
-              <span className="text-sm font-medium text-cyan-400">AI-Powered Local Communities</span>
-            </motion.div>
+            {/* Subtitle Text */}
+            <p className="text-xl text-gray-400 mb-8">
+              AI-Powered Local Communities
+            </p>
 
             {/* Main Heading */}
             <h1 className="text-6xl md:text-8xl font-black mb-8 tracking-tight leading-tight">
