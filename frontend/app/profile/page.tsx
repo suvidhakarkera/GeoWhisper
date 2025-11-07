@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+// removed framer-motion animations per request
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { User as UserIcon, CalendarDays, BarChart3, MapPinned } from 'lucide-react';
@@ -35,8 +35,8 @@ export default function ProfilePage() {
     { label: 'Hot Zones Found', value: 0 }, // Placeholder for future implementation
   ];
 
-  // Placeholder skeleton items for recent zones
-  const recentSkeleton = Array.from({ length: 3 });
+  // Placeholder skeleton items for recent zones (4 boxes)
+  const recentSkeleton = Array.from({ length: 4 });
 
   // Format the member since date
   const getMemberSince = () => {
@@ -66,78 +66,73 @@ export default function ProfilePage() {
       <Navbar />
 
       <div className="min-h-screen px-4 sm:px-6 lg:px-8 pt-20 pb-12">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="mx-auto w-full max-w-3xl"
-        >
+  <div className="mx-auto w-full max-w-[1200px]">
           {/* Header */}
           <div className="flex items-center justify-center mb-6 sm:mb-8">
             <h1 className="text-xl sm:text-2xl font-semibold">Profile</h1>
           </div>
 
           {/* Profile Card */}
-          <div className="bg-linear-to-br from-gray-900 to-gray-800 rounded-2xl border border-gray-700 p-6 sm:p-8 shadow-2xl">
-            {/* Avatar + name */}
-            <div className="flex flex-col items-center text-center">
-              <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-linear-to-br from-purple-700/50 to-indigo-700/50 border border-gray-600 flex items-center justify-center shadow-inner">
-                <UserIcon className="w-14 h-14 sm:w-16 sm:h-16 text-purple-300" />
-              </div>
-              <h2 className="mt-5 text-2xl sm:text-3xl font-bold">{user.username}</h2>
-              <p className="mt-1 text-sm text-gray-400">@{user.username.toLowerCase().replace(/\s+/g, '_')}</p>
-
-              <div className="mt-2 inline-flex items-center gap-2 text-gray-400 text-xs sm:text-sm">
-                <CalendarDays className="w-4 h-4" />
-                <span>Member since {getMemberSince()}</span>
-              </div>
-            </div>
-
-            {/* Activity */}
-            <div className="mt-8">
-              <div className="flex items-center gap-2 mb-3">
-                <BarChart3 className="w-4 h-4 text-cyan-400" />
-                <h3 className="text-sm font-semibold text-gray-200">Your Activity</h3>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                {stats.map((s) => (
-                  <div
-                    key={s.label}
-                    className="rounded-xl border border-gray-700 bg-black/50 p-5 text-center hover:border-cyan-500 transition-colors"
-                  >
-                    <div className="text-3xl font-extrabold">{s.value}</div>
-                    <div className="mt-1 text-xs text-gray-400">{s.label}</div>
+          <div className="bg-linear-to-br from-gray-900 to-gray-800 rounded-2xl border border-gray-700 p-10 sm:p-12 shadow-2xl">
+            {/* Top: avatar + activity side-by-side on desktop */}
+            <div className="lg:grid lg:grid-cols-5 lg:gap-8 items-start">
+              <div className="lg:col-span-3 flex items-center justify-center gap-8">
+                <div className="flex flex-col items-center text-center">
+                  <div className="w-28 h-28 sm:w-32 sm:h-32 lg:w-40 lg:h-40 rounded-full bg-linear-to-br from-purple-700/50 to-indigo-700/50 border border-gray-600 flex items-center justify-center shadow-inner">
+                    <UserIcon className="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 text-purple-300" />
                   </div>
-                ))}
-              </div>
-            </div>
+                  <h2 className="mt-5 text-2xl sm:text-3xl lg:text-4xl font-bold">{user.username}</h2>
+                  <p className="mt-1 text-sm text-gray-400">@{user.username.toLowerCase().replace(/\s+/g, '_')}</p>
 
-            {/* Recent Zones */}
-            <div className="mt-8">
-              <div className="flex items-center gap-2 mb-3">
-                <MapPinned className="w-4 h-4 text-cyan-400" />
-                <h3 className="text-sm font-semibold text-gray-200">Recent Zones</h3>
+                  <div className="mt-2 inline-flex items-center gap-2 text-gray-400 text-xs sm:text-sm">
+                    <CalendarDays className="w-4 h-4" />
+                    <span>Member since {getMemberSince()}</span>
+                  </div>
+                </div>
               </div>
 
-              {/* Skeleton list: backend-ready container */}
-              <div className="space-y-3">
-                {recentSkeleton.map((_, idx) => (
-                  <div
-                    key={idx}
-                    className="w-full rounded-xl border border-gray-700 bg-black/50 p-4 flex items-center gap-3"
-                  >
-                    <div className="w-9 h-9 rounded-full bg-gray-700/60 " />
-                    <div className="flex-1">
-                      <div className="h-3 w-40 sm:w-56 bg-gray-700/60 rounded " />
-                      <div className="h-3 w-24 sm:w-32 bg-gray-700/40 rounded mt-2 " />
+              {/* Activity on the right (2x2) */}
+              <div className="mt-6 lg:mt-0 lg:col-span-2">
+                <div className="flex items-center gap-2 mb-3">
+                  <BarChart3 className="w-4 h-4 text-cyan-400" />
+                  <h3 className="text-sm font-semibold text-gray-200">Your Activity</h3>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  {stats.map((s) => (
+                    <div
+                      key={s.label}
+                      className="rounded-xl border border-gray-700 bg-black/50 p-5 text-center hover:border-cyan-500 transition-colors"
+                    >
+                      <div className="text-2xl lg:text-3xl font-extrabold">{s.value}</div>
+                      <div className="mt-1 text-xs text-gray-400">{s.label}</div>
                     </div>
-                    <div className="h-3 w-10 bg-gray-700/50 rounded hidden sm:block " />
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
+
+              {/* Recent Zones (placed under activity so it aligns) */}
+              <div className="mt-6 lg:mt-6 lg:col-span-2">
+                <div className="flex items-center gap-2 mb-3">
+                  <MapPinned className="w-4 h-4 text-cyan-400" />
+                  <h3 className="text-sm font-semibold text-gray-200">Recent Zones</h3>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  {recentSkeleton.map((_, idx) => (
+                    <div
+                      key={idx}
+                      className="w-full rounded-xl border border-gray-700 bg-black/50 p-5 flex flex-col sm:flex-row items-center gap-4 min-h-28"
+                    >
+                      
+                      
+                    </div>
+                  ))}
+                </div>
+              </div>
           </div>
-        </motion.div>
+  </div>
       </div>
 
       <Footer />
