@@ -5,7 +5,9 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import PostsMap from '@/components/PostsMap';
+import dynamic from 'next/dynamic';
+// Dynamically import PostsMap to disable SSR (Leaflet depends on browser APIs like window, document)
+const PostsMap = dynamic(() => import('@/components/PostsMap'), { ssr: false });
 import PostCard from '@/components/PostCard';
 import { postService, Post } from '@/src/services/postService';
 import { Map, List, Loader2, RefreshCw, Plus, MapPin } from 'lucide-react';

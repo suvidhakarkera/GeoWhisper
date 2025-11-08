@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Post } from '@/src/services/postService';
 import { MapPin } from 'lucide-react';
 import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+// Leaflet CSS is imported globally in app/layout.tsx
 
 // Custom marker icons using SVG
 const userIcon = L.icon({

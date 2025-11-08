@@ -1,8 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
 
-/* Leaflet CSS for OpenStreetMap */
-@import 'leaflet/dist/leaflet.css';
+/* Leaflet CSS moved to app/layout.tsx for Next.js compatibility */
 
 /* Light mode variables */
 :root {
