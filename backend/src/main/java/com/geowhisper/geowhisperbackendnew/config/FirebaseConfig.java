@@ -12,6 +12,8 @@ import org.springframework.core.io.ClassPathResource;
 
 import jakarta.annotation.PostConstruct;
 import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Base64;
 
@@ -62,6 +64,18 @@ public class FirebaseConfig {
     @Bean
     public FirebaseAuth firebaseAuth() {
         return FirebaseAuth.getInstance();
+    }
+
+
+     @Bean
+    public FirebaseApp firebaseApp() throws IOException {
+        FileInputStream serviceAccount = new FileInputStream("path/to/your/serviceAccountKey.json");
+
+        FirebaseOptions options = FirebaseOptions.builder()
+                .setCredentials(GoogleCredentials.fromStream(serviceAccount))
+                .build();
+
+        return FirebaseApp.initializeApp(options);
     }
 
     @Bean

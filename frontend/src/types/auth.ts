@@ -7,8 +7,7 @@ export interface SignUpRequest {
 }
 
 export interface SignInRequest {
-  email: string;
-  password: string;
+  idToken: string;
 }
 
 export interface GoogleAuthRequest {

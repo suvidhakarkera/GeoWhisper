@@ -11,7 +11,7 @@ import { FcGoogle } from 'react-icons/fc';
 import { authService } from '@/services/authService';
 import type { AuthResponse } from '@/types/auth';
 import { auth, googleProvider, isFirebaseConfigured } from '@/config/firebase';
-import { signInWithPopup } from 'firebase/auth';
+import { signInWithPopup, createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { useUser, type UserData } from '@/contexts/UserContext';
 
 export default function SignUp() {
@@ -61,15 +61,34 @@ export default function SignUp() {
       return;
     }
 
+    // Check if Firebase is configured
+    if (!isFirebaseConfigured() || !auth) {
+      setApiError('Firebase authentication is not configured. Please contact the administrator.');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
       // Create username from firstname and lastname
       const username = `${firstname.toLowerCase()}_${lastname.toLowerCase()}`;
       
+      // First, create user in Firebase Authentication
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Update the user's display name in Firebase
+      await updateProfile(user, {
+        displayName: username
+      });
+
+      // Get Firebase ID token
+      const idToken = await user.getIdToken();
+
+      // Now send the user data to backend to create profile
       const response: AuthResponse = await authService.signUp({
         email,
-        password,
+        password, // Backend will ignore this, but keeping for DTO compatibility
         username,
       });
 
@@ -87,13 +106,31 @@ export default function SignUp() {
         zonesVisited: response.userData?.zonesVisited || 0,
       };
 
-      // Use context to store user data
-      login(response.idToken, userData);
+      // Use context to store user data with the ID token
+      login(idToken, userData);
 
       // Redirect to home or dashboard - use window.location for hard refresh
       window.location.href = '/';
-    } catch (error) {
-      if (error instanceof Error) {
+    } catch (error: any) {
+      // Handle Firebase authentication errors
+      if (error.code) {
+        switch (error.code) {
+          case 'auth/email-already-in-use':
+            setApiError('This email is already registered. Please sign in instead.');
+            break;
+          case 'auth/invalid-email':
+            setApiError('Invalid email address. Please check and try again.');
+            break;
+          case 'auth/weak-password':
+            setApiError('Password is too weak. Please use a stronger password.');
+            break;
+          case 'auth/operation-not-allowed':
+            setApiError('Email/password sign up is not enabled. Please contact support.');
+            break;
+          default:
+            setApiError(error.message || 'Sign up failed. Please try again.');
+        }
+      } else if (error instanceof Error) {
         setApiError(error.message);
       } else {
         setApiError('An unexpected error occurred. Please try again.');

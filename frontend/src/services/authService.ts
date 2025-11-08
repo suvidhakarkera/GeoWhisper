@@ -37,16 +37,16 @@ class AuthService {
   }
 
   /**
-   * Sign in with email and password
+   * Sign in with Firebase ID token
    */
-  async signIn(data: SignInRequest): Promise<AuthResponse> {
+  async signIn(idToken: string): Promise<AuthResponse> {
     try {
       const response = await fetch(buildUrl(API_CONFIG.ENDPOINTS.AUTH.SIGNIN), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ idToken }),
       });
 
       const result = await response.json();

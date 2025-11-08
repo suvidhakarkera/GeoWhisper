@@ -65,20 +65,20 @@ public class AuthController {
     }
 
     @PostMapping("/signin")
-    @Operation(summary = "Sign in with email", description = "Sign in existing user with email. Note: Password validation should be done on the client side with Firebase Client SDK. This endpoint verifies user existence and returns user data.")
+    @Operation(summary = "Sign in with Firebase ID token", description = "Verify Firebase ID token and return user profile data. Client must authenticate with Firebase first.")
     @ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Sign in successful", content = @Content(schema = @Schema(implementation = AuthResponse.class))),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Invalid credentials or user not found", content = @Content(schema = @Schema(implementation = com.geowhisper.geowhisperbackendnew.dto.ApiResponse.class)))
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Invalid or expired token", content = @Content(schema = @Schema(implementation = com.geowhisper.geowhisperbackendnew.dto.ApiResponse.class)))
     })
     public ResponseEntity<?> signIn(@Valid @RequestBody SignInRequest request) {
         try {
-            AuthResponse response = authService.signInWithEmail(request);
+            AuthResponse response = authService.verifyToken(request.getIdToken());
            
             return ResponseEntity.ok(response);
         } catch (FirebaseAuthException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(com.geowhisper.geowhisperbackendnew.dto.ApiResponse
-                            .error("Invalid credentials or user not found"));
+                            .error("Invalid or expired token"));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(com.geowhisper.geowhisperbackendnew.dto.ApiResponse
