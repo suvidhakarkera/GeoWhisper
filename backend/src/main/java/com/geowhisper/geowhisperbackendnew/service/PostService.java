@@ -105,4 +105,143 @@ public class PostService {
     ) throws ExecutionException, InterruptedException {
         return getNearbyPosts(lat, lon, radiusMeters, 100);
     }
+
+    public Map<String, Object> likePost(String postId, String userId) 
+        throws ExecutionException, InterruptedException {
+        
+        DocumentReference postRef = firestore.collection("posts").document(postId);
+        DocumentReference likeRef = postRef.collection("likes").document(userId);
+        
+        // Check if user already liked
+        DocumentSnapshot likeDoc = likeRef.get().get();
+        
+        if (likeDoc.exists()) {
+            throw new IllegalStateException("Post already liked by user");
+        }
+        
+        // Add like
+        Map<String, Object> likeData = new HashMap<>();
+        likeData.put("userId", userId);
+        likeData.put("likedAt", FieldValue.serverTimestamp());
+        likeRef.set(likeData).get();
+        
+        // Increment like count
+        postRef.update("likes", FieldValue.increment(1)).get();
+        
+        // Get updated post
+        DocumentSnapshot postDoc = postRef.get().get();
+        Map<String, Object> post = postDoc.getData();
+        if (post != null) {
+            post.put("id", postDoc.getId());
+        }
+        
+        return post;
+    }
+
+    public Map<String, Object> unlikePost(String postId, String userId) 
+        throws ExecutionException, InterruptedException {
+        
+        DocumentReference postRef = firestore.collection("posts").document(postId);
+        DocumentReference likeRef = postRef.collection("likes").document(userId);
+        
+        // Check if like exists
+        DocumentSnapshot likeDoc = likeRef.get().get();
+        
+        if (!likeDoc.exists()) {
+            throw new IllegalStateException("Post not liked by user");
+        }
+        
+        // Remove like
+        likeRef.delete().get();
+        
+        // Decrement like count
+        postRef.update("likes", FieldValue.increment(-1)).get();
+        
+        // Get updated post
+        DocumentSnapshot postDoc = postRef.get().get();
+        Map<String, Object> post = postDoc.getData();
+        if (post != null) {
+            post.put("id", postDoc.getId());
+        }
+        
+        return post;
+    }
+
+    public Map<String, Object> addComment(String postId, String userId, String username, String commentText) 
+        throws ExecutionException, InterruptedException {
+        
+        DocumentReference postRef = firestore.collection("posts").document(postId);
+        
+        // Create comment data
+        Map<String, Object> commentData = new HashMap<>();
+        commentData.put("userId", userId);
+        commentData.put("username", username);
+        commentData.put("comment", commentText);
+        commentData.put("createdAt", FieldValue.serverTimestamp());
+        
+        // Add comment to subcollection
+        DocumentReference commentRef = postRef.collection("comments").document();
+        commentRef.set(commentData).get();
+        
+        // Increment comment count
+        postRef.update("commentCount", FieldValue.increment(1)).get();
+        
+        commentData.put("id", commentRef.getId());
+        return commentData;
+    }
+
+    public List<Map<String, Object>> getComments(String postId) 
+        throws ExecutionException, InterruptedException {
+        
+        QuerySnapshot querySnapshot = firestore.collection("posts")
+            .document(postId)
+            .collection("comments")
+            .orderBy("createdAt", Query.Direction.ASCENDING)
+            .get()
+            .get();
+        
+        List<Map<String, Object>> comments = new ArrayList<>();
+        for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
+            Map<String, Object> comment = doc.getData();
+            if (comment != null) {
+                comment.put("id", doc.getId());
+                comments.add(comment);
+            }
+        }
+        
+        return comments;
+    }
+
+    public void deletePost(String postId, String userId) 
+        throws ExecutionException, InterruptedException {
+        
+        DocumentReference postRef = firestore.collection("posts").document(postId);
+        DocumentSnapshot postDoc = postRef.get().get();
+        
+        if (!postDoc.exists()) {
+            throw new IllegalArgumentException("Post not found");
+        }
+        
+        Map<String, Object> post = postDoc.getData();
+        String postUserId = (String) post.get("userId");
+        
+        if (!postUserId.equals(userId)) {
+            throw new IllegalStateException("User not authorized to delete this post");
+        }
+        
+        // Delete all likes
+        QuerySnapshot likesSnapshot = postRef.collection("likes").get().get();
+        for (DocumentSnapshot likeDoc : likesSnapshot.getDocuments()) {
+            likeDoc.getReference().delete().get();
+        }
+        
+        // Delete all comments
+        QuerySnapshot commentsSnapshot = postRef.collection("comments").get().get();
+        for (DocumentSnapshot commentDoc : commentsSnapshot.getDocuments()) {
+            commentDoc.getReference().delete().get();
+        }
+        
+        // Delete the post
+        postRef.delete().get();
+    }
 }

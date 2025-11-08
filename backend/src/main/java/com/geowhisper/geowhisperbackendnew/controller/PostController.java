@@ -60,4 +60,75 @@ public class PostController {
                     .body(ApiResponse.error("Failed to fetch posts: " + e.getMessage()));
         }
     }
+
+    @PostMapping("/{postId}/like")
+    public ResponseEntity<?> likePost(
+            @PathVariable String postId,
+            @RequestHeader("X-User-Id") String userId) {
+        try {
+            Map<String, Object> result = postService.likePost(postId, userId);
+            return ResponseEntity.ok(ApiResponse.success("Post liked successfully", result));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Failed to like post: " + e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/{postId}/like")
+    public ResponseEntity<?> unlikePost(
+            @PathVariable String postId,
+            @RequestHeader("X-User-Id") String userId) {
+        try {
+            Map<String, Object> result = postService.unlikePost(postId, userId);
+            return ResponseEntity.ok(ApiResponse.success("Post unliked successfully", result));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Failed to unlike post: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/{postId}/comment")
+    public ResponseEntity<?> addComment(
+            @PathVariable String postId,
+            @RequestHeader("X-User-Id") String userId,
+            @RequestHeader(value = "X-Username", defaultValue = "Anonymous") String username,
+            @RequestBody Map<String, String> request) {
+        try {
+            String commentText = request.get("comment");
+            if (commentText == null || commentText.trim().isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(ApiResponse.error("Comment text is required"));
+            }
+
+            Map<String, Object> comment = postService.addComment(postId, userId, username, commentText);
+            return ResponseEntity.ok(ApiResponse.success("Comment added successfully", comment));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Failed to add comment: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/{postId}/comments")
+    public ResponseEntity<?> getComments(@PathVariable String postId) {
+        try {
+            List<Map<String, Object>> comments = postService.getComments(postId);
+            return ResponseEntity.ok(ApiResponse.success("Fetched comments", comments));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Failed to fetch comments: " + e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/{postId}")
+    public ResponseEntity<?> deletePost(
+            @PathVariable String postId,
+            @RequestHeader("X-User-Id") String userId) {
+        try {
+            postService.deletePost(postId, userId);
+            return ResponseEntity.ok(ApiResponse.success("Post deleted successfully", null));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Failed to delete post: " + e.getMessage()));
+        }
+    }
 }
