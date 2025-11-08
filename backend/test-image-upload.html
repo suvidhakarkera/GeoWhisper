@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoWhisper - Test Post Creation with Images</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        .image-input {
+            padding: 20px;
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .image-input:hover {
+            background: #f0f4ff;
+            border-color: #764ba2;
+        }
+        .image-input input {
+            display: none;
+        }
+        .previews {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .preview-item {
+            position: relative;
+            aspect-ratio: 1;
+            overflow: hidden;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+        }
+        .preview-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .preview-item button {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(255, 0, 0, 0.8);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            line-height: 1;
+        }
+        .submit-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .submit-btn:hover {
+            transform: translateY(-2px);
+        }
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .response {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+        .response.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .response.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .response pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            background: rgba(0,0,0,0.05);
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-size: 12px;
+        }
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .settings {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .settings input {
+            width: auto;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌍 GeoWhisper Post Creator</h1>
+        
+        <div class="info-box">
+            <strong>ℹ️ Test Image Upload Feature</strong>
+            <p>Create a post with up to 5 images. Images will be uploaded to Firebase Storage.</p>
+        </div>
+
+        <div class="settings">
+            <div class="form-group">
+                <label>Backend URL:</label>
+                <input type="text" id="backendUrl" value="http://localhost:8080">
+            </div>
+            <div class="form-group">
+                <label>User ID:</label>
+                <input type="text" id="userId" value="test-user-123">
+            </div>
+            <div class="form-group">
+                <label>Username:</label>
+                <input type="text" id="username" value="TestUser">
+            </div>
+        </div>
+
+        <form id="postForm">
+            <div class="form-group">
+                <label for="content">Post Content *</label>
+                <textarea 
+                    id="content" 
+                    placeholder="What's on your mind? Share your thoughts about this location..."
+                    maxlength="500"
+                    required
+                ></textarea>
+                <small style="color: #666;">Max 500 characters</small>
+            </div>
+
+            <div class="form-group">
+                <label for="latitude">Latitude * (-90 to 90)</label>
+                <input 
+                    type="number" 
+                    id="latitude" 
+                    step="any" 
+                    min="-90" 
+                    max="90"
+                    placeholder="e.g., 40.7128"
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="longitude">Longitude * (-180 to 180)</label>
+                <input 
+                    type="number" 
+                    id="longitude" 
+                    step="any" 
+                    min="-180" 
+                    max="180"
+                    placeholder="e.g., -74.0060"
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label>Images (Optional, Max 5)</label>
+                <div class="image-input" onclick="document.getElementById('imageInput').click()">
+                    <input 
+                        type="file" 
+                        id="imageInput" 
+                        accept="image/*" 
+                        multiple
+                        onchange="handleImageSelect(event)"
+                    >
+                    <p>📷 Click to select images</p>
+                    <small>JPEG, PNG, GIF, WebP - Max 10MB each</small>
+                </div>
+                <div class="previews" id="previews"></div>
+            </div>
+
+            <button type="submit" class="submit-btn" id="submitBtn">
+                Create Post with Images
+            </button>
+        </form>
+
+        <div class="response" id="response"></div>
+    </div>
+
+    <script>
+        let selectedFiles = [];
+
+        function handleImageSelect(event) {
+            const files = Array.from(event.target.files);
+            
+            if (files.length > 5) {
+                alert('Maximum 5 images allowed');
+                event.target.value = '';
+                return;
+            }
+
+            selectedFiles = files;
+            displayPreviews();
+        }
+
+        function displayPreviews() {
+            const previewsContainer = document.getElementById('previews');
+            previewsContainer.innerHTML = '';
+
+            selectedFiles.forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const div = document.createElement('div');
+                    div.className = 'preview-item';
+                    div.innerHTML = `
+                        <img src="${e.target.result}" alt="Preview ${index + 1}">
+                        <button type="button" onclick="removeImage(${index})">×</button>
+                    `;
+                    previewsContainer.appendChild(div);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function removeImage(index) {
+            selectedFiles.splice(index, 1);
+            displayPreviews();
+            
+            // Reset file input
+            const input = document.getElementById('imageInput');
+            input.value = '';
+        }
+
+        document.getElementById('postForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const backendUrl = document.getElementById('backendUrl').value;
+            const userId = document.getElementById('userId').value;
+            const username = document.getElementById('username').value;
+            const content = document.getElementById('content').value;
+            const latitude = document.getElementById('latitude').value;
+            const longitude = document.getElementById('longitude').value;
+
+            const formData = new FormData();
+            formData.append('content', content);
+            formData.append('latitude', parseFloat(latitude));
+            formData.append('longitude', parseFloat(longitude));
+
+            selectedFiles.forEach(file => {
+                formData.append('images', file);
+            });
+
+            const submitBtn = document.getElementById('submitBtn');
+            const responseDiv = document.getElementById('response');
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Creating Post...';
+            responseDiv.style.display = 'none';
+
+            try {
+                const response = await fetch(`${backendUrl}/api/posts`, {
+                    method: 'POST',
+                    headers: {
+                        'X-User-Id': userId,
+                        'X-Username': username
+                    },
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                responseDiv.style.display = 'block';
+                
+                if (result.success) {
+                    responseDiv.className = 'response success';
+                    responseDiv.innerHTML = `
+                        <strong>✅ Success!</strong>
+                        <p>${result.message}</p>
+                        <pre>${JSON.stringify(result.data, null, 2)}</pre>
+                    `;
+
+                    // Reset form
+                    document.getElementById('postForm').reset();
+                    selectedFiles = [];
+                    document.getElementById('previews').innerHTML = '';
+                } else {
+                    responseDiv.className = 'response error';
+                    responseDiv.innerHTML = `
+                        <strong>❌ Error</strong>
+                        <p>${result.message}</p>
+                    `;
+                }
+            } catch (error) {
+                responseDiv.style.display = 'block';
+                responseDiv.className = 'response error';
+                responseDiv.innerHTML = `
+                    <strong>❌ Network Error</strong>
+                    <p>${error.message}</p>
+                    <p>Make sure the backend is running at ${backendUrl}</p>
+                `;
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Create Post with Images';
+            }
+        });
+
+        // Get current location if available
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition((position) => {
+                document.getElementById('latitude').value = position.coords.latitude.toFixed(6);
+                document.getElementById('longitude').value = position.coords.longitude.toFixed(6);
+            });
+        }
+    </script>
+</body>
+</html>

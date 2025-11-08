@@ -49,6 +49,7 @@ public class FirebaseConfig {
 
                         FirebaseOptions options = FirebaseOptions.builder()
                                 .setCredentials(GoogleCredentials.fromStream(serviceAccount))
+                                .setStorageBucket(System.getenv("FIREBASE_STORAGE_BUCKET")) // For Firebase Storage
                                 .setConnectTimeout(10000) // 10 seconds
                                 .setReadTimeout(10000) // 10 seconds
                                 .build();
