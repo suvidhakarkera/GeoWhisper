@@ -1,12 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
 
-<<<<<<< HEAD
 /* Leaflet CSS moved to app/layout.tsx for Next.js compatibility */
-=======
-/* Mapbox CSS */
-@import 'mapbox-gl/dist/mapbox-gl.css';
->>>>>>> 5e23c5263d303ecdb4b9697f7aac8a7c63be1e62
 
 /* Light mode variables */
 :root {
@@ -36,36 +31,15 @@ body {
   transition-timing-function: ease-in-out;
 }
 
-/* Mapbox custom styling */
-.mapboxgl-popup-content {
-  padding: 0;
-  border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+/* Leaflet map custom styling */
+.leaflet-container {
+  font-family: 'Inter', sans-serif;
 }
 
-.mapboxgl-popup-close-button {
-  font-size: 24px;
-  padding: 8px;
-  color: #6b7280;
-  right: 4px;
-  top: 4px;
+.leaflet-popup-content-wrapper {
+  border-radius: 8px;
 }
 
-.mapboxgl-popup-close-button:hover {
-  background-color: rgba(0, 0, 0, 0.05);
-  color: #374151;
-}
-
-.mapboxgl-popup-anchor-bottom .mapboxgl-popup-tip {
-  border-top-color: white;
-}
-
-.mapboxgl-ctrl-group {
-  border-radius: 8px !important;
-  overflow: hidden;
-}
-
-.mapboxgl-ctrl-group button {
-  width: 36px;
-  height: 36px;
+.leaflet-popup-content {
+  margin: 8px;
 }
