@@ -26,6 +26,37 @@ export interface NearbyPostsRequest {
   limit: number;
 }
 
+export interface TowerPost {
+  imageCount: number;
+  createdAt: {
+    seconds: number;
+    nanos: number;
+  };
+  images: string[];
+  latitude: number;
+  id: string;
+  userId: string;
+  content: string;
+  commentCount: number;
+  likes: number;
+  longitude: number;
+  username: string;
+}
+
+export interface Tower {
+  towerId: string;
+  latitude: number;
+  longitude: number;
+  postCount: number;
+  posts: TowerPost[];
+}
+
+export interface TowersResponse {
+  success: boolean;
+  message: string;
+  data: Tower[];
+}
+
 class PostService {
   /**
    * Create a new post
@@ -120,6 +151,31 @@ class PostService {
         }
       );
     });
+  }
+
+  /**
+   * Get all towers with their posts
+   * @param clusterRadiusMeters - Clustering radius in meters (default: 50)
+   * @param maxPosts - Maximum number of posts to fetch (default: 1000)
+   */
+  async getTowers(clusterRadiusMeters: number = 50, maxPosts: number = 1000): Promise<TowersResponse> {
+    const response = await fetch(`${API_BASE_URL}/api/posts/towers`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        clusterRadiusMeters,
+        maxPosts
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: 'Failed to fetch towers' }));
+      throw new Error(error.message || 'Failed to fetch towers');
+    }
+
+    return await response.json();
   }
 }
 
