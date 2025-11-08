@@ -188,11 +188,14 @@ public class AuthService {
 
         /**
          * Verify Firebase ID token and return user information
+         * Creates user profile if it doesn't exist in Firestore
          */
         public AuthResponse verifyToken(String idToken)
                         throws FirebaseAuthException, ExecutionException, InterruptedException {
                 FirebaseToken decodedToken = firebaseAuth.verifyIdToken(idToken);
                 String uid = decodedToken.getUid();
+                String email = decodedToken.getEmail();
+                String name = decodedToken.getName();
 
                 // Get user data from Firestore
                 DocumentSnapshot userDoc = firestore.collection("users")
@@ -200,20 +203,43 @@ public class AuthService {
                                 .get()
                                 .get();
 
-                if (!userDoc.exists()) {
-                        throw new RuntimeException("User profile not found");
-                }
+                Map<String, Object> userData;
+                boolean isNewUser = false;
 
-                Map<String, Object> userData = userDoc.getData();
-                userData.put("firebaseUid", uid);
+                if (!userDoc.exists()) {
+                        // User exists in Firebase Auth but not in Firestore
+                        // Create the profile automatically
+                        System.out.println("⚠️ User profile not found in Firestore for UID: " + uid + ". Creating profile...");
+                        
+                        // Try to get username from Firebase Auth or generate one
+                        String username;
+                        try {
+                                UserRecord userRecord = firebaseAuth.getUser(uid);
+                                username = userRecord.getDisplayName() != null && !userRecord.getDisplayName().isEmpty()
+                                        ? userRecord.getDisplayName()
+                                        : (name != null ? name.replaceAll("\\s+", "_").toLowerCase()
+                                                : "user_" + uid.substring(0, 8));
+                        } catch (FirebaseAuthException e) {
+                                // Fallback username
+                                username = name != null ? name.replaceAll("\\s+", "_").toLowerCase()
+                                        : "user_" + uid.substring(0, 8);
+                        }
+                        
+                        userData = createUserProfile(uid, username, email);
+                        isNewUser = true;
+                        System.out.println("✅ User profile created in Firestore for UID: " + uid);
+                } else {
+                        userData = new HashMap<>(userDoc.getData());
+                        userData.put("firebaseUid", uid);
+                }
 
                 return AuthResponse.builder()
                                 .firebaseUid(uid)
-                                .email(decodedToken.getEmail())
+                                .email(email)
                                 .username((String) userData.get("username"))
-                                .isNewUser(false)
+                                .isNewUser(isNewUser)
                                 .userData(userData)
-                                .message("Token verified successfully")
+                                .message(isNewUser ? "Profile created and signed in successfully" : "Token verified successfully")
                                 .build();
         }
 

@@ -1,104 +1,107 @@
 package com.geowhisper.geowhisperbackendnew.config;
 
-import com.google.auth.oauth2.GoogleCredentials;
-import com.google.firebase.FirebaseApp;
-import com.google.firebase.FirebaseOptions;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.cloud.firestore.Firestore;
-import com.google.firebase.cloud.FirestoreClient;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.util.Base64;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 
-import jakarta.annotation.PostConstruct;
-import java.io.ByteArrayInputStream;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Base64;
+import com.google.auth.oauth2.GoogleCredentials;
+import com.google.cloud.firestore.Firestore;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseOptions;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.cloud.FirestoreClient;
 
 @Configuration
 public class FirebaseConfig {
 
-    // Singleton instance to prevent Firestore from being garbage collected
-    private static Firestore firestoreInstance = null;
+    // Static instance to keep Firestore alive throughout the application lifecycle
+    private static volatile FirebaseApp firebaseAppInstance = null;
+    private static volatile Firestore firestoreInstance = null;
 
-    @PostConstruct
-    public void initialize() {
-        try {
-            InputStream serviceAccount;
-
-            // Try to load from environment variable first (for cloud deployment like
-            // Render)
-            String firebaseConfig = System.getenv("FIREBASE_CONFIG");
-            if (firebaseConfig != null && !firebaseConfig.isEmpty()) {
-                // Decode base64 encoded Firebase config from environment
-                byte[] decodedKey = Base64.getDecoder().decode(firebaseConfig);
-                serviceAccount = new ByteArrayInputStream(decodedKey);
-                System.out.println("✅ Loading Firebase config from environment variable");
-            } else {
-                // Fallback to classpath resource (for local development)
-                ClassPathResource resource = new ClassPathResource("firebase-key.json");
-                serviceAccount = resource.getInputStream();
-                System.out.println("✅ Loading Firebase config from classpath");
-            }
-
-            FirebaseOptions options = FirebaseOptions.builder()
-                    .setCredentials(GoogleCredentials.fromStream(serviceAccount))
-                    .setConnectTimeout(10000) // 10 seconds
-                    .setReadTimeout(10000) // 10 seconds
-                    .build();
-
-            if (FirebaseApp.getApps().isEmpty()) {
-                FirebaseApp.initializeApp(options);
-            }
-
-            System.out.println("✅ Firebase initialized successfully!");
-
-        } catch (Exception e) {
-            System.err.println("❌ Firebase initialization failed: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-
+    /**
+     * Initialize Firebase App (singleton pattern)
+     * This method ensures Firebase is initialized only once
+     */
     @Bean
-    public FirebaseAuth firebaseAuth() {
-        return FirebaseAuth.getInstance();
-    }
+    public FirebaseApp initializeFirebase() {
+        if (firebaseAppInstance == null) {
+            synchronized (FirebaseConfig.class) {
+                if (firebaseAppInstance == null) {
+                    try {
+                        InputStream serviceAccount;
 
+                        // Try to load from environment variable first (for cloud deployment)
+                        String firebaseConfig = System.getenv("FIREBASE_CONFIG");
+                        if (firebaseConfig != null && !firebaseConfig.isEmpty()) {
+                            byte[] decodedKey = Base64.getDecoder().decode(firebaseConfig);
+                            serviceAccount = new ByteArrayInputStream(decodedKey);
+                            System.out.println("✅ Loading Firebase config from environment variable");
+                        } else {
+                            // Fallback to classpath resource (for local development)
+                            ClassPathResource resource = new ClassPathResource("firebase-key.json");
+                            serviceAccount = resource.getInputStream();
+                            System.out.println("✅ Loading Firebase config from classpath");
+                        }
 
-     @Bean
-    public FirebaseApp firebaseApp() throws IOException {
-        FileInputStream serviceAccount = new FileInputStream("path/to/your/serviceAccountKey.json");
+                        FirebaseOptions options = FirebaseOptions.builder()
+                                .setCredentials(GoogleCredentials.fromStream(serviceAccount))
+                                .setConnectTimeout(10000) // 10 seconds
+                                .setReadTimeout(10000) // 10 seconds
+                                .build();
 
-        FirebaseOptions options = FirebaseOptions.builder()
-                .setCredentials(GoogleCredentials.fromStream(serviceAccount))
-                .build();
+                        firebaseAppInstance = FirebaseApp.initializeApp(options);
+                        System.out.println("✅ Firebase App initialized successfully!");
 
-        return FirebaseApp.initializeApp(options);
-    }
-
-    @Bean
-    public Firestore firestore() {
-        try {
-            if (FirebaseApp.getApps().isEmpty()) {
-                throw new IllegalStateException("Firebase must be initialized first");
-            }
-            
-            // Use singleton pattern - only create Firestore instance once
-            if (firestoreInstance == null) {
-                synchronized (FirebaseConfig.class) {
-                    if (firestoreInstance == null) {
-                        firestoreInstance = FirestoreClient.getFirestore();
-                        System.out.println("✅ Firestore instance created and cached");
+                    } catch (Exception e) {
+                        System.err.println("❌ Firebase initialization failed: " + e.getMessage());
+                        e.printStackTrace();
+                        throw new RuntimeException("Failed to initialize Firebase", e);
                     }
                 }
             }
-            
-            return firestoreInstance;
-        } catch (Exception e) {
-            System.err.println("❌ Firestore initialization failed: " + e.getMessage());
-            throw new RuntimeException("Failed to initialize Firestore", e);
         }
+        return firebaseAppInstance;
+    }
+
+    /**
+     * Get FirebaseAuth instance
+     * This depends on the FirebaseApp bean
+     */
+    @Bean
+    public FirebaseAuth firebaseAuth(FirebaseApp firebaseApp) {
+        try {
+            FirebaseAuth auth = FirebaseAuth.getInstance(firebaseApp);
+            System.out.println("✅ FirebaseAuth instance created");
+            return auth;
+        } catch (Exception e) {
+            System.err.println("❌ FirebaseAuth initialization failed: " + e.getMessage());
+            throw new RuntimeException("Failed to get FirebaseAuth", e);
+        }
+    }
+
+    /**
+     * Get Firestore instance (singleton pattern)
+     * This depends on the FirebaseApp bean
+     */
+    @Bean
+    public Firestore firestore(FirebaseApp firebaseApp) {
+        if (firestoreInstance == null) {
+            synchronized (FirebaseConfig.class) {
+                if (firestoreInstance == null) {
+                    try {
+                        firestoreInstance = FirestoreClient.getFirestore(firebaseApp);
+                        System.out.println("✅ Firestore instance created and cached");
+                    } catch (Exception e) {
+                        System.err.println("❌ Firestore initialization failed: " + e.getMessage());
+                        throw new RuntimeException("Failed to initialize Firestore", e);
+                    }
+                }
+            }
+        }
+        return firestoreInstance;
     }
 }
