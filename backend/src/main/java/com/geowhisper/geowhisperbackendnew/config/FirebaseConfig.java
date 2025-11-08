@@ -47,13 +47,21 @@ public class FirebaseConfig {
                             System.out.println("✅ Loading Firebase config from classpath");
                         }
 
-                        FirebaseOptions options = FirebaseOptions.builder()
+                        FirebaseOptions.Builder optionsBuilder = FirebaseOptions.builder()
                                 .setCredentials(GoogleCredentials.fromStream(serviceAccount))
-                                .setStorageBucket(System.getenv("FIREBASE_STORAGE_BUCKET")) // For Firebase Storage
                                 .setConnectTimeout(10000) // 10 seconds
-                                .setReadTimeout(10000) // 10 seconds
-                                .build();
+                                .setReadTimeout(10000); // 10 seconds
 
+                        // Only set storage bucket if environment variable is provided
+                        String storageBucket = System.getenv("FIREBASE_STORAGE_BUCKET");
+                        if (storageBucket != null && !storageBucket.isEmpty()) {
+                            optionsBuilder.setStorageBucket(storageBucket);
+                            System.out.println("✅ Firebase Storage bucket configured: " + storageBucket);
+                        } else {
+                            System.out.println("⚠️ Firebase Storage bucket not configured (optional for Firestore-only operations)");
+                        }
+
+                        FirebaseOptions options = optionsBuilder.build();
                         firebaseAppInstance = FirebaseApp.initializeApp(options);
                         System.out.println("✅ Firebase App initialized successfully!");
 

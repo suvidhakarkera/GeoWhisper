@@ -182,12 +182,13 @@ public class PostService {
     }
 
     /**
-     * Clusters posts into towers based on proximity using a greedy clustering algorithm.
-     * This is similar to DBSCAN but simplified for our use case.
+     * Clusters posts into towers based on proximity.
+     * Each post is assigned to only ONE tower.
+     * Only creates towers when multiple posts are within radiusMeters of each other.
      * 
      * @param posts List of all posts to cluster
      * @param radiusMeters Distance threshold for clustering
-     * @return List of towers with consolidated coordinates
+     * @return List of towers with consolidated coordinates (only includes towers with 2+ posts)
      */
     private List<TowerResponse> clusterPostsIntoTowers(
         List<Map<String, Object>> posts, 
@@ -205,12 +206,15 @@ public class PostService {
                 continue;
             }
 
-            // Create a new tower/cluster for this post
+            // This post becomes the center of a potential tower
+            double centerLat = ((Number) post.get("latitude")).doubleValue();
+            double centerLon = ((Number) post.get("longitude")).doubleValue();
+            
             List<Map<String, Object>> clusterPosts = new ArrayList<>();
             clusterPosts.add(post);
             processedPostIds.add(postId);
 
-            // Find all nearby posts within the cluster radius
+            // Find all nearby posts within the cluster radius from THIS CENTER POST
             for (Map<String, Object> candidatePost : posts) {
                 String candidateId = (String) candidatePost.get("id");
                 
@@ -221,42 +225,35 @@ public class PostService {
                 double candidateLat = ((Number) candidatePost.get("latitude")).doubleValue();
                 double candidateLon = ((Number) candidatePost.get("longitude")).doubleValue();
 
-                // Check if candidate post is within cluster radius of any post in current cluster
-                boolean isNearby = false;
-                for (Map<String, Object> clusterPost : clusterPosts) {
-                    double clusterPostLat = ((Number) clusterPost.get("latitude")).doubleValue();
-                    double clusterPostLon = ((Number) clusterPost.get("longitude")).doubleValue();
-                    
-                    double distance = GeoUtils.calculateDistance(
-                        clusterPostLat, clusterPostLon, 
-                        candidateLat, candidateLon
-                    );
+                // Check if candidate post is within cluster radius of the CENTER post only
+                double distance = GeoUtils.calculateDistance(
+                    centerLat, centerLon, 
+                    candidateLat, candidateLon
+                );
 
-                    if (distance <= radiusMeters) {
-                        isNearby = true;
-                        break;
-                    }
-                }
-
-                if (isNearby) {
+                if (distance <= radiusMeters) {
                     clusterPosts.add(candidatePost);
                     processedPostIds.add(candidateId);
                 }
             }
 
-            // Calculate centroid (consolidated coordinate) for this tower
-            double[] centroid = calculateCentroid(clusterPosts);
+            // Only create a tower if there are 2 or more posts in the cluster
+            // Single isolated posts don't form towers
+            if (clusterPosts.size() >= 2) {
+                // Calculate centroid (consolidated coordinate) for this tower
+                double[] centroid = calculateCentroid(clusterPosts);
 
-            // Create tower response
-            TowerResponse tower = new TowerResponse(
-                "tower-" + towerCounter.getAndIncrement(),
-                centroid[0], // latitude
-                centroid[1], // longitude
-                clusterPosts.size(),
-                clusterPosts
-            );
+                // Create tower response
+                TowerResponse tower = new TowerResponse(
+                    "tower-" + towerCounter.getAndIncrement(),
+                    centroid[0], // latitude
+                    centroid[1], // longitude
+                    clusterPosts.size(),
+                    clusterPosts
+                );
 
-            towers.add(tower);
+                towers.add(tower);
+            }
         }
 
         // Sort towers by post count (descending)
