@@ -2,10 +2,22 @@
 
 import { motion } from 'framer-motion';
 import { Sparkles, Shield, TrendingUp, MapPin, Zap, Globe, Users, MessageSquare, Lock, Compass, Link } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useUser } from '@/contexts/UserContext';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
 export default function Home() {
+  const router = useRouter();
+  const { isAuthenticated } = useUser();
+
+  const handleGetStarted = () => {
+    if (isAuthenticated) {
+      router.push('/maps');
+    } else {
+      router.push('/signin');
+    }
+  };
 
   if (typeof window !== 'undefined') {
     console.log(sessionStorage.getItem('zonesVisited'));
@@ -272,6 +284,7 @@ export default function Home() {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              onClick={handleGetStarted}
               className="px-12 py-5 bg-black/20 backdrop-blur-lg border-2 border-gray-600 text-white hover:border-cyan-500 rounded-xl font-bold text-lg transition-all"
             >
               Get Started Now
