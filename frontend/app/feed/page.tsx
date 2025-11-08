@@ -5,7 +5,9 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import PostsMap from '@/components/PostsMap';
+import MapView from '@/components/MapViewWrapper';
+import CreatePostModal from '@/components/CreatePostModal';
+import FloatingActionButton from '@/components/FloatingActionButton';
 import PostCard from '@/components/PostCard';
 import { postService, Post } from '@/src/services/postService';
 import { Map, List, Loader2, RefreshCw, Plus, MapPin } from 'lucide-react';
@@ -19,6 +21,8 @@ export default function FeedPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [error, setError] = useState('');
+  const [isPostModalOpen, setIsPostModalOpen] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
     // Check authentication
@@ -176,10 +180,11 @@ export default function FeedPage() {
               </Link>
             </div>
           ) : viewMode === 'map' ? (
-            <div className="mb-8">
-              <PostsMap
+            <div className="mb-8 rounded-2xl overflow-hidden shadow-2xl border-2 border-gray-700">
+              <MapView
                 posts={posts}
-                center={location ? { lat: location.latitude, lng: location.longitude } : undefined}
+                userLocation={location}
+                refreshTrigger={refreshTrigger}
               />
             </div>
           ) : (
@@ -196,6 +201,21 @@ export default function FeedPage() {
           )}
         </motion.div>
       </div>
+
+      {/* Floating Action Button */}
+      <FloatingActionButton onClick={() => setIsPostModalOpen(true)} />
+
+      {/* Create Post Modal */}
+      <CreatePostModal
+        isOpen={isPostModalOpen}
+        onClose={() => setIsPostModalOpen(false)}
+        onPostCreated={() => {
+          setRefreshTrigger(prev => prev + 1);
+          setIsPostModalOpen(false);
+          loadPosts();
+        }}
+        initialLocation={location}
+      />
 
       <Footer />
     </div>
