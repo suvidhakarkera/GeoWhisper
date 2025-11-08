@@ -51,10 +51,10 @@ export default function Navbar() {
           {/* Desktop Navigation Links */}
           <div className="hidden md:flex items-center gap-2">
             <NavLink href="/">Home</NavLink>
-            <NavLink href="/feed">Feed</NavLink>
-            <NavLink href="/create-post">Create Post</NavLink>
             <NavLink href="/hot-zones">Hot Zones</NavLink>
+            <NavLink href="/my-posts">My Posts</NavLink>
             <NavLink href="/profile">Profile</NavLink>
+            <NavLink href="/maps">Maps</NavLink>
           </div>
 
           {/* Right Section: Auth + Mobile Menu */}
@@ -141,17 +141,17 @@ export default function Navbar() {
                 <MobileNavLink href="/" onClick={() => setMobileMenuOpen(false)}>
                   Home
                 </MobileNavLink>
-                <MobileNavLink href="/feed" onClick={() => setMobileMenuOpen(false)}>
-                  Feed
-                </MobileNavLink>
-                <MobileNavLink href="/create-post" onClick={() => setMobileMenuOpen(false)}>
-                  Create Post
-                </MobileNavLink>
                 <MobileNavLink href="/hot-zones" onClick={() => setMobileMenuOpen(false)}>
                   Hot Zones
                 </MobileNavLink>
+                <MobileNavLink href="/my-posts" onClick={() => setMobileMenuOpen(false)}>
+                  My Posts
+                </MobileNavLink>
                 <MobileNavLink href="/profile" onClick={() => setMobileMenuOpen(false)}>
                   Profile
+                </MobileNavLink>
+                <MobileNavLink href="/maps" onClick={() => setMobileMenuOpen(false)}>
+                  Maps
                 </MobileNavLink>
 
                 {/* Auth Buttons - Mobile */}

@@ -1,8 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
 
-/* Leaflet CSS moved to app/layout.tsx for Next.js compatibility */
-
 /* Light mode variables */
 :root {
   --background: #ffffff;
@@ -29,17 +27,4 @@ body {
   transition-property: color, background-color, border-color;
   transition-duration: 200ms;
   transition-timing-function: ease-in-out;
-}
-
-/* Leaflet map custom styling */
-.leaflet-container {
-  font-family: 'Inter', sans-serif;
-}
-
-.leaflet-popup-content-wrapper {
-  border-radius: 8px;
-}
-
-.leaflet-popup-content {
-  margin: 8px;
 }

@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-// Import Leaflet CSS globally from node_modules (must be in a top-level layout in Next.js app dir)
-import "leaflet/dist/leaflet.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { UserProvider } from "@/contexts/UserContext";
 
