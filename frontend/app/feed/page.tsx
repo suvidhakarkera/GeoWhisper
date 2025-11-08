@@ -5,9 +5,15 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+<<<<<<< HEAD
 import dynamic from 'next/dynamic';
 // Dynamically import PostsMap to disable SSR (Leaflet depends on browser APIs like window, document)
 const PostsMap = dynamic(() => import('@/components/PostsMap'), { ssr: false });
+=======
+import MapView from '@/components/MapViewWrapper';
+import CreatePostModal from '@/components/CreatePostModal';
+import FloatingActionButton from '@/components/FloatingActionButton';
+>>>>>>> 5e23c5263d303ecdb4b9697f7aac8a7c63be1e62
 import PostCard from '@/components/PostCard';
 import { postService, Post } from '@/src/services/postService';
 import { Map, List, Loader2, RefreshCw, Plus, MapPin } from 'lucide-react';
@@ -21,6 +27,8 @@ export default function FeedPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [error, setError] = useState('');
+  const [isPostModalOpen, setIsPostModalOpen] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
     // Check authentication
@@ -178,10 +186,11 @@ export default function FeedPage() {
               </Link>
             </div>
           ) : viewMode === 'map' ? (
-            <div className="mb-8">
-              <PostsMap
+            <div className="mb-8 rounded-2xl overflow-hidden shadow-2xl border-2 border-gray-700">
+              <MapView
                 posts={posts}
-                center={location ? { lat: location.latitude, lng: location.longitude } : undefined}
+                userLocation={location}
+                refreshTrigger={refreshTrigger}
               />
             </div>
           ) : (
@@ -198,6 +207,21 @@ export default function FeedPage() {
           )}
         </motion.div>
       </div>
+
+      {/* Floating Action Button */}
+      <FloatingActionButton onClick={() => setIsPostModalOpen(true)} />
+
+      {/* Create Post Modal */}
+      <CreatePostModal
+        isOpen={isPostModalOpen}
+        onClose={() => setIsPostModalOpen(false)}
+        onPostCreated={() => {
+          setRefreshTrigger(prev => prev + 1);
+          setIsPostModalOpen(false);
+          loadPosts();
+        }}
+        initialLocation={location}
+      />
 
       <Footer />
     </div>

@@ -124,3 +124,20 @@ class PostService {
 }
 
 export const postService = new PostService();
+
+/**
+ * Helper function to get nearby posts with default parameters
+ */
+export async function getNearbyPosts(
+  latitude: number,
+  longitude: number,
+  radiusKm: number = 10,
+  limit: number = 50
+): Promise<Post[]> {
+  return postService.getNearbyPosts({
+    latitude,
+    longitude,
+    radiusMeters: radiusKm * 1000,
+    limit
+  });
+}
