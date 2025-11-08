@@ -49,16 +49,15 @@ export default function Navbar() {
           </Link>
 
           {/* Desktop Navigation Links */}
-          <div className="hidden md:flex items-center gap-2">
+          <div className="hidden md:flex items-center gap-6">
             <NavLink href="/">Home</NavLink>
-            <NavLink href="/hot-zones">Hot Zones</NavLink>
             <NavLink href="/my-posts">My Posts</NavLink>
             <NavLink href="/profile">Profile</NavLink>
             <NavLink href="/maps">Maps</NavLink>
           </div>
 
           {/* Right Section: Auth + Mobile Menu */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             {/* Auth Buttons - Desktop */}
             <div className="hidden md:flex items-center gap-3">
               {isAuthenticated && user ? (
@@ -140,9 +139,6 @@ export default function Navbar() {
               <div className="flex flex-col gap-2 pt-6 pb-4 border-t border-gray-800 mt-4">
                 <MobileNavLink href="/" onClick={() => setMobileMenuOpen(false)}>
                   Home
-                </MobileNavLink>
-                <MobileNavLink href="/hot-zones" onClick={() => setMobileMenuOpen(false)}>
-                  Hot Zones
                 </MobileNavLink>
                 <MobileNavLink href="/my-posts" onClick={() => setMobileMenuOpen(false)}>
                   My Posts
