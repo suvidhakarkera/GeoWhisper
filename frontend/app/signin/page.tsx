@@ -19,7 +19,7 @@ import { FcGoogle } from "react-icons/fc";
 import { authService } from "@/services/authService";
 import type { AuthResponse } from "@/types/auth";
 import { auth, googleProvider, isFirebaseConfigured, firebaseConfigStatus } from "@/config/firebase";
-import { signInWithPopup } from "firebase/auth";
+import { signInWithPopup, signInWithEmailAndPassword } from "firebase/auth";
 import { useUser, type UserData } from "@/contexts/UserContext";
 
 export default function SignIn() {
@@ -54,13 +54,24 @@ export default function SignIn() {
       return;
     }
 
+    // Check if Firebase is configured
+    if (!isFirebaseConfigured() || !auth) {
+      setApiError("Firebase authentication is not configured. Please contact the administrator.");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      const response: AuthResponse = await authService.signIn({
-        email,
-        password,
-      });
+      // First, authenticate with Firebase to validate password
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Get Firebase ID token
+      const idToken = await user.getIdToken();
+
+      // Now send the token to backend to get user profile data
+      const response: AuthResponse = await authService.signIn(idToken);
       console.log("Sign-in response:", response);
       
       // Store rememberMe preference
@@ -82,12 +93,32 @@ export default function SignIn() {
       };
 
       // Use context to store user data
-      login(response.idToken, userData);
+      login(idToken, userData);
 
       // Redirect to home or dashboard - use window.location for hard refresh
       window.location.href = "/";
-    } catch (error) {
-      if (error instanceof Error) {
+    } catch (error: any) {
+      // Handle Firebase authentication errors
+      if (error.code) {
+        switch (error.code) {
+          case 'auth/invalid-credential':
+          case 'auth/wrong-password':
+          case 'auth/invalid-email':
+            setApiError("Invalid email or password. Please try again.");
+            break;
+          case 'auth/user-not-found':
+            setApiError("No account found with this email. Please sign up.");
+            break;
+          case 'auth/user-disabled':
+            setApiError("This account has been disabled. Please contact support.");
+            break;
+          case 'auth/too-many-requests':
+            setApiError("Too many failed login attempts. Please try again later.");
+            break;
+          default:
+            setApiError(error.message || "Sign in failed. Please try again.");
+        }
+      } else if (error instanceof Error) {
         setApiError(error.message);
       } else {
         setApiError("An unexpected error occurred. Please try again.");

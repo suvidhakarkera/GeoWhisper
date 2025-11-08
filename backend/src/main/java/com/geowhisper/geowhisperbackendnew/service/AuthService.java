@@ -29,23 +29,53 @@ public class AuthService {
 
         /**
          * Sign up a new user with email and password
+         * Note: As of the new implementation, user creation happens on the client side
+         * first.
+         * This method handles the case where the Firebase user might already exist.
          */
         public AuthResponse signUpWithEmail(SignUpRequest request)
                         throws FirebaseAuthException, ExecutionException, InterruptedException {
-                // Create user in Firebase Auth
-                UserRecord.CreateRequest createRequest = new UserRecord.CreateRequest()
-                                .setEmail(request.getEmail())
-                                .setPassword(request.getPassword())
-                                .setDisplayName(request.getUsername())
-                                .setEmailVerified(false);
+                UserRecord userRecord;
+                boolean isNewUser = false;
 
-                UserRecord userRecord = firebaseAuth.createUser(createRequest);
+                try {
+                        // Try to get existing user by email first
+                        userRecord = firebaseAuth.getUserByEmail(request.getEmail());
+                } catch (FirebaseAuthException e) {
+                        if (e.getAuthErrorCode() == com.google.firebase.auth.AuthErrorCode.USER_NOT_FOUND) {
+                                // User doesn't exist in Firebase Auth, create new user
+                                UserRecord.CreateRequest createRequest = new UserRecord.CreateRequest()
+                                                .setEmail(request.getEmail())
+                                                .setPassword(request.getPassword())
+                                                .setDisplayName(request.getUsername())
+                                                .setEmailVerified(false);
 
-                // Create user profile in Firestore
-                Map<String, Object> userData = createUserProfile(
-                                userRecord.getUid(),
-                                request.getUsername(),
-                                request.getEmail());
+                                userRecord = firebaseAuth.createUser(createRequest);
+                                isNewUser = true;
+                        } else {
+                                // Re-throw other Firebase exceptions
+                                throw e;
+                        }
+                }
+
+                // Check if user profile exists in Firestore
+                DocumentSnapshot userDoc = firestore.collection("users")
+                                .document(userRecord.getUid())
+                                .get()
+                                .get();
+
+                Map<String, Object> userData;
+                if (!userDoc.exists()) {
+                        // Create user profile in Firestore
+                        userData = createUserProfile(
+                                        userRecord.getUid(),
+                                        request.getUsername(),
+                                        request.getEmail());
+                } else {
+                        // Use existing profile data
+                        userData = new HashMap<>(userDoc.getData());
+                        userData.put("firebaseUid", userRecord.getUid());
+                }
 
                 // Generate custom token for the user
                 String customToken = firebaseAuth.createCustomToken(userRecord.getUid());
@@ -55,7 +85,7 @@ public class AuthService {
                                 .idToken(customToken)
                                 .email(request.getEmail())
                                 .username(request.getUsername())
-                                .isNewUser(true)
+                                .isNewUser(isNewUser)
                                 .userData(userData)
                                 .message("Sign up successful! Please verify your email.")
                                 .build();
@@ -67,11 +97,13 @@ public class AuthService {
          * Password validation happens on the client side with Firebase Client SDK.
          * This method verifies the user exists and returns user data.
          */
-        public AuthResponse signInWithEmail(SignInRequest request)
-                        throws FirebaseAuthException, ExecutionException, InterruptedException {
-                // Get user by email
-                UserRecord userRecord = firebaseAuth.getUserByEmail(request.getEmail());
 
+       
+
+        /*public AuthResponse signInWithEmail(SignInRequest request)
+                        throws FirebaseAuthException, ExecutionException, InterruptedException {
+                // Get user by email);
+                UserRecord userRecord = firebaseAuth.getUserByEmail(request.());
                 // Check if user profile exists in Firestore
                 DocumentSnapshot userDoc = firestore.collection("users")
                                 .document(userRecord.getUid())
@@ -107,7 +139,7 @@ public class AuthService {
                                 .userData(userData)
                                 .message("Sign in successful!")
                                 .build();
-        }
+        }*/
 
         /**
          * Authenticate user with Google Sign-In using Firebase ID token
@@ -156,11 +188,14 @@ public class AuthService {
 
         /**
          * Verify Firebase ID token and return user information
+         * Creates user profile if it doesn't exist in Firestore
          */
         public AuthResponse verifyToken(String idToken)
                         throws FirebaseAuthException, ExecutionException, InterruptedException {
                 FirebaseToken decodedToken = firebaseAuth.verifyIdToken(idToken);
                 String uid = decodedToken.getUid();
+                String email = decodedToken.getEmail();
+                String name = decodedToken.getName();
 
                 // Get user data from Firestore
                 DocumentSnapshot userDoc = firestore.collection("users")
@@ -168,20 +203,43 @@ public class AuthService {
                                 .get()
                                 .get();
 
-                if (!userDoc.exists()) {
-                        throw new RuntimeException("User profile not found");
-                }
+                Map<String, Object> userData;
+                boolean isNewUser = false;
 
-                Map<String, Object> userData = userDoc.getData();
-                userData.put("firebaseUid", uid);
+                if (!userDoc.exists()) {
+                        // User exists in Firebase Auth but not in Firestore
+                        // Create the profile automatically
+                        System.out.println("⚠️ User profile not found in Firestore for UID: " + uid + ". Creating profile...");
+                        
+                        // Try to get username from Firebase Auth or generate one
+                        String username;
+                        try {
+                                UserRecord userRecord = firebaseAuth.getUser(uid);
+                                username = userRecord.getDisplayName() != null && !userRecord.getDisplayName().isEmpty()
+                                        ? userRecord.getDisplayName()
+                                        : (name != null ? name.replaceAll("\\s+", "_").toLowerCase()
+                                                : "user_" + uid.substring(0, 8));
+                        } catch (FirebaseAuthException e) {
+                                // Fallback username
+                                username = name != null ? name.replaceAll("\\s+", "_").toLowerCase()
+                                        : "user_" + uid.substring(0, 8);
+                        }
+                        
+                        userData = createUserProfile(uid, username, email);
+                        isNewUser = true;
+                        System.out.println("✅ User profile created in Firestore for UID: " + uid);
+                } else {
+                        userData = new HashMap<>(userDoc.getData());
+                        userData.put("firebaseUid", uid);
+                }
 
                 return AuthResponse.builder()
                                 .firebaseUid(uid)
-                                .email(decodedToken.getEmail())
+                                .email(email)
                                 .username((String) userData.get("username"))
-                                .isNewUser(false)
+                                .isNewUser(isNewUser)
                                 .userData(userData)
-                                .message("Token verified successfully")
+                                .message(isNewUser ? "Profile created and signed in successfully" : "Token verified successfully")
                                 .build();
         }
 
