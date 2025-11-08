@@ -5,19 +5,13 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-<<<<<<< HEAD
-import dynamic from 'next/dynamic';
-// Dynamically import PostsMap to disable SSR (Leaflet depends on browser APIs like window, document)
-const PostsMap = dynamic(() => import('@/components/PostsMap'), { ssr: false });
-=======
-import MapView from '@/components/MapViewWrapper';
-import CreatePostModal from '@/components/CreatePostModal';
-import FloatingActionButton from '@/components/FloatingActionButton';
->>>>>>> 5e23c5263d303ecdb4b9697f7aac8a7c63be1e62
 import PostCard from '@/components/PostCard';
 import { postService, Post } from '@/src/services/postService';
 import { Map, List, Loader2, RefreshCw, Plus, MapPin } from 'lucide-react';
 import Link from 'next/link';
+import FloatingActionButton from '@/components/FloatingActionButton';
+import CreatePostModal from '@/components/CreatePostModal';
+import MapView from '@/components/MapView';
 
 export default function FeedPage() {
   const router = useRouter();
