@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import Map, { Marker, Popup } from 'react-map-gl';
-import { MapPin, Loader2, AlertCircle, X } from 'lucide-react';
+import { MapPin, Loader2, AlertCircle, X, Send, Camera, Image as ImageIcon } from 'lucide-react';
 import { postService, Tower, TowerPost } from '@/src/services/postService';
+import { TowerIcon } from './TowerIcon';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
 interface MapViewProps {
@@ -26,7 +27,11 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
   const [towers, setTowers] = useState<Tower[]>([]);
   const [selectedTower, setSelectedTower] = useState<Tower | null>(null);
   const [towersLoading, setTowersLoading] = useState(false);
+  const [messageText, setMessageText] = useState('');
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const mapRef = useRef<any>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || '';
 
@@ -169,6 +174,39 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
     return date.toLocaleDateString();
   };
 
+  // Handle image selection from gallery
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    setSelectedImages(prev => [...prev, ...files].slice(0, 4)); // Max 4 images
+  };
+
+  // Handle camera capture
+  const handleCameraClick = () => {
+    cameraInputRef.current?.click();
+  };
+
+  // Handle gallery click
+  const handleGalleryClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  // Remove selected image
+  const removeImage = (index: number) => {
+    setSelectedImages(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Handle send message
+  const handleSendMessage = async () => {
+    if (!messageText.trim() && selectedImages.length === 0) return;
+    
+    // TODO: Implement actual post creation
+    console.log('Sending message:', messageText, 'Images:', selectedImages);
+    
+    // Clear inputs
+    setMessageText('');
+    setSelectedImages([]);
+  };
+
   // Render loading state
   if (loading) {
     return (
@@ -252,95 +290,11 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
               setSelectedTower(tower);
             }}
           >
-            <div className="cursor-pointer transform transition-transform hover:scale-110">
-              <div className="relative">
-                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center shadow-lg border-2 border-white">
-                  <MapPin className="w-6 h-6 text-white" />
-                </div>
-                <div className="absolute -top-1 -right-1 bg-cyan-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center border-2 border-white">
-                  {tower.postCount}
-                </div>
-              </div>
+            <div className="cursor-pointer transform transition-all hover:scale-110">
+              <TowerIcon className="w-10 h-10 text-slate-300 drop-shadow-2xl" size={40} />
             </div>
           </Marker>
         ))}
-
-        {/* Selected Tower Popup */}
-        {selectedTower && (
-          <Popup
-            longitude={selectedTower.longitude}
-            latitude={selectedTower.latitude}
-            anchor="bottom"
-            onClose={() => setSelectedTower(null)}
-            closeOnClick={false}
-            maxWidth="400px"
-          >
-            <div className="max-h-96 overflow-y-auto">
-              <div className="sticky top-0 bg-white border-b border-gray-200 p-3 flex items-center justify-between">
-                <div>
-                  <h3 className="font-bold text-gray-900">Tower {selectedTower.towerId}</h3>
-                  <p className="text-sm text-gray-600">{selectedTower.postCount} posts</p>
-                </div>
-                <button
-                  onClick={() => setSelectedTower(null)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              
-              <div className="p-3 space-y-3">
-                {selectedTower.posts.map((post) => (
-                  <div
-                    key={post.id}
-                    className="bg-gray-50 rounded-lg p-3 border border-gray-200 hover:border-cyan-400 transition-colors"
-                  >
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                          {post.username.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <p className="font-semibold text-gray-900 text-sm">{post.username}</p>
-                          <p className="text-xs text-gray-500">{formatTimestamp(post.createdAt)}</p>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <p className="text-gray-700 text-sm mb-2">{post.content}</p>
-                    
-                    {post.images && post.images.length > 0 && (
-                      <div className="grid grid-cols-2 gap-2 mb-2">
-                        {post.images.map((img, idx) => (
-                          <img
-                            key={idx}
-                            src={img}
-                            alt={`Post image ${idx + 1}`}
-                            className="w-full h-24 object-cover rounded"
-                          />
-                        ))}
-                      </div>
-                    )}
-                    
-                    <div className="flex items-center gap-4 text-xs text-gray-600">
-                      <span className="flex items-center gap-1">
-                        ❤️ {post.likes}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        💬 {post.commentCount}
-                      </span>
-                      {post.imageCount > 0 && (
-                        <span className="flex items-center gap-1">
-                          📷 {post.imageCount}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </Popup>
-        )}
 
         {/* User Location Marker */}
         {userLocation && (
@@ -367,22 +321,184 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
 
       {/* Location Info Card */}
       {userLocation && (
-        <div className="absolute top-4 left-4 bg-black/80 backdrop-blur-lg border border-cyan-500/20 rounded-lg p-4 text-white">
-          <div className="flex items-center gap-2 mb-2">
-            <MapPin className="w-4 h-4 text-cyan-400" />
-            <span className="font-semibold">Your Location</span>
+        <div className="absolute top-2 left-2 md:top-4 md:left-4 bg-black/80 backdrop-blur-lg border border-cyan-500/20 rounded-lg p-1.5 md:p-4 text-white max-w-[130px] md:max-w-none">
+          <div className="flex items-center gap-1 md:gap-2 mb-1 md:mb-2">
+            <MapPin className="w-2.5 h-2.5 md:w-4 md:h-4 text-cyan-400" />
+            <span className="font-semibold text-[10px] md:text-sm">Your Location</span>
           </div>
-          <div className="text-xs text-gray-400 space-y-1">
-            <div>Lat: {userLocation.latitude.toFixed(6)}</div>
-            <div>Lng: {userLocation.longitude.toFixed(6)}</div>
+          <div className="text-[8px] md:text-xs text-gray-400 space-y-0.5 md:space-y-1">
+            <div>Lat: {userLocation.latitude.toFixed(4)}</div>
+            <div>Lng: {userLocation.longitude.toFixed(4)}</div>
             <div>Accuracy: ±{Math.round(userLocation.accuracy)}m</div>
             {towers.length > 0 && (
-              <div className="pt-2 border-t border-gray-700 mt-2">
-                <div className="text-cyan-400 font-semibold">{towers.length} towers found</div>
+              <div className="pt-1 md:pt-2 border-t border-gray-700 mt-1 md:mt-2">
+                <div className="text-cyan-400 font-semibold">{towers.length} towers</div>
               </div>
             )}
           </div>
         </div>
+      )}
+
+      {/* Tower Side Panel - Slides in from right */}
+      {selectedTower && (
+        <>
+          {/* Backdrop overlay */}
+          <div 
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 transition-opacity duration-300"
+            onClick={() => setSelectedTower(null)}
+          />
+          
+          {/* Side panel - full width on mobile, fixed width on desktop */}
+          <div className="fixed top-[72px] md:top-0 right-0 bottom-0 w-full md:w-[400px] bg-gray-900 border-l border-gray-800 shadow-2xl z-50 transform transition-transform duration-300 ease-out animate-slide-in-right overflow-hidden">
+            {/* Header */}
+            <div className="bg-gray-900 text-white p-3 md:p-6 flex items-center justify-between border-b border-gray-800">
+              <div className="flex-1 min-w-0">
+                <h3 className="font-bold text-lg md:text-2xl truncate">Tower {selectedTower.towerId}</h3>
+                <p className="text-sm md:text-base text-gray-400">{selectedTower.postCount} posts</p>
+              </div>
+              <button
+                onClick={() => setSelectedTower(null)}
+                className="p-2 hover:bg-gray-800 rounded-lg transition-colors flex-shrink-0 ml-2"
+              >
+                <X className="w-5 h-5 text-gray-400" />
+              </button>
+            </div>
+            
+            {/* Posts content - scrollable */}
+            <div className="h-[calc(100%-60px-80px)] md:h-[calc(100%-96px-90px)] overflow-y-auto p-3 md:p-6 space-y-3 md:space-y-3.5 scrollbar-hide">
+              {selectedTower.posts.map((post) => (
+                <div
+                  key={post.id}
+                  className="bg-gray-800 rounded-xl p-3 md:p-3.5 border border-gray-700 hover:border-cyan-500 transition-all"
+                >
+                  <div className="flex items-start justify-between mb-2 md:mb-2.5">
+                    <div className="flex items-center gap-2 md:gap-2.5 min-w-0">
+                      <div className="w-8 h-8 md:w-9 md:h-9 bg-cyan-500 rounded-full flex items-center justify-center text-white text-xs md:text-sm font-bold flex-shrink-0">
+                        {post.username.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-white text-sm md:text-sm truncate">{post.username}</p>
+                        <p className="text-[10px] md:text-xs text-gray-500">{formatTimestamp(post.createdAt)}</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <p className="text-gray-300 text-sm md:text-sm mb-2 md:mb-2.5 leading-relaxed break-words">{post.content}</p>
+                  
+                  {post.images && post.images.length > 0 && (
+                    <div className="grid grid-cols-2 gap-2 mb-2 md:mb-2.5">
+                      {post.images.map((img, idx) => (
+                        <img
+                          key={idx}
+                          src={img}
+                          alt={`Post image ${idx + 1}`}
+                          className="w-full h-24 md:h-28 object-cover rounded-lg border border-gray-700"
+                        />
+                      ))}
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center gap-4 md:gap-5 text-xs md:text-xs text-gray-500 pt-2 md:pt-2.5 border-t border-gray-700">
+                    <span className="flex items-center gap-1 md:gap-1.5 hover:text-red-400 transition-colors cursor-pointer">
+                      <span className="text-base">❤️</span> <span className="font-medium">{post.likes}</span>
+                    </span>
+                    <span className="flex items-center gap-1 md:gap-1.5 hover:text-cyan-400 transition-colors cursor-pointer">
+                      <span className="text-base">💬</span> <span className="font-medium">{post.commentCount}</span>
+                    </span>
+                    {post.imageCount > 0 && (
+                      <span className="flex items-center gap-1 md:gap-1.5 text-cyan-400">
+                        <span className="text-base">📷</span> <span className="font-medium">{post.imageCount}</span>
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Input Area - Fixed at bottom */}
+            <div className="absolute bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-800">
+              {/* Image Preview */}
+              {selectedImages.length > 0 && (
+                <div className="p-2 md:p-3 border-b border-gray-800 flex gap-2 overflow-x-auto">
+                  {selectedImages.map((img, idx) => (
+                    <div key={idx} className="relative flex-shrink-0">
+                      <img
+                        src={URL.createObjectURL(img)}
+                        alt={`Selected ${idx + 1}`}
+                        className="w-16 h-16 md:w-20 md:h-20 object-cover rounded-lg border border-gray-700"
+                      />
+                      <button
+                        onClick={() => removeImage(idx)}
+                        className="absolute -top-1 -right-1 p-2 bg-black/80 hover:bg-black rounded-lg transition-colors"
+                      >
+                        <X className="w-4 h-4 text-white" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Input Controls */}
+              <div className="p-2 md:p-3 flex items-end gap-2">
+                {/* Hidden file inputs */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImageSelect}
+                  className="hidden"
+                />
+                <input
+                  ref={cameraInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={handleImageSelect}
+                  className="hidden"
+                />
+
+                {/* Camera button */}
+                <button
+                  onClick={handleCameraClick}
+                  className="flex-shrink-0 p-1.5 md:p-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-400 rounded-lg transition-colors"
+                  title="Take photo"
+                >
+                  <Camera className="w-4 h-4 md:w-5 md:h-5" />
+                </button>
+
+                {/* Gallery button */}
+                <button
+                  onClick={handleGalleryClick}
+                  className="flex-shrink-0 p-1.5 md:p-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-400 rounded-lg transition-colors"
+                  title="Choose from gallery"
+                >
+                  <ImageIcon className="w-4 h-4 md:w-5 md:h-5" />
+                </button>
+
+                {/* Text input */}
+                <input
+                  type="text"
+                  value={messageText}
+                  onChange={(e) => setMessageText(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                  placeholder="Type a message..."
+                  className="flex-1 px-2 md:px-4 py-2 md:py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-sm md:text-base text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors"
+                />
+
+                {/* Send button */}
+                <button
+                  onClick={handleSendMessage}
+                  disabled={!messageText.trim() && selectedImages.length === 0}
+                  className="flex-shrink-0 p-1.5 md:p-2 bg-cyan-500 hover:bg-cyan-600 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg transition-colors"
+                  title="Send"
+                >
+                  <Send className="w-4 h-4 md:w-5 md:h-5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
