@@ -5,6 +5,7 @@ import Map, { Marker, Popup } from 'react-map-gl';
 import { MapPin, Loader2, AlertCircle, X, Send, Camera, Image as ImageIcon } from 'lucide-react';
 import { postService, Tower, TowerPost } from '@/src/services/postService';
 import { TowerIcon } from './TowerIcon';
+import { motion, AnimatePresence } from 'framer-motion';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
 interface MapViewProps {
@@ -277,6 +278,7 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
         style={{ width: '100%', height: '100%' }}
         mapStyle="mapbox://styles/mapbox/dark-v11"
         mapboxAccessToken={MAPBOX_TOKEN}
+        onClick={() => setSelectedTower(null)}
       >
         {/* Tower Markers */}
         {towers.map((tower) => (
@@ -340,16 +342,15 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
       )}
 
       {/* Tower Side Panel - Slides in from right */}
-      {selectedTower && (
-        <>
-          {/* Backdrop overlay */}
-          <div 
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 transition-opacity duration-300"
-            onClick={() => setSelectedTower(null)}
-          />
-          
-          {/* Side panel - full width on mobile, fixed width on desktop */}
-          <div className="fixed top-[72px] md:top-0 right-0 bottom-0 w-full md:w-[400px] bg-gray-900 border-l border-gray-800 shadow-2xl z-50 transform transition-transform duration-300 ease-out animate-slide-in-right overflow-hidden">
+      <AnimatePresence>
+        {selectedTower && (
+          <motion.div
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ type: 'tween', duration: 0.3, ease: 'easeInOut' }}
+            className="fixed top-[72px] md:top-0 right-0 bottom-0 w-full md:w-[400px] bg-gray-900 border-l border-gray-800 shadow-2xl z-50 overflow-hidden"
+          >
             {/* Header */}
             <div className="bg-gray-900 text-white p-3 md:p-6 flex items-center justify-between border-b border-gray-800">
               <div className="flex-1 min-w-0">
@@ -369,9 +370,17 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
               {selectedTower.posts.map((post) => (
                 <div
                   key={post.id}
-                  className="bg-gray-800 rounded-xl p-3 md:p-3.5 border border-gray-700 hover:border-cyan-500 transition-all"
+                  className="bg-gray-800 rounded-xl p-3 md:p-3.5 border border-gray-700 hover:border-cyan-500 transition-all relative"
                 >
-                  <div className="flex items-start justify-between mb-2 md:mb-2.5">
+                  {/* Comment icon at top right */}
+                  <div className="absolute top-3 md:top-3.5 right-3 md:right-3.5">
+                    <span className="flex items-center gap-1 md:gap-1.5 hover:text-cyan-400 transition-colors cursor-pointer text-gray-400">
+                      <span className="text-base md:text-lg">💬</span>
+                      <span className="font-medium text-xs md:text-sm">{post.commentCount}</span>
+                    </span>
+                  </div>
+
+                  <div className="flex items-start justify-between mb-2 md:mb-2.5 pr-12 md:pr-14">
                     <div className="flex items-center gap-2 md:gap-2.5 min-w-0">
                       <div className="w-8 h-8 md:w-9 md:h-9 bg-cyan-500 rounded-full flex items-center justify-center text-white text-xs md:text-sm font-bold flex-shrink-0">
                         {post.username.charAt(0).toUpperCase()}
@@ -398,19 +407,12 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
                     </div>
                   )}
                   
-                  <div className="flex items-center gap-4 md:gap-5 text-xs md:text-xs text-gray-500 pt-2 md:pt-2.5 border-t border-gray-700">
-                    <span className="flex items-center gap-1 md:gap-1.5 hover:text-red-400 transition-colors cursor-pointer">
-                      <span className="text-base">❤️</span> <span className="font-medium">{post.likes}</span>
-                    </span>
-                    <span className="flex items-center gap-1 md:gap-1.5 hover:text-cyan-400 transition-colors cursor-pointer">
-                      <span className="text-base">💬</span> <span className="font-medium">{post.commentCount}</span>
-                    </span>
-                    {post.imageCount > 0 && (
-                      <span className="flex items-center gap-1 md:gap-1.5 text-cyan-400">
-                        <span className="text-base">📷</span> <span className="font-medium">{post.imageCount}</span>
-                      </span>
-                    )}
-                  </div>
+                  {post.imageCount > 0 && (
+                    <div className="flex items-center gap-1 md:gap-1.5 text-cyan-400 text-xs md:text-sm pt-2 md:pt-2.5 border-t border-gray-700">
+                      <span className="text-base">📷</span>
+                      <span className="font-medium">{post.imageCount}</span>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -497,9 +499,9 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
                 </button>
               </div>
             </div>
-          </div>
-        </>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
