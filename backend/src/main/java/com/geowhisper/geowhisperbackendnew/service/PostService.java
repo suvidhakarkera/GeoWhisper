@@ -3,6 +3,7 @@ package com.geowhisper.geowhisperbackendnew.service;
 import com.google.cloud.firestore.*;
 import com.geowhisper.geowhisperbackendnew.dto.CreatePostRequest;
 import com.geowhisper.geowhisperbackendnew.dto.TowerResponse;
+import com.geowhisper.geowhisperbackendnew.model.Tower;
 import com.geowhisper.geowhisperbackendnew.util.GeoUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,9 @@ public class PostService {
 
     @Autowired
     private StorageService storageService;
+
+    @Autowired
+    private TowerService towerService;
 
     /**
      * Create a new post without images (backward compatibility)
@@ -54,6 +58,26 @@ public class PostService {
             }
         }
 
+        // Tower assignment logic: Find or create a tower for this post
+        String towerId = null;
+        double postLat = request.getLatitude();
+        double postLon = request.getLongitude();
+        int towerRadius = 50; // 50 meters radius for tower clustering
+        
+        // Check if there's an existing tower within 50 meters
+        Optional<Tower> nearestTower = towerService.findNearestTower(postLat, postLon, towerRadius);
+        
+        if (nearestTower.isPresent()) {
+            // Add post to existing tower
+            Tower tower = nearestTower.get();
+            towerId = tower.getTowerId();
+            towerService.addPostToTower(towerId, postId);
+        } else {
+            // No nearby tower found - create a new tower with this post as the first post
+            Tower newTower = towerService.createTower(postLat, postLon, towerRadius, postId);
+            towerId = newTower.getTowerId();
+        }
+
         // Create post data
         Map<String, Object> postData = new HashMap<>();
         postData.put("userId", userId);
@@ -61,6 +85,7 @@ public class PostService {
         postData.put("content", request.getContent());
         postData.put("latitude", request.getLatitude());
         postData.put("longitude", request.getLongitude());
+        postData.put("towerId", towerId); // Store tower reference in post
         postData.put("createdAt", FieldValue.serverTimestamp());
         postData.put("likes", 0);
         postData.put("commentCount", 0);
@@ -146,144 +171,81 @@ public class PostService {
     }
 
     /**
-     * Get all posts and categorize them into towers based on proximity.
-     * Posts within the specified cluster radius will be grouped into the same tower.
-     * Each tower will have a consolidated coordinate (centroid of all posts in that tower).
+     * Get all posts grouped into their assigned towers from the database.
+     * This retrieves the persistent tower data, ensuring consistent grouping across API calls.
      * 
-     * @param clusterRadiusMeters The distance threshold in meters for grouping posts into same tower
-     * @param maxPosts Maximum number of posts to fetch from database
-     * @return List of towers with consolidated coordinates and grouped posts
+     * @param clusterRadiusMeters Not used anymore (kept for backward compatibility)
+     * @param maxPosts Maximum number of posts to include per tower
+     * @return List of towers with their associated posts
      */
     public List<TowerResponse> getPostsGroupedIntoTowers(
         int clusterRadiusMeters, 
         int maxPosts
     ) throws ExecutionException, InterruptedException {
         
-        // Fetch all posts from database
-        QuerySnapshot querySnapshot = firestore.collection("posts")
-            .orderBy("createdAt", Query.Direction.DESCENDING)
-            .limit(maxPosts)
-            .get()
-            .get();
-
-        List<Map<String, Object>> allPosts = new ArrayList<>();
-        for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
-            Map<String, Object> post = doc.getData();
-            if (post != null) {
-                post.put("id", doc.getId());
-                allPosts.add(post);
-            }
-        }
-
-        // Cluster posts into towers using DBSCAN-like algorithm
-        List<TowerResponse> towers = clusterPostsIntoTowers(allPosts, clusterRadiusMeters);
+        // Fetch all towers from database
+        List<Tower> towers = towerService.getAllTowers();
+        List<TowerResponse> towerResponses = new ArrayList<>();
         
-        return towers;
+        // For each tower, fetch its posts
+        for (Tower tower : towers) {
+            List<String> postIds = tower.getPostIds();
+            if (postIds == null || postIds.isEmpty()) {
+                continue;
+            }
+            
+            // Fetch post details for this tower
+            List<Map<String, Object>> posts = new ArrayList<>();
+            
+            // Firestore 'in' query has a limit of 10 items, so we need to batch
+            int batchSize = 10;
+            for (int i = 0; i < postIds.size(); i += batchSize) {
+                List<String> batch = postIds.subList(i, Math.min(i + batchSize, postIds.size()));
+                
+                QuerySnapshot postSnapshot = firestore.collection("posts")
+                    .whereIn(FieldPath.documentId(), batch)
+                    .get()
+                    .get();
+                
+                for (DocumentSnapshot doc : postSnapshot.getDocuments()) {
+                    Map<String, Object> post = doc.getData();
+                    if (post != null) {
+                        post.put("id", doc.getId());
+                        posts.add(post);
+                    }
+                }
+            }
+            
+            // Create tower response
+            TowerResponse towerResponse = new TowerResponse(
+                tower.getTowerId(),
+                tower.getLatitude(),
+                tower.getLongitude(),
+                posts.size(),
+                posts
+            );
+            
+            towerResponses.add(towerResponse);
+        }
+        
+        // Sort by post count (descending)
+        towerResponses.sort((a, b) -> Integer.compare(b.getPostCount(), a.getPostCount()));
+        
+        return towerResponses;
     }
 
     /**
-     * Clusters posts into towers based on proximity.
-     * Each post is assigned to only ONE tower.
-     * Only creates towers when multiple posts are within radiusMeters of each other.
-     * 
-     * @param posts List of all posts to cluster
-     * @param radiusMeters Distance threshold for clustering
-     * @return List of towers with consolidated coordinates (only includes towers with 2+ posts)
+     * DEPRECATED: This method is no longer used.
+     * Tower clustering is now done at post creation time and stored in the database.
+     * Kept for reference only.
      */
+    @Deprecated
     private List<TowerResponse> clusterPostsIntoTowers(
         List<Map<String, Object>> posts, 
         int radiusMeters
     ) {
-        List<TowerResponse> towers = new ArrayList<>();
-        Set<String> processedPostIds = new HashSet<>();
-        AtomicInteger towerCounter = new AtomicInteger(1);
-
-        for (Map<String, Object> post : posts) {
-            String postId = (String) post.get("id");
-            
-            // Skip if already processed
-            if (processedPostIds.contains(postId)) {
-                continue;
-            }
-
-            // This post becomes the center of a potential tower
-            double centerLat = ((Number) post.get("latitude")).doubleValue();
-            double centerLon = ((Number) post.get("longitude")).doubleValue();
-            
-            List<Map<String, Object>> clusterPosts = new ArrayList<>();
-            clusterPosts.add(post);
-            processedPostIds.add(postId);
-
-            // Find all nearby posts within the cluster radius from THIS CENTER POST
-            for (Map<String, Object> candidatePost : posts) {
-                String candidateId = (String) candidatePost.get("id");
-                
-                if (processedPostIds.contains(candidateId)) {
-                    continue;
-                }
-
-                double candidateLat = ((Number) candidatePost.get("latitude")).doubleValue();
-                double candidateLon = ((Number) candidatePost.get("longitude")).doubleValue();
-
-                // Check if candidate post is within cluster radius of the CENTER post only
-                double distance = GeoUtils.calculateDistance(
-                    centerLat, centerLon, 
-                    candidateLat, candidateLon
-                );
-
-                if (distance <= radiusMeters) {
-                    clusterPosts.add(candidatePost);
-                    processedPostIds.add(candidateId);
-                }
-            }
-
-            // Only create a tower if there are 2 or more posts in the cluster
-            // Single isolated posts don't form towers
-            if (clusterPosts.size() >= 2) {
-                // Calculate centroid (consolidated coordinate) for this tower
-                double[] centroid = calculateCentroid(clusterPosts);
-
-                // Create tower response
-                TowerResponse tower = new TowerResponse(
-                    "tower-" + towerCounter.getAndIncrement(),
-                    centroid[0], // latitude
-                    centroid[1], // longitude
-                    clusterPosts.size(),
-                    clusterPosts
-                );
-
-                towers.add(tower);
-            }
-        }
-
-        // Sort towers by post count (descending)
-        towers.sort((a, b) -> Integer.compare(b.getPostCount(), a.getPostCount()));
-
-        return towers;
-    }
-
-    /**
-     * Calculate the centroid (average coordinate) of a list of posts.
-     * 
-     * @param posts List of posts in the cluster
-     * @return Array with [latitude, longitude] of the centroid
-     */
-    private double[] calculateCentroid(List<Map<String, Object>> posts) {
-        if (posts.isEmpty()) {
-            return new double[]{0.0, 0.0};
-        }
-
-        double sumLat = 0.0;
-        double sumLon = 0.0;
-
-        for (Map<String, Object> post : posts) {
-            sumLat += ((Number) post.get("latitude")).doubleValue();
-            sumLon += ((Number) post.get("longitude")).doubleValue();
-        }
-
-        double avgLat = sumLat / posts.size();
-        double avgLon = sumLon / posts.size();
-
-        return new double[]{avgLat, avgLon};
+        // This method is no longer used - towers are now stored in the database
+        // and posts are assigned to towers at creation time
+        return new ArrayList<>();
     }
 }
