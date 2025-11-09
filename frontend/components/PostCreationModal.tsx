@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, MapPin, Loader2, Image as ImageIcon, Send } from 'lucide-react';
+import { X, MapPin, Loader2, Image as ImageIcon, Send, Camera } from 'lucide-react';
 
 interface PostCreationModalProps {
   isOpen: boolean;
@@ -32,6 +32,8 @@ export default function PostCreationModal({
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const maxChars = 500;
 
@@ -220,20 +222,48 @@ export default function PostCreationModal({
 
             {/* Actions */}
             <div className="flex items-center justify-between pt-4">
-              {/* Image Upload */}
-              <label className="cursor-pointer">
+              <div className="flex items-center gap-2">
+                {/* Hidden file inputs */}
                 <input
+                  ref={fileInputRef}
                   type="file"
                   accept="image/*"
                   onChange={handleImageChange}
                   disabled={isSubmitting || !!image}
                   className="hidden"
                 />
-                <div className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg transition-colors">
-                  <ImageIcon className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-300">Add Image</span>
-                </div>
-              </label>
+                <input
+                  ref={cameraInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="user"
+                  onChange={handleImageChange}
+                  disabled={isSubmitting || !!image}
+                  className="hidden"
+                />
+
+                {/* Camera Button - Mobile Only */}
+                <button
+                  type="button"
+                  onClick={() => cameraInputRef.current?.click()}
+                  disabled={isSubmitting || !!image}
+                  className="p-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed md:hidden"
+                  title="Take photo"
+                >
+                  <Camera className="w-5 h-5 text-gray-400" />
+                </button>
+
+                {/* Gallery Button */}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isSubmitting || !!image}
+                  className="p-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Choose from gallery"
+                >
+                  <ImageIcon className="w-5 h-5 text-gray-400" />
+                </button>
+              </div>
 
               {/* Submit Button */}
               <button
