@@ -10,14 +10,11 @@ public class CorsConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/api/**")
-                .allowedOrigins(
-                        "http://localhost:3000",
-                        "http://localhost:8080",
-                        "http://localhost:5173",
-                        "https://geowhisper.onrender.com",
-                        "https://geo-whisper-chi.vercel.app")
+                .allowedOriginPatterns("*") // Allow all origins
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
                 .allowedHeaders("*")
-                .allowCredentials(true);
+                .exposedHeaders("*")
+                .allowCredentials(false) // Changed to false to work with allowedOriginPatterns("*")
+                .maxAge(3600);
     }
 }
