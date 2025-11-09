@@ -58,7 +58,8 @@ public class FirebaseConfig {
                             optionsBuilder.setStorageBucket(storageBucket);
                             System.out.println("✅ Firebase Storage bucket configured: " + storageBucket);
                         } else {
-                            System.out.println("⚠️ Firebase Storage bucket not configured (optional for Firestore-only operations)");
+                            System.out.println(
+                                    "⚠️ Firebase Storage bucket not configured (optional for Firestore-only operations)");
                         }
 
                         FirebaseOptions options = optionsBuilder.build();

@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoWhisper Tower Chat Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .container {
+            background: #2a2a2a;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #06b6d4;
+        }
+        input, textarea, button {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #444;
+            border-radius: 5px;
+            background: #333;
+            color: #fff;
+            box-sizing: border-box;
+        }
+        button {
+            background: #06b6d4;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #0891b2;
+        }
+        button:disabled {
+            background: #555;
+            cursor: not-allowed;
+        }
+        #messages {
+            height: 400px;
+            overflow-y: auto;
+            border: 1px solid #444;
+            padding: 10px;
+            margin: 10px 0;
+            background: #1a1a1a;
+            border-radius: 5px;
+        }
+        .message {
+            margin: 10px 0;
+            padding: 10px;
+            background: #333;
+            border-radius: 5px;
+            border-left: 3px solid #06b6d4;
+        }
+        .message.system {
+            background: #2d3748;
+            border-left-color: #fbbf24;
+        }
+        .message-header {
+            font-weight: bold;
+            color: #06b6d4;
+            margin-bottom: 5px;
+        }
+        .message-time {
+            font-size: 0.8em;
+            color: #888;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .status.connected {
+            background: #065f46;
+            border: 1px solid #10b981;
+        }
+        .status.disconnected {
+            background: #7f1d1d;
+            border: 1px solid #ef4444;
+        }
+        .subscriber-count {
+            color: #fbbf24;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>🗼 GeoWhisper Tower Chat Test</h1>
+    
+    <div class="container">
+        <h2>Connection Settings</h2>
+        <input type="text" id="towerId" placeholder="Tower ID (e.g., tower-1)" value="tower-1">
+        <input type="text" id="userId" placeholder="Your User ID" value="user-test-123">
+        <input type="text" id="username" placeholder="Your Username" value="TestUser">
+        <button id="connectBtn" onclick="connect()">Connect to Chat</button>
+        <button id="disconnectBtn" onclick="disconnect()" disabled>Disconnect</button>
+        <div id="status" class="status disconnected">Status: Disconnected</div>
+        <div id="subscriberCount">Subscribers: <span class="subscriber-count">0</span></div>
+    </div>
+    
+    <div class="container">
+        <h2>Chat Messages</h2>
+        <div id="messages"></div>
+        <textarea id="messageInput" placeholder="Type your message..." rows="3"></textarea>
+        <button id="sendBtn" onclick="sendMessage()" disabled>Send Message</button>
+    </div>
+    
+    <div class="container">
+        <h2>Actions</h2>
+        <button onclick="loadHistory()">Load Chat History</button>
+        <button onclick="getSubscribers()">Get Subscriber Count</button>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080/api';
+        let eventSource = null;
+        let towerId = '';
+        let userId = '';
+        let username = '';
+
+        function connect() {
+            towerId = document.getElementById('towerId').value;
+            userId = document.getElementById('userId').value;
+            username = document.getElementById('username').value;
+
+            if (!towerId || !userId || !username) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            // Close existing connection
+            if (eventSource) {
+                eventSource.close();
+            }
+
+            // Create SSE connection
+            const url = `${API_BASE}/chat/subscribe/${towerId}?userId=${userId}&username=${username}`;
+            eventSource = new EventSource(url);
+
+            eventSource.addEventListener('connected', (e) => {
+                const data = JSON.parse(e.data);
+                console.log('Connected:', data);
+                updateStatus('Connected to ' + towerId, true);
+                addSystemMessage('Connected to tower chat');
+                enableChat(true);
+            });
+
+            eventSource.addEventListener('message', (e) => {
+                const data = JSON.parse(e.data);
+                console.log('Message received:', data);
+                addMessage(data);
+            });
+
+            eventSource.addEventListener('user-joined', (e) => {
+                const data = JSON.parse(e.data);
+                console.log('User joined:', data);
+                addSystemMessage(data.message);
+            });
+
+            eventSource.addEventListener('user-left', (e) => {
+                const data = JSON.parse(e.data);
+                console.log('User left:', data);
+                addSystemMessage(data.message);
+            });
+
+            eventSource.onerror = (error) => {
+                console.error('SSE Error:', error);
+                updateStatus('Connection error', false);
+                enableChat(false);
+            };
+
+            document.getElementById('connectBtn').disabled = true;
+            document.getElementById('disconnectBtn').disabled = false;
+        }
+
+        function disconnect() {
+            if (eventSource) {
+                eventSource.close();
+                eventSource = null;
+            }
+
+            // Notify server
+            fetch(`${API_BASE}/chat/leave?towerId=${towerId}&username=${username}`, {
+                method: 'POST'
+            });
+
+            updateStatus('Disconnected', false);
+            enableChat(false);
+            document.getElementById('connectBtn').disabled = false;
+            document.getElementById('disconnectBtn').disabled = true;
+        }
+
+        async function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const message = messageInput.value.trim();
+
+            if (!message) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/chat/send`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        towerId: towerId,
+                        userId: userId,
+                        username: username,
+                        message: message
+                    })
+                });
+
+                const result = await response.json();
+                console.log('Send result:', result);
+                
+                if (result.success) {
+                    messageInput.value = '';
+                }
+            } catch (error) {
+                console.error('Error sending message:', error);
+                alert('Failed to send message');
+            }
+        }
+
+        async function loadHistory() {
+            if (!towerId) {
+                alert('Please connect first');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/chat/history`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        towerId: towerId,
+                        limit: 50,
+                        offset: 0
+                    })
+                });
+
+                const result = await response.json();
+                console.log('History:', result);
+                
+                if (result.success && result.data) {
+                    document.getElementById('messages').innerHTML = '';
+                    result.data.forEach(msg => addMessage(msg));
+                }
+            } catch (error) {
+                console.error('Error loading history:', error);
+            }
+        }
+
+        async function getSubscribers() {
+            if (!towerId) {
+                alert('Please connect first');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/chat/subscribers/${towerId}`);
+                const result = await response.json();
+                console.log('Subscribers:', result);
+                
+                if (result.success) {
+                    document.querySelector('.subscriber-count').textContent = result.data;
+                }
+            } catch (error) {
+                console.error('Error getting subscribers:', error);
+            }
+        }
+
+        function addMessage(data) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+            
+            const time = new Date(data.timestamp).toLocaleTimeString();
+            
+            messageDiv.innerHTML = `
+                <div class="message-header">${data.username} <span class="message-time">${time}</span></div>
+                <div>${data.message}</div>
+            `;
+            
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function addSystemMessage(message) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message system';
+            messageDiv.innerHTML = `<div>${message}</div>`;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function updateStatus(message, connected) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = 'Status: ' + message;
+            statusDiv.className = 'status ' + (connected ? 'connected' : 'disconnected');
+        }
+
+        function enableChat(enabled) {
+            document.getElementById('sendBtn').disabled = !enabled;
+            document.getElementById('messageInput').disabled = !enabled;
+        }
+
+        // Allow Enter to send message
+        document.getElementById('messageInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>
