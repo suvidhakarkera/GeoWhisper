@@ -7,6 +7,7 @@ import com.geowhisper.geowhisperbackendnew.dto.SignUpRequest;
 import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.FieldValue;
 import com.google.cloud.firestore.Firestore;
+import com.google.cloud.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseToken;
@@ -17,6 +18,8 @@ import org.springframework.stereotype.Service;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 
 @Service
 public class AuthService {
@@ -258,6 +261,18 @@ public class AuthService {
 
                 Map<String, Object> userData = new HashMap<>(doc.getData());
                 userData.put("firebaseUid", doc.getId());
+                
+                // Convert createdAt Timestamp to ISO 8601 string for frontend
+                Object createdAtObj = userData.get("createdAt");
+                if (createdAtObj instanceof Timestamp) {
+                        Timestamp timestamp = (Timestamp) createdAtObj;
+                        Instant instant = Instant.ofEpochSecond(
+                                timestamp.getSeconds(),
+                                timestamp.getNanos()
+                        );
+                        userData.put("createdAt", DateTimeFormatter.ISO_INSTANT.format(instant));
+                }
+                
                 return userData;
         }
 
@@ -293,12 +308,21 @@ public class AuthService {
                         if (saved != null) {
                                 userData.putAll(saved);
 
-                                // Convert createdAt to a serializable representation (string)
+                                // Convert createdAt Timestamp to ISO 8601 string for frontend
                                 Object createdAtObj = saved.get("createdAt");
                                 if (createdAtObj != null) {
-                                        // Use toString() which yields a readable timestamp; avoids serializing
-                                        // Firestore sentinel
-                                        userData.put("createdAt", createdAtObj.toString());
+                                        if (createdAtObj instanceof Timestamp) {
+                                                Timestamp timestamp = (Timestamp) createdAtObj;
+                                                // Convert to ISO 8601 format (e.g., "2024-11-10T12:30:45.123Z")
+                                                Instant instant = Instant.ofEpochSecond(
+                                                        timestamp.getSeconds(),
+                                                        timestamp.getNanos()
+                                                );
+                                                userData.put("createdAt", DateTimeFormatter.ISO_INSTANT.format(instant));
+                                        } else {
+                                                // Fallback for other formats
+                                                userData.put("createdAt", createdAtObj.toString());
+                                        }
                                 }
                         }
                 }

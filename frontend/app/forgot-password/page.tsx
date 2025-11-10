@@ -7,6 +7,8 @@ import { Mail, ArrowRight, ArrowLeft, CheckCircle, Loader2 } from 'lucide-react'
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import { sendPasswordResetEmail } from 'firebase/auth';
+import { auth } from '@/config/firebase';
 
 export default function ForgotPassword() {
   const router = useRouter();
@@ -49,16 +51,31 @@ export default function ForgotPassword() {
     setIsLoading(true);
 
     try {
-      // Simulate API call for password reset
-      // Replace this with your actual API endpoint
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // In production, call your password reset API:
-      // const response = await authService.forgotPassword({ email });
+      // Check if Firebase auth is initialized
+      if (!auth) {
+        throw new Error('Firebase authentication is not configured. Please check your Firebase setup.');
+      }
+
+      // Send password reset email using Firebase
+      await sendPasswordResetEmail(auth, email, {
+        // Configure the redirect URL for password reset
+        // This URL will be opened when user clicks the link in the email
+        url: `${window.location.origin}/signin`,
+        handleCodeInApp: false,
+      });
       
       setIsSuccess(true);
-    } catch (error) {
-      if (error instanceof Error) {
+    } catch (error: any) {
+      console.error('Password reset error:', error);
+      
+      // Handle specific Firebase error codes
+      if (error.code === 'auth/user-not-found') {
+        setApiError('No account found with this email address.');
+      } else if (error.code === 'auth/invalid-email') {
+        setApiError('Invalid email address.');
+      } else if (error.code === 'auth/too-many-requests') {
+        setApiError('Too many attempts. Please try again later.');
+      } else if (error.message) {
         setApiError(error.message);
       } else {
         setApiError('Failed to send reset email. Please try again.');

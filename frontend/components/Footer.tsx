@@ -4,9 +4,13 @@ import { motion } from 'framer-motion';
 import { Github, Twitter, MessageCircle, MapPin, Heart, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 
-export default function Footer() {
+interface FooterProps {
+  hideOnMobile?: boolean;
+}
+
+export default function Footer({ hideOnMobile = true }: FooterProps) {
   return (
-    <footer className="relative border-t border-gray-800/50 bg-gradient-to-b from-black to-gray-900/50 mt-24">
+    <footer className={`relative border-t border-gray-800/50 bg-gradient-to-b from-black to-gray-900/50 mt-24 ${hideOnMobile ? 'hidden md:block' : ''}`}>
       {/* Decorative top border */}
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent"></div>
       

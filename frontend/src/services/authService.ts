@@ -6,6 +6,8 @@ import {
   AuthResponse,
   ApiResponse,
 } from '@/types/auth';
+import { auth } from '@/config/firebase';
+import { sendPasswordResetEmail, confirmPasswordReset, verifyPasswordResetCode } from 'firebase/auth';
 
 class AuthService {
   /**
@@ -233,6 +235,89 @@ class AuthService {
         throw error;
       }
       throw new Error('An unexpected error occurred during health check');
+    }
+  }
+
+  /**
+   * Send password reset email
+   * @param email - User's email address
+   * @param redirectUrl - Optional URL to redirect after password reset (defaults to signin page)
+   */
+  async sendPasswordResetEmail(email: string, redirectUrl?: string): Promise<void> {
+    try {
+      if (!auth) {
+        throw new Error('Firebase authentication is not configured');
+      }
+
+      const actionCodeSettings = {
+        url: redirectUrl || `${window.location.origin}/signin`,
+        handleCodeInApp: false,
+      };
+
+      await sendPasswordResetEmail(auth, email, actionCodeSettings);
+    } catch (error: any) {
+      // Re-throw Firebase errors with better messages
+      if (error.code === 'auth/user-not-found') {
+        throw new Error('No account found with this email address');
+      } else if (error.code === 'auth/invalid-email') {
+        throw new Error('Invalid email address');
+      } else if (error.code === 'auth/too-many-requests') {
+        throw new Error('Too many attempts. Please try again later');
+      } else if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Failed to send password reset email');
+    }
+  }
+
+  /**
+   * Verify password reset code
+   * @param code - The password reset code from the email link
+   * @returns The email address associated with the code
+   */
+  async verifyPasswordResetCode(code: string): Promise<string> {
+    try {
+      if (!auth) {
+        throw new Error('Firebase authentication is not configured');
+      }
+
+      const email = await verifyPasswordResetCode(auth, code);
+      return email;
+    } catch (error: any) {
+      if (error.code === 'auth/expired-action-code') {
+        throw new Error('This password reset link has expired');
+      } else if (error.code === 'auth/invalid-action-code') {
+        throw new Error('This password reset link is invalid or has already been used');
+      } else if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Failed to verify password reset code');
+    }
+  }
+
+  /**
+   * Confirm password reset
+   * @param code - The password reset code from the email link
+   * @param newPassword - The new password to set
+   */
+  async confirmPasswordReset(code: string, newPassword: string): Promise<void> {
+    try {
+      if (!auth) {
+        throw new Error('Firebase authentication is not configured');
+      }
+
+      await confirmPasswordReset(auth, code, newPassword);
+    } catch (error: any) {
+      if (error.code === 'auth/expired-action-code') {
+        throw new Error('This password reset link has expired');
+      } else if (error.code === 'auth/invalid-action-code') {
+        throw new Error('This password reset link is invalid or has already been used');
+      } else if (error.code === 'auth/weak-password') {
+        throw new Error('Password is too weak. Please choose a stronger password');
+      } else if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Failed to reset password');
     }
   }
 }

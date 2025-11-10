@@ -30,16 +30,16 @@ export default function Home() {
       <section className="relative pt-32 pb-24 px-6 overflow-hidden">
         {/* Animated Grid Background */}
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-b from-cyan-500/5 via-transparent to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-b from-blue-500/5 via-transparent to-transparent"></div>
           <div 
             className="absolute inset-0 opacity-20"
             style={{
-              backgroundImage: `linear-gradient(rgba(6, 182, 212, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(6, 182, 212, 0.1) 1px, transparent 1px)`,
+              backgroundImage: `linear-gradient(rgba(96, 165, 250, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(96, 165, 250, 0.1) 1px, transparent 1px)`,
               backgroundSize: '50px 50px'
             }}
           ></div>
           {/* Glow Effects */}
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl"></div>
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
         </div>
 
@@ -72,9 +72,10 @@ export default function Home() {
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <motion.button
-                whileHover={{ scale: 1.05, boxShadow: "0 0 30px rgba(6, 182, 212, 0.4)" }}
+                onClick={() => router.push('/maps')}
+                whileHover={{ scale: 1.05, boxShadow: "0 0 30px rgba(96, 165, 250, 0.4)" }}
                 whileTap={{ scale: 0.95 }}
-                className="px-10 py-5 bg-white/5 hover:bg-white/10 backdrop-blur-sm border-2 border-gray-700 hover:border-cyan-500 rounded-xl font-bold text-lg transition-all"
+                className="px-10 py-5 bg-white/5 hover:bg-white/10 backdrop-blur-sm border-2 border-gray-700 hover:border-blue-400 rounded-xl font-bold text-lg transition-all"
               >
                 <span className="relative z-10 flex items-center gap-2">
                   <MapPin className="w-5 h-5" />
@@ -84,9 +85,13 @@ export default function Home() {
               </motion.button>
               
               <motion.button
+                onClick={() => {
+                  const howItWorksSection = document.getElementById('how-it-works');
+                  howItWorksSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="px-10 py-5 bg-white/5 hover:bg-white/10 backdrop-blur-sm border-2 border-gray-700 hover:border-cyan-500 rounded-xl font-bold text-lg transition-all"
+                className="px-10 py-5 bg-white/5 hover:bg-white/10 backdrop-blur-sm border-2 border-gray-700 hover:border-blue-400 rounded-xl font-bold text-lg transition-all"
               >
                 Learn More
               </motion.button>
@@ -95,15 +100,15 @@ export default function Home() {
             {/* Stats */}
             <div className="grid grid-cols-3 gap-8 mt-20 max-w-3xl mx-auto">
               <div className="text-center">
-                <div className="text-4xl font-bold text-cyan-400 mb-2">500m</div>
+                <div className="text-4xl font-bold text-transparent bg-clip-text bg-linear-to-r from-blue-400/70 via-blue-400/70 to-blue-400/70 mb-2">500m</div>
                 <div className="text-sm text-gray-500 uppercase tracking-wide">Range Radius</div>
               </div>
               <div className="text-center border-x border-gray-800">
-                <div className="text-4xl font-bold text-cyan-400 mb-2">AI</div>
+                <div className="text-4xl font-bold text-transparent bg-clip-text bg-linear-to-r from-blue-400/70 via-blue-400/70 to-blue-400/70 mb-2">AI</div>
                 <div className="text-sm text-gray-500 uppercase tracking-wide">Local Agents</div>
               </div>
               <div className="text-center">
-                <div className="text-4xl font-bold text-cyan-400 mb-2">24/7</div>
+                <div className="text-4xl font-bold text-transparent bg-clip-text bg-linear-to-r from-blue-400/70 via-blue-400/70 to-blue-400/70 mb-2">24/7</div>
                 <div className="text-sm text-gray-500 uppercase tracking-wide">Active</div>
               </div>
             </div>
@@ -156,7 +161,7 @@ export default function Home() {
       </section>
 
       {/* How It Works */}
-      <section className="py-24 px-6">
+      <section id="how-it-works" className="py-24 px-6">
         <div className="max-w-7xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -175,7 +180,7 @@ export default function Home() {
 
           <div className="grid md:grid-cols-3 gap-8 relative">
             {/* Connection Lines - Desktop Only */}
-            <div className="hidden md:block absolute top-16 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent"></div>
+            <div className="hidden md:block absolute top-16 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-blue-500/30 to-transparent"></div>
             
             <StepCard
               number="01"
@@ -203,7 +208,7 @@ export default function Home() {
       </section>
 
       {/* Why GeoWhisper */}
-      <section className="py-24 px-6 bg-gradient-to-b from-transparent via-cyan-500/5 to-transparent">
+      <section className="py-24 px-6 bg-gradient-to-b from-transparent via-blue-500/5 to-transparent">
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <motion.div
@@ -215,7 +220,7 @@ export default function Home() {
               <h2 className="text-4xl md:text-5xl font-bold mb-6">
                 Why Choose
                 <br />
-                <span className="text-cyan-400">GeoWhisper?</span>
+                <span className="text-transparent bg-clip-text bg-linear-to-r from-blue-400/70 via-blue-400/70 to-blue-400/70">GeoWhisper?</span>
               </h2>
               <p className="text-xl text-gray-400 mb-8 leading-relaxed">
                 Unlike global social networks, GeoWhisper creates intimate, location-specific communities where every conversation matters and AI enhances the experience.
@@ -223,17 +228,17 @@ export default function Home() {
               
               <div className="space-y-6">
                 <BenefitItem
-                  icon={<Globe className="w-6 h-6 text-cyan-400" />}
+                  icon={<Globe className="w-6 h-6 text-blue-400" />}
                   title="Hyper-Local Focus"
                   description="Only see and interact with content from your immediate surroundings"
                 />
                 <BenefitItem
-                  icon={<Lock className="w-6 h-6 text-cyan-400" />}
+                  icon={<Lock className="w-6 h-6 text-blue-400" />}
                   title="Privacy First"
                   description="Your exact location stays private. Posts are anonymous yet authentic"
                 />
                 <BenefitItem
-                  icon={<Users className="w-6 h-6 text-cyan-400" />}
+                  icon={<Users className="w-6 h-6 text-blue-400" />}
                   title="Real Communities"
                   description="Build genuine connections with people who share your physical space"
                 />
@@ -247,17 +252,17 @@ export default function Home() {
               transition={{ duration: 0.6 }}
               className="relative"
             >
-              <div className="aspect-square rounded-2xl bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/30 p-8 backdrop-blur-sm">
+              <div className="aspect-square rounded-2xl bg-gradient-to-br from-blue-500/20 to-blue-600/20 border border-blue-500/30 p-8 backdrop-blur-sm">
                 <div className="h-full flex items-center justify-center">
                   <div className="text-center">
-                    <MapPin className="w-32 h-32 text-cyan-400 mx-auto mb-6" />
-                    <p className="text-2xl font-bold text-cyan-400">500 Meter Radius</p>
+                    <MapPin className="w-32 h-32 text-blue-400 mx-auto mb-6" />
+                    <p className="text-2xl font-bold text-transparent bg-clip-text bg-linear-to-r from-blue-400/70 via-blue-400/70 to-blue-400/70">500 Meter Radius</p>
                     <p className="text-gray-400 mt-2">Your hyperlocal community zone</p>
                   </div>
                 </div>
               </div>
               {/* Decorative elements */}
-              <div className="absolute -top-6 -right-6 w-24 h-24 bg-cyan-500/20 rounded-full blur-2xl"></div>
+              <div className="absolute -top-6 -right-6 w-24 h-24 bg-blue-500/20 rounded-full blur-2xl"></div>
               <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-blue-500/20 rounded-full blur-2xl"></div>
             </motion.div>
           </div>
@@ -272,7 +277,7 @@ export default function Home() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="text-center bg-gradient-to-br from-cyan-500/10 to-blue-600/10 border border-cyan-500/20 rounded-3xl p-12 backdrop-blur-sm"
+            className="text-center bg-gradient-to-br from-blue-500/10 to-blue-600/10 border border-blue-500/20 rounded-3xl p-12 backdrop-blur-sm"
           >
             <h2 className="text-4xl md:text-5xl font-bold mb-6">
               Ready to Whisper?
@@ -285,7 +290,7 @@ export default function Home() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={handleGetStarted}
-              className="px-12 py-5 bg-black/20 backdrop-blur-lg border-2 border-gray-600 text-white hover:border-cyan-500 rounded-xl font-bold text-lg transition-all"
+              className="px-12 py-5 bg-black/20 backdrop-blur-lg border-2 border-gray-600 text-white hover:border-blue-400 rounded-xl font-bold text-lg transition-all"
             >
               Get Started Now
             </motion.button>
@@ -293,7 +298,7 @@ export default function Home() {
         </div>
       </section>
 
-      <Footer />
+      <Footer hideOnMobile={false} />
     </div>
   );
 }
@@ -318,19 +323,19 @@ function FeatureCard({
       viewport={{ once: true }}
       transition={{ duration: 0.6, delay }}
       whileHover={{ y: -8 }}
-      className="group p-8 rounded-2xl bg-gradient-to-br from-gray-900 to-gray-900/50 border border-gray-800 hover:border-cyan-500/50 transition-all backdrop-blur-sm"
+      className="group p-8 rounded-2xl bg-gradient-to-br from-gray-900 to-gray-900/50 border border-gray-800 hover:border-blue-500/50 transition-all backdrop-blur-sm"
     >
-      <div className="mb-6 text-cyan-400 group-hover:scale-110 transition-transform">
+      <div className="mb-6 text-blue-400 group-hover:scale-110 transition-transform">
         {icon}
       </div>
-      <h3 className="text-2xl font-bold mb-4 group-hover:text-cyan-400 transition-colors">{title}</h3>
+      <h3 className="text-2xl font-bold mb-4 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-linear-to-r group-hover:from-blue-400/70 group-hover:via-blue-400/70 group-hover:to-blue-400/70 transition-colors">{title}</h3>
       <p className="text-gray-400 mb-6 leading-relaxed">
         {description}
       </p>
       <ul className="space-y-2">
         {features.map((feature, idx) => (
           <li key={idx} className="flex items-center gap-2 text-sm text-gray-500">
-            <div className="w-1.5 h-1.5 rounded-full bg-cyan-500"></div>
+            <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
             {feature}
           </li>
         ))}
@@ -361,13 +366,13 @@ function StepCard({
       className="relative text-center"
     >
       <div className="relative inline-flex items-center justify-center w-32 h-32 mb-6">
-        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 to-blue-600/20 rounded-full blur-xl"></div>
-        <div className="relative w-24 h-24 bg-gradient-to-br from-gray-900 to-gray-800 border border-cyan-500/30 rounded-full flex items-center justify-center">
-          <div className="text-cyan-400">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-blue-600/20 rounded-full blur-xl"></div>
+        <div className="relative w-24 h-24 bg-gradient-to-br from-gray-900 to-gray-800 border border-blue-500/30 rounded-full flex items-center justify-center">
+          <div className="text-blue-400">
             {icon}
           </div>
         </div>
-        <div className="absolute -top-2 -right-2 w-10 h-10 bg-cyan-500 rounded-full flex items-center justify-center font-bold text-sm">
+        <div className="absolute -top-2 -right-2 w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center font-bold text-sm">
           {number}
         </div>
       </div>
@@ -388,7 +393,7 @@ function BenefitItem({
 }) {
   return (
     <div className="flex gap-4">
-      <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-cyan-500/20 to-blue-600/20 rounded-lg flex items-center justify-center border border-cyan-500/30">
+      <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-blue-500/20 to-blue-600/20 rounded-lg flex items-center justify-center border border-blue-500/30">
         {icon}
       </div>
       <div>

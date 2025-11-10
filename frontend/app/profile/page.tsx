@@ -41,14 +41,43 @@ export default function ProfilePage() {
   // Format the member since date
   const getMemberSince = () => {
     if (!user?.createdAt) {
-      return new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+      return 'Recently';
     }
     try {
-      // Parse the createdAt timestamp
-      const date = new Date(user.createdAt);
+      let date: Date;
+      
+      // Handle different timestamp formats
+      if (typeof user.createdAt === 'string') {
+        // Try to parse Firestore Timestamp string format
+        // Format: "Timestamp(seconds=1699564800, nanoseconds=0)"
+        const timestampMatch = user.createdAt.match(/seconds=(\d+)/);
+        if (timestampMatch) {
+          // Convert seconds to milliseconds
+          const seconds = parseInt(timestampMatch[1], 10);
+          date = new Date(seconds * 1000);
+        } else {
+          // Try standard date parsing
+          date = new Date(user.createdAt);
+        }
+      } else if (typeof user.createdAt === 'number') {
+        // Handle numeric timestamp (milliseconds or seconds)
+        date = new Date(user.createdAt > 10000000000 ? user.createdAt : user.createdAt * 1000);
+      } else if (user.createdAt && typeof user.createdAt === 'object' && 'seconds' in user.createdAt) {
+        // Handle Firestore Timestamp object
+        date = new Date((user.createdAt as any).seconds * 1000);
+      } else {
+        date = new Date(user.createdAt);
+      }
+      
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        return 'Recently';
+      }
+      
       return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-    } catch {
-      return new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    } catch (error) {
+      console.error('Error parsing createdAt:', error, user.createdAt);
+      return 'Recently';
     }
   };
 
