@@ -12,7 +12,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 public class PostService {
@@ -29,8 +28,8 @@ public class PostService {
     /**
      * Create a new post without images (backward compatibility)
      */
-    public Map<String, Object> createPost(String userId, String username, CreatePostRequest request) 
-        throws ExecutionException, InterruptedException {
+    public Map<String, Object> createPost(String userId, String username, CreatePostRequest request)
+            throws ExecutionException, InterruptedException {
         return createPost(userId, username, request, null);
     }
 
@@ -38,12 +37,12 @@ public class PostService {
      * Create a new post with optional images
      */
     public Map<String, Object> createPost(
-            String userId, 
-            String username, 
+            String userId,
+            String username,
             CreatePostRequest request,
-            MultipartFile[] images) 
-        throws ExecutionException, InterruptedException {
-        
+            MultipartFile[] images)
+            throws ExecutionException, InterruptedException {
+
         // Create document reference first to get the post ID
         DocumentReference docRef = firestore.collection("posts").document();
         String postId = docRef.getId();
@@ -63,10 +62,10 @@ public class PostService {
         double postLat = request.getLatitude();
         double postLon = request.getLongitude();
         int towerRadius = 50; // 50 meters radius for tower clustering
-        
+
         // Check if there's an existing tower within 50 meters
         Optional<Tower> nearestTower = towerService.findNearestTower(postLat, postLon, towerRadius);
-        
+
         if (nearestTower.isPresent()) {
             // Add post to existing tower
             Tower tower = nearestTower.get();
@@ -100,23 +99,23 @@ public class PostService {
     }
 
     public List<Map<String, Object>> getNearbyPosts(
-        double userLat, 
-        double userLon, 
-        int radiusMeters,
-        int limit
-    ) throws ExecutionException, InterruptedException {
-        
+            double userLat,
+            double userLon,
+            int radiusMeters,
+            int limit) throws ExecutionException, InterruptedException {
+
         QuerySnapshot querySnapshot = firestore.collection("posts")
-            .orderBy("createdAt", Query.Direction.DESCENDING)
-            .limit(500)
-            .get()
-            .get();
+                .orderBy("createdAt", Query.Direction.DESCENDING)
+                .limit(500)
+                .get()
+                .get();
 
         List<Map<String, Object>> nearbyPosts = new ArrayList<>();
 
         for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
             Map<String, Object> post = doc.getData();
-            if (post == null) continue;
+            if (post == null)
+                continue;
 
             double postLat = ((Number) post.get("latitude")).doubleValue();
             double postLon = ((Number) post.get("longitude")).doubleValue();
@@ -134,21 +133,19 @@ public class PostService {
             }
         }
 
-        nearbyPosts.sort((a, b) -> 
-            Double.compare((Double) a.get("distance"), (Double) b.get("distance"))
-        );
+        nearbyPosts.sort((a, b) -> Double.compare((Double) a.get("distance"), (Double) b.get("distance")));
 
         return nearbyPosts;
     }
 
-    public List<Map<String, Object>> getUserPosts(String userId) 
-        throws ExecutionException, InterruptedException {
-        
+    public List<Map<String, Object>> getUserPosts(String userId)
+            throws ExecutionException, InterruptedException {
+
         QuerySnapshot querySnapshot = firestore.collection("posts")
-            .whereEqualTo("userId", userId)
-            .orderBy("createdAt", Query.Direction.DESCENDING)
-            .get()
-            .get();
+                .whereEqualTo("userId", userId)
+                .orderBy("createdAt", Query.Direction.DESCENDING)
+                .get()
+                .get();
 
         List<Map<String, Object>> posts = new ArrayList<>();
         for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
@@ -163,50 +160,49 @@ public class PostService {
     }
 
     public List<Map<String, Object>> getRecentPostsForZone(
-        double lat, 
-        double lon, 
-        int radiusMeters
-    ) throws ExecutionException, InterruptedException {
+            double lat,
+            double lon,
+            int radiusMeters) throws ExecutionException, InterruptedException {
         return getNearbyPosts(lat, lon, radiusMeters, 100);
     }
 
     /**
      * Get all posts grouped into their assigned towers from the database.
-     * This retrieves the persistent tower data, ensuring consistent grouping across API calls.
+     * This retrieves the persistent tower data, ensuring consistent grouping across
+     * API calls.
      * 
      * @param clusterRadiusMeters Not used anymore (kept for backward compatibility)
-     * @param maxPosts Maximum number of posts to include per tower
+     * @param maxPosts            Maximum number of posts to include per tower
      * @return List of towers with their associated posts
      */
     public List<TowerResponse> getPostsGroupedIntoTowers(
-        int clusterRadiusMeters, 
-        int maxPosts
-    ) throws ExecutionException, InterruptedException {
-        
+            int clusterRadiusMeters,
+            int maxPosts) throws ExecutionException, InterruptedException {
+
         // Fetch all towers from database
         List<Tower> towers = towerService.getAllTowers();
         List<TowerResponse> towerResponses = new ArrayList<>();
-        
+
         // For each tower, fetch its posts
         for (Tower tower : towers) {
             List<String> postIds = tower.getPostIds();
             if (postIds == null || postIds.isEmpty()) {
                 continue;
             }
-            
+
             // Fetch post details for this tower
             List<Map<String, Object>> posts = new ArrayList<>();
-            
+
             // Firestore 'in' query has a limit of 10 items, so we need to batch
             int batchSize = 10;
             for (int i = 0; i < postIds.size(); i += batchSize) {
                 List<String> batch = postIds.subList(i, Math.min(i + batchSize, postIds.size()));
-                
+
                 QuerySnapshot postSnapshot = firestore.collection("posts")
-                    .whereIn(FieldPath.documentId(), batch)
-                    .get()
-                    .get();
-                
+                        .whereIn(FieldPath.documentId(), batch)
+                        .get()
+                        .get();
+
                 for (DocumentSnapshot doc : postSnapshot.getDocuments()) {
                     Map<String, Object> post = doc.getData();
                     if (post != null) {
@@ -215,37 +211,47 @@ public class PostService {
                     }
                 }
             }
-            
+
             // Create tower response
             TowerResponse towerResponse = new TowerResponse(
-                tower.getTowerId(),
-                tower.getLatitude(),
-                tower.getLongitude(),
-                posts.size(),
-                posts
-            );
-            
+                    tower.getTowerId(),
+                    tower.getLatitude(),
+                    tower.getLongitude(),
+                    posts.size(),
+                    posts);
+
             towerResponses.add(towerResponse);
         }
-        
+
         // Sort by post count (descending)
         towerResponses.sort((a, b) -> Integer.compare(b.getPostCount(), a.getPostCount()));
-        
+
         return towerResponses;
     }
 
     /**
-     * DEPRECATED: This method is no longer used.
-     * Tower clustering is now done at post creation time and stored in the database.
-     * Kept for reference only.
+     * Get all towers with their statistics
      */
-    @Deprecated
-    private List<TowerResponse> clusterPostsIntoTowers(
-        List<Map<String, Object>> posts, 
-        int radiusMeters
-    ) {
-        // This method is no longer used - towers are now stored in the database
-        // and posts are assigned to towers at creation time
-        return new ArrayList<>();
+    public List<Map<String, Object>> getAllTowersWithStats()
+            throws ExecutionException, InterruptedException {
+
+        List<Tower> towers = towerService.getAllTowers();
+        List<Map<String, Object>> towerStats = new ArrayList<>();
+
+        for (Tower tower : towers) {
+            Map<String, Object> stats = new HashMap<>();
+            stats.put("towerId", tower.getTowerId());
+            stats.put("latitude", tower.getLatitude());
+            stats.put("longitude", tower.getLongitude());
+            stats.put("radiusMeters", tower.getRadiusMeters());
+            stats.put("postCount", tower.getPostCount());
+            stats.put("postIds", tower.getPostIds());
+            stats.put("createdAt", tower.getCreatedAt());
+            stats.put("updatedAt", tower.getUpdatedAt());
+            towerStats.add(stats);
+        }
+
+        return towerStats;
     }
+
 }

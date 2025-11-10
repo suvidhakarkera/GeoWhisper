@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seed Chat Messages for Testing</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .container {
+            background: #2a2a2a;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #06b6d4;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #888;
+            margin-bottom: 30px;
+        }
+        input, button {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid #444;
+            border-radius: 5px;
+            background: #333;
+            color: #fff;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        button {
+            background: #06b6d4;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #0891b2;
+        }
+        button:disabled {
+            background: #555;
+            cursor: not-allowed;
+        }
+        .log {
+            background: #1a1a1a;
+            border: 1px solid #444;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+        }
+        .log-success {
+            color: #10b981;
+        }
+        .log-error {
+            color: #ef4444;
+        }
+        .log-info {
+            color: #06b6d4;
+        }
+        .sample-messages {
+            background: #333;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-size: 13px;
+        }
+        .sample-messages h3 {
+            color: #06b6d4;
+            margin-top: 0;
+        }
+        .sample-messages ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .sample-messages li {
+            margin: 5px 0;
+            color: #aaa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌱 Seed Chat Messages</h1>
+        <p class="subtitle">Generate sample chat messages for testing the chat summary API</p>
+        
+        <input type="text" id="towerId" placeholder="Tower ID (e.g., RwvBgwnDbPsupDsZ7rH1)" value="RwvBgwnDbPsupDsZ7rH1">
+        <input type="number" id="messageCount" placeholder="Number of messages to create" value="10" min="1" max="50">
+        <button id="seedBtn" onclick="seedMessages()">Seed Chat Messages</button>
+        
+        <div class="sample-messages">
+            <h3>📝 Sample Message Topics:</h3>
+            <ul>
+                <li>Coffee shop atmosphere and drinks</li>
+                <li>Restaurant food and service quality</li>
+                <li>Location ambiance and views</li>
+                <li>Wifi quality and workspace</li>
+                <li>Pricing and value</li>
+                <li>Recommendations and reviews</li>
+            </ul>
+        </div>
+        
+        <div class="log" id="log"></div>
+    </div>
+
+    <script type="module">
+        // Import Firebase SDK
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getDatabase, ref, push, set } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+
+        // Firebase configuration - UPDATE THESE VALUES
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "geowhisper-1.firebaseapp.com",
+            databaseURL: "https://geowhisper-1-default-rtdb.firebaseio.com",
+            projectId: "geowhisper-1",
+            storageBucket: "geowhisper-1.firebasestorage.app",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        // Sample messages for different scenarios
+        const messageTemplates = [
+            // Coffee shop messages
+            "This coffee shop is amazing! The atmosphere is perfect for working.",
+            "Great cappuccino here! Highly recommend it.",
+            "Love the ambiance and decor. Very cozy!",
+            "The wifi is super fast, perfect for remote work.",
+            "Best latte I've had in ages!",
+            "Friendly staff and excellent service.",
+            "A bit pricey but worth it for the quality.",
+            "Try the chocolate croissant - it's delicious!",
+            "Perfect spot for meetings with clients.",
+            "The view from here is spectacular!",
+            
+            // Restaurant messages  
+            "Food here is absolutely delicious!",
+            "Service was quick and friendly.",
+            "The menu has great variety.",
+            "Portions are generous for the price.",
+            "Atmosphere is nice for a date night.",
+            "The chef really knows what they're doing.",
+            "Vegetarian options are fantastic.",
+            "Wine selection is impressive.",
+            "Desserts are to die for!",
+            "Will definitely come back again.",
+            
+            // General location messages
+            "This place is a hidden gem!",
+            "Great location, easy to find.",
+            "Parking was a bit difficult though.",
+            "Very clean and well-maintained.",
+            "Can get crowded during peak hours.",
+            "Outdoor seating is lovely.",
+            "Music volume is just right.",
+            "Good for families with kids.",
+            "Accessible and disability-friendly.",
+            "Prices are reasonable for the area.",
+            
+            // Recommendations
+            "Anyone know if they have vegan options?",
+            "What's the best thing on the menu?",
+            "Is this place good for birthday celebrations?",
+            "Do they take reservations?",
+            "What time is it usually quietest?",
+            "Are dogs allowed here?",
+            "Is there a happy hour?",
+            "How late are they open?",
+            "Do they have gluten-free options?",
+            "Anyone been here on weekends?"
+        ];
+
+        const usernames = [
+            "Alex", "Sam", "Jordan", "Taylor", "Morgan", 
+            "Casey", "Riley", "Avery", "Quinn", "Skylar",
+            "Jamie", "Parker", "Reese", "Cameron", "Blake"
+        ];
+
+        // Initialize Firebase
+        let app, database;
+        try {
+            app = initializeApp(firebaseConfig);
+            database = getDatabase(app);
+            logMessage('Firebase initialized successfully', 'info');
+        } catch (error) {
+            logMessage('Firebase initialization failed: ' + error.message, 'error');
+            logMessage('Please update the firebaseConfig in the script with your actual Firebase credentials', 'error');
+        }
+
+        window.seedMessages = async function() {
+            const towerId = document.getElementById('towerId').value.trim();
+            const messageCount = parseInt(document.getElementById('messageCount').value);
+            const seedBtn = document.getElementById('seedBtn');
+
+            if (!towerId) {
+                logMessage('Please enter a tower ID', 'error');
+                return;
+            }
+
+            if (!database) {
+                logMessage('Firebase not initialized. Please check your configuration.', 'error');
+                return;
+            }
+
+            seedBtn.disabled = true;
+            logMessage(`Starting to seed ${messageCount} messages for tower: ${towerId}`, 'info');
+
+            let successCount = 0;
+            let failCount = 0;
+
+            for (let i = 0; i < messageCount; i++) {
+                try {
+                    const messagesRef = ref(database, `chats/${towerId}/messages`);
+                    const newMessageRef = push(messagesRef);
+                    
+                    const randomMessage = messageTemplates[Math.floor(Math.random() * messageTemplates.length)];
+                    const randomUsername = usernames[Math.floor(Math.random() * usernames.length)];
+                    const randomUserId = `user${Math.floor(Math.random() * 1000)}`;
+                    
+                    // Create message with timestamp spread over last 24 hours
+                    const now = Date.now();
+                    const randomTimestamp = now - Math.floor(Math.random() * 24 * 60 * 60 * 1000);
+                    
+                    await set(newMessageRef, {
+                        message: randomMessage,
+                        userId: randomUserId,
+                        username: randomUsername,
+                        timestamp: randomTimestamp,
+                        createdAt: new Date(randomTimestamp).toISOString()
+                    });
+
+                    successCount++;
+                    logMessage(`✓ Message ${i + 1}/${messageCount}: "${randomMessage}" - ${randomUsername}`, 'success');
+                    
+                    // Small delay to avoid rate limiting
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    
+                } catch (error) {
+                    failCount++;
+                    logMessage(`✗ Failed to send message ${i + 1}: ${error.message}`, 'error');
+                }
+            }
+
+            seedBtn.disabled = false;
+            logMessage(`\n✅ Seeding complete! Success: ${successCount}, Failed: ${failCount}`, 'info');
+            logMessage(`\nNow you can call the chat summary API: POST /api/chat/summary with towerId: ${towerId}`, 'info');
+        }
+
+        function logMessage(message, type = 'info') {
+            const log = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = message;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+        }
+    </script>
+</body>
+</html>
