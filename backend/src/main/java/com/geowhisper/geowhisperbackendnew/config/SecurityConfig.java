@@ -30,7 +30,11 @@ public class SecurityConfig {
                         .requestMatchers("/api/seed/**").permitAll()
                         .requestMatchers("/api/ai/**").permitAll()
                         .requestMatchers("/api/chat/**").permitAll()
+                        .requestMatchers("/api/hotzones/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
+                        // Admin endpoints - TEMPORARILY public for development
+                        // TODO: Add proper authentication before production deployment
+                        .requestMatchers("/api/admin/**").permitAll()
                         // All other requests require authentication
                         .anyRequest().authenticated());
 

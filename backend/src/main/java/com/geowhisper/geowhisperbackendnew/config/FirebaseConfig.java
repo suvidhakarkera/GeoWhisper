@@ -52,6 +52,18 @@ public class FirebaseConfig {
                                 .setConnectTimeout(10000) // 10 seconds
                                 .setReadTimeout(10000); // 10 seconds
 
+                        // Set Firebase Realtime Database URL
+                        String databaseUrl = System.getenv("FIREBASE_DATABASE_URL");
+                        if (databaseUrl != null && !databaseUrl.isEmpty()) {
+                            optionsBuilder.setDatabaseUrl(databaseUrl);
+                            System.out.println("✅ Firebase Realtime Database URL configured: " + databaseUrl);
+                        } else {
+                            // Default to geowhisper-1 project
+                            String defaultUrl = "https://geowhisper-1-default-rtdb.firebaseio.com";
+                            optionsBuilder.setDatabaseUrl(defaultUrl);
+                            System.out.println("✅ Firebase Realtime Database URL configured (default): " + defaultUrl);
+                        }
+
                         // Only set storage bucket if environment variable is provided
                         String storageBucket = System.getenv("FIREBASE_STORAGE_BUCKET");
                         if (storageBucket != null && !storageBucket.isEmpty()) {
