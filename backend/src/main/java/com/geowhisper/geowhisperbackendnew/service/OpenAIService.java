@@ -40,18 +40,20 @@ public class OpenAIService {
     
     private static final String CHAT_SUMMARY_SYSTEM_PROMPT = 
         "You are an AI assistant specialized in analyzing chat conversations from GeoWhisper, a location-based social platform. " +
-        "Your role is to provide insightful summaries of chat discussions that occur at specific tower locations.\n\n" +
+        "Your role is to provide brief, insightful summaries of chat discussions that occur at specific tower locations.\n\n" +
+        "CRITICAL: Base your summary ONLY on the actual messages provided. DO NOT make up or assume content.\n\n" +
         "When summarizing:\n" +
-        "1. Capture the main themes and topics being discussed\n" +
-        "2. Identify the overall sentiment (positive, negative, neutral, or mixed)\n" +
-        "3. Highlight any notable patterns, trends, or community insights\n" +
-        "4. Keep summaries concise yet informative (2-4 sentences)\n" +
-        "5. Use friendly, engaging language appropriate for a social platform\n\n" +
-        "Format your response as:\n" +
-        "SUMMARY: [2-4 sentence summary]\n" +
-        "TOPICS: [topic1, topic2, topic3, ...] (3-7 key topics)\n" +
+        "1. Read ALL the messages carefully and identify what people are ACTUALLY talking about\n" +
+        "2. Capture the main themes and topics being discussed based on the MESSAGE CONTENT\n" +
+        "3. Identify the overall sentiment (positive, negative, neutral, or mixed) from what people wrote\n" +
+        "4. Extract specific topics mentioned (e.g., food, service, atmosphere, prices, recommendations)\n" +
+        "5. Keep summaries VERY brief and concise (1-2 sentences MAXIMUM) based on the real conversation\n" +
+        "6. Use friendly, engaging language appropriate for a social platform\n\n" +
+        "Format your response EXACTLY as:\n" +
+        "SUMMARY: [1-2 brief sentences summarizing what people are discussing]\n" +
+        "TOPICS: [topic1, topic2, topic3] (3-5 key topics extracted from the messages)\n" +
         "SENTIMENT: positive | negative | neutral | mixed\n" +
-        "INSIGHTS: [Any interesting patterns or community insights]";
+        "INSIGHTS: [One brief sentence about patterns or insights]";
     
     private static final String TOXIC_CONTENT_SYSTEM_PROMPT = 
         "You are a toxicity detection system for GeoWhisper, a location-based social platform. " +
@@ -75,8 +77,11 @@ public class OpenAIService {
      */
     public CompletableFuture<String> generateChatSummary(String messagesText, int messageCount, String timeRange) {
         String userPrompt = String.format(
-            "Analyze these %d chat messages from the last %s at a GeoWhisper location:\n\n%s\n\n" +
-            "Provide a comprehensive summary following the specified format.",
+            "Analyze these %d real chat messages from the %s at a GeoWhisper location tower.\n\n" +
+            "ACTUAL MESSAGES:\n%s\n\n" +
+            "Based ONLY on these actual messages above, provide a BRIEF summary (1-2 sentences max) following the specified format. " +
+            "Extract topics from what people are actually saying (e.g., if they mention coffee, food, service, prices, atmosphere). " +
+            "Be concise and to the point.",
             messageCount, timeRange, messagesText
         );
         return generateWithSystemPrompt(CHAT_SUMMARY_SYSTEM_PROMPT, userPrompt);

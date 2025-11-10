@@ -405,11 +405,11 @@ public class SeedController {
     @PostMapping("/chat-messages")
     public ResponseEntity<?> seedChatMessages(
             @RequestParam(defaultValue = "5") int messagesPerTower) {
-        
+
         try {
             // Get all towers
             List<Map<String, Object>> towers = postService.getAllTowersWithStats();
-            
+
             if (towers.isEmpty()) {
                 return ResponseEntity.badRequest()
                         .body(ApiResponse.error("No towers found. Please create some posts first."));
@@ -417,44 +417,44 @@ public class SeedController {
 
             // Sample chat messages
             String[] chatMessages = {
-                "This place is amazing! Love the atmosphere here.",
-                "Great coffee and excellent wifi!",
-                "Anyone tried the cappuccino? Highly recommend it.",
-                "Perfect spot for working remotely.",
-                "The view from here is spectacular!",
-                "Highly recommend the chocolate croissant.",
-                "Service is quick and friendly.",
-                "This is my go-to spot now!",
-                "Food quality is top notch.",
-                "Very clean and well-maintained.",
-                "Love the ambiance and decor.",
-                "Pricing is reasonable for the quality.",
-                "Will definitely come back again!",
-                "Hidden gem in the neighborhood.",
-                "Peaceful and quiet, perfect for reading.",
-                "Staff are super friendly and helpful.",
-                "Great place for meetings.",
-                "Music volume is just right.",
-                "Lots of seating options available.",
-                "They have great vegetarian options."
+                    "This place is amazing! Love the atmosphere here.",
+                    "Great coffee and excellent wifi!",
+                    "Anyone tried the cappuccino? Highly recommend it.",
+                    "Perfect spot for working remotely.",
+                    "The view from here is spectacular!",
+                    "Highly recommend the chocolate croissant.",
+                    "Service is quick and friendly.",
+                    "This is my go-to spot now!",
+                    "Food quality is top notch.",
+                    "Very clean and well-maintained.",
+                    "Love the ambiance and decor.",
+                    "Pricing is reasonable for the quality.",
+                    "Will definitely come back again!",
+                    "Hidden gem in the neighborhood.",
+                    "Peaceful and quiet, perfect for reading.",
+                    "Staff are super friendly and helpful.",
+                    "Great place for meetings.",
+                    "Music volume is just right.",
+                    "Lots of seating options available.",
+                    "They have great vegetarian options."
             };
 
             String[] usernames = {
-                "Alex", "Sam", "Jordan", "Taylor", "Morgan",
-                "Casey", "Riley", "Avery", "Quinn", "Skylar",
-                "Jamie", "Parker", "Reese", "Cameron", "Blake"
+                    "Alex", "Sam", "Jordan", "Taylor", "Morgan",
+                    "Casey", "Riley", "Avery", "Quinn", "Skylar",
+                    "Jamie", "Parker", "Reese", "Cameron", "Blake"
             };
 
-            // Use Firebase Realtime Database  
-            com.google.firebase.database.DatabaseReference dbRef = 
-                com.google.firebase.database.FirebaseDatabase.getInstance().getReference();
+            // Use Firebase Realtime Database
+            com.google.firebase.database.DatabaseReference dbRef = com.google.firebase.database.FirebaseDatabase
+                    .getInstance().getReference();
 
             int totalMessagesSent = 0;
             int towersSeeded = 0;
             Random random = new Random();
 
             System.out.println("⏳ Seeding chat messages for " + towers.size() + " towers (processing first 10)...");
-            
+
             // Limit to first 10 towers
             int maxTowers = Math.min(towers.size(), 10);
             int successCount = 0;
@@ -463,7 +463,7 @@ public class SeedController {
             for (int towerIndex = 0; towerIndex < maxTowers; towerIndex++) {
                 Map<String, Object> tower = towers.get(towerIndex);
                 String towerId = (String) tower.get("towerId");
-                
+
                 if (towerId == null || towerId.isEmpty()) {
                     continue;
                 }
@@ -475,25 +475,25 @@ public class SeedController {
                     String message = chatMessages[random.nextInt(chatMessages.length)];
                     String username = usernames[random.nextInt(usernames.length)];
                     String userId = "user" + random.nextInt(1000);
-                    
+
                     // Create message data
                     Map<String, Object> messageData = new HashMap<>();
                     messageData.put("message", message);
                     messageData.put("userId", userId);
                     messageData.put("username", username);
-                    
+
                     // Spread timestamps over last 24 hours
                     long now = System.currentTimeMillis();
                     long randomOffset = random.nextInt(24 * 60 * 60 * 1000);
                     long timestamp = now - randomOffset;
-                    
+
                     messageData.put("timestamp", timestamp);
                     messageData.put("createdAt", new java.util.Date(timestamp).toString());
 
                     // Push to Firebase Realtime Database with immediate response
                     try {
                         dbRef.child("chats").child(towerId).child("messages").push()
-                            .setValueAsync(messageData);
+                                .setValueAsync(messageData);
                         // Don't wait - fire and forget
                         totalMessagesSent++;
                         successCount++;
@@ -502,13 +502,14 @@ public class SeedController {
                         System.err.println("❌ Error for tower " + towerId + ": " + e.getMessage());
                     }
                 }
-                
+
                 towersSeeded++;
             }
-            
+
             System.out.println("✅ Initiated " + totalMessagesSent + " messages (writes are async)");
             System.out.println("⚠️  If messages don't appear, UPDATE FIREBASE REALTIME DATABASE RULES!");
-            System.out.println("    Go to: https://console.firebase.google.com/project/geowhisper-1/database/geowhisper-1-default-rtdb/rules");
+            System.out.println(
+                    "    Go to: https://console.firebase.google.com/project/geowhisper-1/database/geowhisper-1-default-rtdb/rules");
             System.out.println("    Set: { \"rules\": { \".read\": true, \".write\": true } }");
 
             Map<String, Object> result = new HashMap<>();
@@ -517,12 +518,15 @@ public class SeedController {
             result.put("towersProcessed", maxTowers);
             result.put("messagesPerTower", messagesPerTower);
             result.put("messagesInitiated", totalMessagesSent);
-            result.put("note", "Messages are being written asynchronously. If they don't appear, update Firebase Realtime Database security rules.");
-            result.put("rulesUrl", "https://console.firebase.google.com/project/geowhisper-1/database/geowhisper-1-default-rtdb/rules");
+            result.put("note",
+                    "Messages are being written asynchronously. If they don't appear, update Firebase Realtime Database security rules.");
+            result.put("rulesUrl",
+                    "https://console.firebase.google.com/project/geowhisper-1/database/geowhisper-1-default-rtdb/rules");
             result.put("suggestedRules", "{ \"rules\": { \".read\": true, \".write\": true } }");
 
-            String statusMessage = "Initiated " + totalMessagesSent + " chat messages across " + towersSeeded + " towers. " +
-                    "⚠️ IMPORTANT: Update Firebase Realtime Database rules to allow writes, then wait 5-10 seconds before testing summary API.";
+            String statusMessage = "Initiated " + totalMessagesSent + " chat messages across " + towersSeeded
+                    + " towers. " +
+                    "Update Firebase Realtime Database rules to allow writes, then wait 5-10 seconds before testing summary API.";
 
             return ResponseEntity.ok(ApiResponse.success(statusMessage, result));
 

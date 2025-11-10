@@ -32,19 +32,15 @@ export default function MyPostsPage() {
   const loadUserPosts = async () => {
     try {
       setLoadingPosts(true);
-      // Get user's location first
-      const location = await postService.getCurrentLocation();
       
-      // Fetch nearby posts and filter by username
-      const nearbyPosts = await postService.getNearbyPosts({
-        latitude: location.latitude,
-        longitude: location.longitude,
-        radiusMeters: 50000, // 50km radius to get more posts
-        limit: 100,
-      });
+      if (!user?.firebaseUid) {
+        console.error('User ID not available');
+        setLoadingPosts(false);
+        return;
+      }
 
-      // Filter posts by current user
-      const myPosts = nearbyPosts.filter(post => post.username === user?.username);
+      // Fetch user's posts directly using the dedicated endpoint
+      const myPosts = await postService.getUserPosts(user.firebaseUid);
       setUserPosts(myPosts);
     } catch (error) {
       console.error('Failed to load user posts:', error);

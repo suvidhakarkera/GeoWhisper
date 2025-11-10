@@ -148,33 +148,65 @@ public class ChatModerationService {
     
     /**
      * Moderate a specific message (delete, hide, or flag)
-     * This would need Firebase Admin SDK to modify Realtime Database
+     * Updates the message in Firebase Realtime Database with moderation metadata
      */
     public CompletableFuture<String> moderateMessage(ChatModerationRequest request) {
         CompletableFuture<String> future = new CompletableFuture<>();
         
         try {
-            // Log moderation action to Firestore for audit trail
-            Map<String, Object> moderationLog = new HashMap<>();
-            moderationLog.put("towerId", request.getTowerId());
-            moderationLog.put("messageId", request.getMessageId());
-            moderationLog.put("moderatorUserId", request.getModeratorUserId());
-            moderationLog.put("reason", request.getReason());
-            moderationLog.put("action", request.getAction());
-            moderationLog.put("timestamp", System.currentTimeMillis());
+            String towerId = request.getTowerId();
+            String messageId = request.getMessageId();
+            String action = request.getAction();
             
-            log.info("Moderation action logged: {} on message {} by moderator {}", 
-                    request.getAction(), request.getMessageId(), request.getModeratorUserId());
+            // Get reference to the message in Firebase Realtime Database
+            com.google.firebase.database.DatabaseReference messageRef = 
+                com.google.firebase.database.FirebaseDatabase.getInstance()
+                    .getReference("chats/" + towerId + "/messages/" + messageId);
             
-            // In production, you would:
-            // 1. Use Firebase Admin SDK to delete/update the message in Realtime Database
-            // 2. Store moderation log in Firestore
-            // 3. Notify relevant users
+            Map<String, Object> updates = new HashMap<>();
             
-            String message = String.format("Message %s has been %s by moderator", 
-                    request.getMessageId(), request.getAction().toLowerCase());
+            if ("DELETE".equalsIgnoreCase(action)) {
+                // Mark as deleted rather than actually deleting (for audit trail)
+                updates.put("moderated", true);
+                updates.put("moderationAction", "DELETED");
+                updates.put("moderationReason", request.getReason());
+                updates.put("moderatedAt", System.currentTimeMillis());
+                updates.put("moderatedBy", request.getModeratorUserId());
+                updates.put("message", "[Message removed by moderator]");
+                
+            } else if ("HIDE".equalsIgnoreCase(action)) {
+                // Mark as hidden
+                updates.put("moderated", true);
+                updates.put("moderationAction", "HIDDEN");
+                updates.put("moderationReason", request.getReason());
+                updates.put("moderatedAt", System.currentTimeMillis());
+                updates.put("moderatedBy", request.getModeratorUserId());
+                updates.put("hidden", true);
+                
+            } else if ("FLAG".equalsIgnoreCase(action)) {
+                // Flag for review
+                updates.put("flagged", true);
+                updates.put("flagReason", request.getReason());
+                updates.put("flaggedAt", System.currentTimeMillis());
+                updates.put("flaggedBy", request.getModeratorUserId());
+            }
             
-            future.complete(message);
+            // Update message in Firebase
+            messageRef.updateChildren(updates, (error, ref) -> {
+                if (error != null) {
+                    log.error("Failed to moderate message in Firebase: {}", error.getMessage());
+                    future.completeExceptionally(new RuntimeException("Failed to moderate message: " + error.getMessage()));
+                } else {
+                    log.info("Message {} successfully moderated with action: {}", messageId, action);
+                    
+                    // Log to Firestore for audit trail (optional)
+                    // firestore.collection("moderation_logs").add(moderationLog);
+                    
+                    String resultMessage = String.format("Message %s has been %s. Users will see the changes in real-time.", 
+                            messageId, action.toLowerCase());
+                    future.complete(resultMessage);
+                }
+            });
             
         } catch (Exception e) {
             log.error("Error moderating message: {}", e.getMessage(), e);
