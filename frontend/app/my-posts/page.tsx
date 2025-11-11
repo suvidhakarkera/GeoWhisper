@@ -127,8 +127,8 @@ export default function MyPostsPage() {
                 onChange={(e) => setSortBy(e.target.value as 'newest' | 'oldest')}
                 className="px-4 py-2 bg-black/50 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-cyan-500 transition-colors cursor-pointer"
               >
-                <option value="newest">Newest First</option>
-                <option value="oldest">Oldest First</option>
+                <option value="newest" className="text-xs sm:text-base">Newest First</option>
+                <option value="oldest" className="text-xs sm:text-base">Oldest First</option>
               </select>
             </div>
           </div>

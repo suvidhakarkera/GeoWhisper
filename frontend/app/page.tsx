@@ -23,11 +23,11 @@ export default function Home() {
     console.log(sessionStorage.getItem('zonesVisited'));
   }
   return (
-    <div className="min-h-screen bg-black text-white transition-colors duration-300">
+    <div className="min-h-screen bg-black text-white transition-colors duration-300 overflow-x-hidden w-full">
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative pt-32 pb-24 px-6 overflow-hidden">
+      <section className="relative pt-32 pb-24 px-4 sm:px-6 overflow-hidden">
         {/* Animated Grid Background */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-b from-blue-500/5 via-transparent to-transparent"></div>
@@ -51,12 +51,12 @@ export default function Home() {
             className="text-center mb-16"
           >
             {/* Subtitle Text */}
-            <p className="text-xl text-gray-400 mb-8">
+            <p className="text-base sm:text-xl text-gray-400 mb-6 sm:mb-8">
               AI-Powered Local Communities
             </p>
 
             {/* Main Heading */}
-            <h1 className="text-6xl md:text-8xl font-black mb-8 tracking-tight leading-tight">
+            <h1 className="text-4xl sm:text-6xl md:text-8xl font-black mb-6 sm:mb-8 tracking-tight leading-tight">
               Your Voice,
               <br />
               <span className="text-transparent bg-clip-text bg-linear-to-r from-blue-400/70 via-blue-400/70 to-blue-400/70">
@@ -65,19 +65,19 @@ export default function Home() {
             </h1>
 
             {/* Subtitle */}
-            <p className="text-xl md:text-2xl text-gray-400 mb-12 max-w-4xl mx-auto leading-relaxed">
+            <p className="text-base sm:text-xl md:text-2xl text-gray-400 mb-8 sm:mb-12 max-w-4xl mx-auto leading-relaxed px-2">
               Drop digital graffiti, discover local vibes, and chat with AI agents that know your neighborhood better than anyone else.
             </p>
 
             {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center px-2">
               <motion.button
                 onClick={() => router.push('/maps')}
                 whileHover={{ scale: 1.05, boxShadow: "0 0 30px rgba(96, 165, 250, 0.4)" }}
                 whileTap={{ scale: 0.95 }}
-                className="px-10 py-5 bg-white/5 hover:bg-white/10 backdrop-blur-sm border-2 border-gray-700 hover:border-blue-400 rounded-xl font-bold text-lg transition-all"
+                className="w-full sm:w-auto px-8 sm:px-10 py-4 sm:py-5 bg-white/5 hover:bg-white/10 backdrop-blur-sm border-2 border-gray-700 hover:border-blue-400 rounded-xl font-bold text-base sm:text-lg transition-all"
               >
-                <span className="relative z-10 flex items-center gap-2">
+                <span className="relative z-10 flex items-center justify-center gap-2">
                   <MapPin className="w-5 h-5" />
                   Explore the Map
                 </span>
@@ -91,25 +91,25 @@ export default function Home() {
                 }}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="px-10 py-5 bg-white/5 hover:bg-white/10 backdrop-blur-sm border-2 border-gray-700 hover:border-blue-400 rounded-xl font-bold text-lg transition-all"
+                className="w-full sm:w-auto px-8 sm:px-10 py-4 sm:py-5 bg-white/5 hover:bg-white/10 backdrop-blur-sm border-2 border-gray-700 hover:border-blue-400 rounded-xl font-bold text-base sm:text-lg transition-all"
               >
                 Learn More
               </motion.button>
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-3 gap-8 mt-20 max-w-3xl mx-auto">
+            <div className="grid grid-cols-3 gap-4 sm:gap-8 mt-12 sm:mt-20 max-w-3xl mx-auto px-2">
               <div className="text-center">
-                <div className="text-4xl font-bold text-transparent bg-clip-text bg-linear-to-r from-blue-400/70 via-blue-400/70 to-blue-400/70 mb-2">500m</div>
-                <div className="text-sm text-gray-500 uppercase tracking-wide">Range Radius</div>
+                <div className="text-2xl sm:text-4xl font-bold text-transparent bg-clip-text bg-linear-to-r from-blue-400/70 via-blue-400/70 to-blue-400/70 mb-1 sm:mb-2">500m</div>
+                <div className="text-[10px] sm:text-sm text-gray-500 uppercase tracking-wide">Range Radius</div>
               </div>
               <div className="text-center border-x border-gray-800">
-                <div className="text-4xl font-bold text-transparent bg-clip-text bg-linear-to-r from-blue-400/70 via-blue-400/70 to-blue-400/70 mb-2">AI</div>
-                <div className="text-sm text-gray-500 uppercase tracking-wide">Local Agents</div>
+                <div className="text-2xl sm:text-4xl font-bold text-transparent bg-clip-text bg-linear-to-r from-blue-400/70 via-blue-400/70 to-blue-400/70 mb-1 sm:mb-2">AI</div>
+                <div className="text-[10px] sm:text-sm text-gray-500 uppercase tracking-wide">Local Agents</div>
               </div>
               <div className="text-center">
-                <div className="text-4xl font-bold text-transparent bg-clip-text bg-linear-to-r from-blue-400/70 via-blue-400/70 to-blue-400/70 mb-2">24/7</div>
-                <div className="text-sm text-gray-500 uppercase tracking-wide">Active</div>
+                <div className="text-2xl sm:text-4xl font-bold text-transparent bg-clip-text bg-linear-to-r from-blue-400/70 via-blue-400/70 to-blue-400/70 mb-1 sm:mb-2">24/7</div>
+                <div className="text-[10px] sm:text-sm text-gray-500 uppercase tracking-wide">Active</div>
               </div>
             </div>
           </motion.div>
@@ -117,19 +117,19 @@ export default function Home() {
       </section>
 
       {/* Features Grid */}
-      <section className="py-24 px-6 bg-gradient-to-b from-transparent via-gray-900/50 to-transparent">
+      <section className="py-16 sm:py-24 px-4 sm:px-6 bg-gradient-to-b from-transparent via-gray-900/50 to-transparent">
         <div className="max-w-7xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="text-center mb-16"
+            className="text-center mb-12 sm:mb-16"
           >
-            <h2 className="text-4xl md:text-5xl font-bold mb-4">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">
               Powered by Intelligent AI
             </h2>
-            <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+            <p className="text-base sm:text-xl text-gray-400 max-w-2xl mx-auto px-2">
               Every location has its own AI guardian, moderator, and community manager
             </p>
           </motion.div>
@@ -161,19 +161,19 @@ export default function Home() {
       </section>
 
       {/* How It Works */}
-      <section id="how-it-works" className="py-24 px-6">
+      <section id="how-it-works" className="py-16 sm:py-24 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="text-center mb-20"
+            className="text-center mb-12 sm:mb-20"
           >
-            <h2 className="text-4xl md:text-5xl font-bold mb-4">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">
               How GeoWhisper Works
             </h2>
-            <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+            <p className="text-base sm:text-xl text-gray-400 max-w-2xl mx-auto px-2">
               Three simple steps to join hyper-local conversations
             </p>
           </motion.div>
@@ -208,21 +208,21 @@ export default function Home() {
       </section>
 
       {/* Why GeoWhisper */}
-      <section className="py-24 px-6 bg-gradient-to-b from-transparent via-blue-500/5 to-transparent">
+      <section className="py-16 sm:py-24 px-4 sm:px-6 bg-gradient-to-b from-transparent via-blue-500/5 to-transparent">
         <div className="max-w-7xl mx-auto">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
+          <div className="grid md:grid-cols-2 gap-8 sm:gap-12 items-center">
             <motion.div
               initial={{ opacity: 0, x: -30 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
             >
-              <h2 className="text-4xl md:text-5xl font-bold mb-6">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6">
                 Why Choose
                 <br />
                 <span className="text-transparent bg-clip-text bg-linear-to-r from-blue-400/70 via-blue-400/70 to-blue-400/70">GeoWhisper?</span>
               </h2>
-              <p className="text-xl text-gray-400 mb-8 leading-relaxed">
+              <p className="text-base sm:text-xl text-gray-400 mb-6 sm:mb-8 leading-relaxed">
                 Unlike global social networks, GeoWhisper creates intimate, location-specific communities where every conversation matters and AI enhances the experience.
               </p>
               
@@ -270,19 +270,19 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-24 px-6">
+      <section className="py-16 sm:py-24 px-4 sm:px-6">
         <div className="max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="text-center bg-gradient-to-br from-blue-500/10 to-blue-600/10 border border-blue-500/20 rounded-3xl p-12 backdrop-blur-sm"
+            className="text-center bg-gradient-to-br from-blue-500/10 to-blue-600/10 border border-blue-500/20 rounded-3xl p-8 sm:p-12 backdrop-blur-sm"
           >
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6">
               Ready to Whisper?
             </h2>
-            <p className="text-xl text-gray-400 mb-8 max-w-2xl mx-auto">
+            <p className="text-base sm:text-xl text-gray-400 mb-6 sm:mb-8 max-w-2xl mx-auto">
               Join thousands discovering what's happening right around them. Your location. Your community. Your AI agent.
             </p>
             
@@ -290,7 +290,7 @@ export default function Home() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={handleGetStarted}
-              className="px-12 py-5 bg-black/20 backdrop-blur-lg border-2 border-gray-600 text-white hover:border-blue-400 rounded-xl font-bold text-lg transition-all"
+              className="w-full sm:w-auto px-10 sm:px-12 py-4 sm:py-5 bg-black/20 backdrop-blur-lg border-2 border-gray-600 text-white hover:border-blue-400 rounded-xl font-bold text-base sm:text-lg transition-all"
             >
               Get Started Now
             </motion.button>
