@@ -260,6 +260,34 @@ class LocationService {
   }
 
   /**
+   * Get all towers (optimized - fetch once)
+   */
+  async getAllTowers(): Promise<Array<{ towerId: string; latitude: number; longitude: number; postCount: number }>> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/posts/towers`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          clusterRadiusMeters: 50,
+          maxPosts: 1000,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch towers');
+      }
+
+      const result = await response.json();
+      return result.data || [];
+    } catch (error) {
+      console.error('Error fetching all towers:', error);
+      return [];
+    }
+  }
+
+  /**
    * Check location permission status
    */
   async checkLocationPermission(): Promise<'granted' | 'denied' | 'prompt'> {

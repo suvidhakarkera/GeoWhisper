@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { ref, onValue, push, set, off } from 'firebase/database';
-import { Send, AlertTriangle, Flag, Trash2, EyeOff, Loader2 } from 'lucide-react';
+import { Send, AlertTriangle, Flag, Trash2, EyeOff, Loader2, Image as ImageIcon, X } from 'lucide-react';
 import { chatService, ChatMessage, ContentModerationResponse } from '@/services/chatService';
 import { database } from '@/config/firebase';
 
@@ -25,7 +25,10 @@ export default function TowerChat({
   const [checking, setChecking] = useState(false);
   const [moderationWarning, setModerationWarning] = useState<ContentModerationResponse | null>(null);
   const [dbError, setDbError] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Scroll to bottom when new messages arrive
   const scrollToBottom = () => {
@@ -61,6 +64,10 @@ export default function TowerChat({
             message: msg.message,
             timestamp: msg.timestamp,
             createdAt: msg.createdAt,
+            // Post-related fields
+            isPost: msg.isPost,
+            postId: msg.postId,
+            image: msg.image,
             // Moderation fields
             moderated: msg.moderated,
             moderationAction: msg.moderationAction,
@@ -91,28 +98,71 @@ export default function TowerChat({
     };
   }, [towerId]);
 
+  // Handle image selection
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please select a valid image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image size must be less than 5MB');
+      return;
+    }
+
+    setSelectedImage(file);
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Remove selected image
+  const handleRemoveImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   // Check message before sending
   const handleCheckMessage = async () => {
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() && !selectedImage) return;
 
     setChecking(true);
     setModerationWarning(null);
 
     try {
-      const result = await chatService.checkContent({
-        content: newMessage,
-        userId: currentUserId,
-        towerId: towerId,
-      });
+      // Only check text content if present
+      if (newMessage.trim()) {
+        const result = await chatService.checkContent({
+          content: newMessage,
+          userId: currentUserId,
+          towerId: towerId,
+        });
 
-      if (result.suggestedAction === 'BLOCK') {
-        setModerationWarning(result);
-      } else if (result.suggestedAction === 'WARN') {
-        setModerationWarning(result);
-      } else {
-        // Message is ok, send it
-        await sendMessage();
+        if (result.suggestedAction === 'BLOCK') {
+          setModerationWarning(result);
+          setChecking(false);
+          return;
+        } else if (result.suggestedAction === 'WARN') {
+          setModerationWarning(result);
+          setChecking(false);
+          return;
+        }
       }
+      
+      // Message is ok, send it
+      await sendMessage();
     } catch (error) {
       console.error('Error checking message:', error);
       // If check fails, send anyway (graceful degradation)
@@ -124,7 +174,7 @@ export default function TowerChat({
 
   // Send message to Firebase
   const sendMessage = async () => {
-    if (!newMessage.trim() || sending) return;
+    if ((!newMessage.trim() && !selectedImage) || sending) return;
 
     if (!database) {
       alert('Chat service not available. Firebase not configured.');
@@ -137,13 +187,36 @@ export default function TowerChat({
       const messagesRef = ref(database, `chats/${towerId}/messages`);
       const newMessageRef = push(messagesRef);
 
-      await set(newMessageRef, {
-        message: newMessage.trim(),
+      const messageData: any = {
+        message: newMessage.trim() || '📷 Photo',
         userId: currentUserId,
         username: currentUsername,
         timestamp: Date.now(),
         createdAt: new Date().toISOString(),
-      });
+      };
+
+      // If there's an image, convert to base64 and include it
+      if (selectedImage) {
+        const reader = new FileReader();
+        reader.onloadend = async () => {
+          messageData.image = reader.result as string;
+          messageData.hasImage = true;
+          
+          await set(newMessageRef, messageData);
+          
+          setNewMessage('');
+          setSelectedImage(null);
+          setImagePreview(null);
+          setModerationWarning(null);
+          setDbError(null);
+          setSending(false);
+        };
+        reader.readAsDataURL(selectedImage);
+        return; // Exit early, reader callback will handle the rest
+      }
+
+      // No image, just send text
+      await set(newMessageRef, messageData);
 
       setNewMessage('');
       setModerationWarning(null);
@@ -232,6 +305,8 @@ export default function TowerChat({
                   className={`max-w-[70%] rounded-lg p-3 ${
                     formatted.isModerated
                       ? 'bg-red-900/30 border border-red-700'
+                      : msg.isPost
+                      ? 'bg-cyan-900/40 border border-cyan-700' // Special styling for posts
                       : isOwnMessage
                       ? 'bg-blue-600'
                       : 'bg-gray-700'
@@ -240,11 +315,27 @@ export default function TowerChat({
                   {!formatted.isModerated && (
                     <div className="text-xs text-gray-300 mb-1 font-semibold">
                       {msg.username}
+                      {msg.isPost && (
+                        <span className="ml-2 text-cyan-400 text-xs">
+                          📍 Post
+                        </span>
+                      )}
                       {msg.flagged && isModerator && (
                         <span className="ml-2 text-yellow-400">
                           <Flag className="inline w-3 h-3" /> Flagged
                         </span>
                       )}
+                    </div>
+                  )}
+                  
+                  {/* Display image if present (for both posts and regular messages) */}
+                  {((msg as any).hasImage || msg.image) && (msg as any).image && !formatted.isModerated && (
+                    <div className="mb-2">
+                      <img 
+                        src={(msg as any).image} 
+                        alt="Chat attachment" 
+                        className="max-w-full h-auto rounded-lg max-h-64 object-cover"
+                      />
                     </div>
                   )}
                   
@@ -338,7 +429,45 @@ export default function TowerChat({
 
       {/* Input Area */}
       <div className="p-4 bg-gray-800 border-t border-gray-700">
+        {/* Image Preview */}
+        {imagePreview && (
+          <div className="mb-3 relative inline-block">
+            <img 
+              src={imagePreview} 
+              alt="Preview" 
+              className="max-h-32 rounded-lg border border-gray-600"
+            />
+            <button
+              onClick={handleRemoveImage}
+              className="absolute -top-2 -right-2 p-1 bg-red-600 hover:bg-red-700 rounded-full transition-colors"
+              type="button"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+        
         <div className="flex gap-2">
+          {/* Hidden file input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImageSelect}
+            className="hidden"
+          />
+          
+          {/* Image upload button */}
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={sending || checking}
+            className="px-3 py-2 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg transition-colors flex items-center gap-2"
+            type="button"
+            title="Add photo"
+          >
+            <ImageIcon className="w-5 h-5" />
+          </button>
+          
           <input
             type="text"
             value={newMessage}
@@ -355,7 +484,7 @@ export default function TowerChat({
           />
           <button
             onClick={handleCheckMessage}
-            disabled={!newMessage.trim() || sending || checking}
+            disabled={(!newMessage.trim() && !selectedImage) || sending || checking}
             className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg transition-colors flex items-center gap-2"
           >
             {sending || checking ? (
@@ -366,7 +495,7 @@ export default function TowerChat({
           </button>
         </div>
         <div className="text-xs text-gray-500 mt-2">
-          Messages are checked for inappropriate content before sending
+          Messages are checked for inappropriate content before sending • You can attach photos
         </div>
       </div>
     </div>

@@ -26,6 +26,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         // Public endpoints
                         .requestMatchers("/api/auth/**", "/api/health").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/posts").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/posts/**").permitAll()
                         .requestMatchers("/api/posts/**").permitAll()
                         .requestMatchers("/api/seed/**").permitAll()
                         .requestMatchers("/api/ai/**").permitAll()

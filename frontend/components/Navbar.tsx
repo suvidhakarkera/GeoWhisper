@@ -54,7 +54,6 @@ export default function Navbar() {
             <NavLink href="/">Home</NavLink>
             <NavLink href="/nearby">Nearby</NavLink>
             <NavLink href="/my-posts">My Posts</NavLink>
-            <NavLink href="/profile">Profile</NavLink>
             <NavLink href="/maps">Maps</NavLink>
           </div>
 
@@ -148,9 +147,7 @@ export default function Navbar() {
                 <MobileNavLink href="/my-posts" onClick={() => setMobileMenuOpen(false)}>
                   My Posts
                 </MobileNavLink>
-                <MobileNavLink href="/profile" onClick={() => setMobileMenuOpen(false)} isActive={pathname === '/profile'}>
-                  Profile
-                </MobileNavLink>
+               
                 <MobileNavLink href="/maps" onClick={() => setMobileMenuOpen(false)} isActive={pathname === '/maps'}>
                   Maps
                 </MobileNavLink>

@@ -1,6 +1,8 @@
 package com.geowhisper.geowhisperbackendnew.service;
 
 import com.google.cloud.firestore.*;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 import com.geowhisper.geowhisperbackendnew.dto.CreatePostRequest;
 import com.geowhisper.geowhisperbackendnew.dto.TowerResponse;
 import com.geowhisper.geowhisperbackendnew.model.Tower;
@@ -94,6 +96,12 @@ public class PostService {
         // Save to Firestore
         docRef.set(postData).get();
 
+        // Also add the post as a chat message to the tower's chat
+        long timestamp = System.currentTimeMillis();
+        addPostAsChatMessage(towerId, userId, username, request.getContent(), imageUrls, postId, timestamp);
+
+        // Replace FieldValue.serverTimestamp() with actual timestamp for the response
+        postData.put("createdAt", timestamp);
         postData.put("id", postId);
         return postData;
     }
@@ -141,9 +149,10 @@ public class PostService {
     public List<Map<String, Object>> getUserPosts(String userId)
             throws ExecutionException, InterruptedException {
 
+        // Query without orderBy to avoid needing a composite index
+        // Sorting will be done on the frontend
         QuerySnapshot querySnapshot = firestore.collection("posts")
                 .whereEqualTo("userId", userId)
-                .orderBy("createdAt", Query.Direction.DESCENDING)
                 .get()
                 .get();
 
@@ -157,6 +166,47 @@ public class PostService {
         }
 
         return posts;
+    }
+
+    /**
+     * Add a post as a chat message to the tower's chat in Firebase Realtime Database
+     */
+    private void addPostAsChatMessage(String towerId, String userId, String username, 
+                                      String content, List<String> imageUrls, 
+                                      String postId, long timestamp) {
+        try {
+            // Get reference to the tower's chat messages
+            DatabaseReference chatRef = FirebaseDatabase.getInstance()
+                    .getReference("chats")
+                    .child(towerId)
+                    .child("messages");
+
+            // Create a new message node
+            DatabaseReference newMessageRef = chatRef.push();
+
+            // Prepare message data
+            Map<String, Object> messageData = new HashMap<>();
+            messageData.put("userId", userId);
+            messageData.put("username", username);
+            messageData.put("message", "📍 Created a post: " + content);
+            messageData.put("timestamp", timestamp);
+            messageData.put("createdAt", new Date(timestamp).toString());
+            messageData.put("isPost", true); // Flag to identify this as a post
+            messageData.put("postId", postId); // Reference to the original post
+            
+            // Add image if available
+            if (imageUrls != null && !imageUrls.isEmpty()) {
+                messageData.put("image", imageUrls.get(0)); // Add first image URL
+            }
+
+            // Save asynchronously to Realtime Database
+            newMessageRef.setValueAsync(messageData);
+
+            System.out.println("✅ Added post " + postId + " as chat message in tower " + towerId);
+        } catch (Exception e) {
+            // Don't fail the post creation if chat message fails
+            System.err.println("⚠️ Failed to add post as chat message: " + e.getMessage());
+        }
     }
 
     public List<Map<String, Object>> getRecentPostsForZone(

@@ -63,18 +63,31 @@ class PostService {
    */
   async createPost(postData: CreatePostData, images?: File[]): Promise<Post> {
     // Try to get userId from different storage keys (backward compatibility)
-    const userId = localStorage.getItem('firebaseUid') || 
-                   sessionStorage.getItem('firebaseUid') ||
-                   localStorage.getItem('userId') ||
-                   sessionStorage.getItem('userId');
+    const firebaseUid = localStorage.getItem('firebaseUid') || sessionStorage.getItem('firebaseUid');
+    const userId = firebaseUid || localStorage.getItem('userId') || sessionStorage.getItem('userId');
     
     const username = localStorage.getItem('username') || 
                      sessionStorage.getItem('username') || 
                      'Anonymous';
 
-    if (!userId) {
+    console.log('Auth check:', {
+      firebaseUid,
+      userId,
+      username,
+      localStorageKeys: Object.keys(localStorage),
+      sessionStorageKeys: Object.keys(sessionStorage)
+    });
+
+    if (!userId || userId.trim() === '') {
       throw new Error('User not authenticated. Please sign in to create posts.');
     }
+    
+    if (!firebaseUid) {
+      console.warn('Warning: firebaseUid not found, using fallback userId');
+    }
+    
+    // Validate username
+    const validUsername = username && username.trim() !== '' ? username : 'Anonymous';
 
     // Use FormData for multipart/form-data (backend expects this)
     const formData = new FormData();
@@ -90,16 +103,30 @@ class PostService {
     }
 
     try {
+      console.log('Sending POST request to:', `${API_BASE_URL}/api/posts`);
+      console.log('Headers:', {
+        'X-User-Id': userId,
+        'X-Username': validUsername
+      });
+      console.log('FormData contents:', {
+        content: formData.get('content'),
+        latitude: formData.get('latitude'),
+        longitude: formData.get('longitude'),
+        images: images?.length || 0
+      });
+      
       const response = await fetch(`${API_BASE_URL}/api/posts`, {
         method: 'POST',
         headers: {
           'X-User-Id': userId,
-          'X-Username': username,
+          'X-Username': validUsername,
           // Don't set Content-Type - browser will set it with boundary for FormData
         },
         body: formData,
       });
 
+      console.log('Response status:', response.status, response.statusText);
+      
       if (!response.ok) {
         // Try to parse error as JSON, but handle cases where it's not JSON
         let errorMessage = 'Failed to create post';
@@ -149,7 +176,7 @@ class PostService {
    * Get posts by a specific user
    */
   async getUserPosts(userId: string): Promise<Post[]> {
-    const response = await fetch(`${API_BASE_URL}/posts/user/${userId}`, {
+    const response = await fetch(`${API_BASE_URL}/api/posts/user/${userId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

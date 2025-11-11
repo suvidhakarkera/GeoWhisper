@@ -2,10 +2,12 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import Map, { Marker, Popup } from 'react-map-gl';
-import { MapPin, Loader2, AlertCircle, X, Send, Camera, Image as ImageIcon, Reply } from 'lucide-react';
-import { postService, Tower, TowerPost } from '@/src/services/postService';
+import { MapPin, Loader2, AlertCircle, X } from 'lucide-react';
+import { postService, Tower } from '@/src/services/postService';
 import { TowerIcon } from './TowerIcon';
 import { motion, AnimatePresence } from 'framer-motion';
+import TowerChat from './TowerChat';
+import { useUser } from '@/contexts/UserContext';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
 interface MapViewProps {
@@ -21,6 +23,7 @@ interface UserLocation {
 }
 
 export default function MapView({ onLocationUpdate, onPostClick, onChatAccessChange }: MapViewProps) {
+  const { user, isAuthenticated } = useUser();
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -28,12 +31,7 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
   const [towers, setTowers] = useState<Tower[]>([]);
   const [selectedTower, setSelectedTower] = useState<Tower | null>(null);
   const [towersLoading, setTowersLoading] = useState(false);
-  const [messageText, setMessageText] = useState('');
-  const [selectedImages, setSelectedImages] = useState<File[]>([]);
-  const [replyingTo, setReplyingTo] = useState<TowerPost | null>(null);
   const mapRef = useRef<any>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || '';
 
@@ -160,58 +158,6 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
       });
     }
   }, [requestLocation]);
-
-  // Format timestamp for display
-  const formatTimestamp = (timestamp: { seconds: number; nanos: number }) => {
-    const date = new Date(timestamp.seconds * 1000);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMins / 60);
-    const diffDays = Math.floor(diffHours / 24);
-
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
-    return date.toLocaleDateString();
-  };
-
-  // Handle image selection from gallery
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    setSelectedImages(prev => [...prev, ...files].slice(0, 4)); // Max 4 images
-  };
-
-  // Handle camera capture
-  const handleCameraClick = () => {
-    cameraInputRef.current?.click();
-  };
-
-  // Handle gallery click
-  const handleGalleryClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  // Remove selected image
-  const removeImage = (index: number) => {
-    setSelectedImages(prev => prev.filter((_, i) => i !== index));
-  };
-
-  // Handle send message
-  const handleSendMessage = async () => {
-    if (!messageText.trim() && selectedImages.length === 0) return;
-    
-    // TODO: Implement actual post creation with reply support
-    console.log('Sending message:', messageText, 'Images:', selectedImages);
-    if (replyingTo) {
-      console.log('Reply to:', replyingTo.id, 'by', replyingTo.username);
-    }
-    
-    // Clear inputs
-    setMessageText('');
-    setSelectedImages([]);
-    setReplyingTo(null);
-  };
 
   // Render loading state
   if (loading) {
@@ -354,13 +300,13 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'tween', duration: 0.3, ease: 'easeInOut' }}
-            className="fixed top-[72px] md:top-0 right-0 bottom-0 w-full md:w-[400px] bg-gray-900 border-l border-gray-800 shadow-2xl z-50 overflow-hidden"
+            className="fixed top-[72px] md:top-0 right-0 bottom-0 w-full md:w-[400px] bg-gray-900 border-l border-gray-800 shadow-2xl z-50 overflow-hidden flex flex-col"
           >
             {/* Header */}
-            <div className="bg-gray-900 text-white p-3 md:p-6 flex items-center justify-between border-b border-gray-800">
+            <div className="bg-gray-900 text-white p-3 md:p-4 flex items-center justify-between border-b border-gray-800 flex-shrink-0">
               <div className="flex-1 min-w-0">
-                <h3 className="font-bold text-lg md:text-2xl truncate">Tower {selectedTower.towerId}</h3>
-                <p className="text-sm md:text-base text-gray-400">{selectedTower.postCount} posts</p>
+                <h3 className="font-bold text-lg md:text-xl truncate">Tower {selectedTower.towerId}</h3>
+                <p className="text-sm text-gray-400">Real-time chat</p>
               </div>
               <button
                 onClick={() => setSelectedTower(null)}
@@ -370,169 +316,28 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
               </button>
             </div>
             
-            {/* Posts content - scrollable */}
-            <div className="h-[calc(100%-60px-80px)] md:h-[calc(100%-96px-90px)] overflow-y-auto p-3 md:p-6 space-y-3 md:space-y-3.5 scrollbar-hide">
-              {selectedTower.posts.map((post) => (
-                <div
-                  key={post.id}
-                  className="bg-gray-800 rounded-xl p-3 md:p-3.5 border border-gray-700 hover:border-cyan-500 transition-all relative"
-                >
-                  {/* Comment icon at top right */}
-                  <div className="absolute top-3 md:top-3.5 right-3 md:right-3.5">
-                    <span className="flex items-center gap-1 md:gap-1.5 hover:text-cyan-400 transition-colors cursor-pointer text-gray-400">
-                      <span className="text-base md:text-lg">💬</span>
-                      <span className="font-medium text-xs md:text-sm">{post.commentCount}</span>
-                    </span>
-                  </div>
-
-                  <div className="flex items-start justify-between mb-2 md:mb-2.5 pr-12 md:pr-14">
-                    <div className="flex items-center gap-2 md:gap-2.5 min-w-0">
-                      <div className="w-8 h-8 md:w-9 md:h-9 bg-cyan-500 rounded-full flex items-center justify-center text-white text-xs md:text-sm font-bold flex-shrink-0">
-                        {post.username.charAt(0).toUpperCase()}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-semibold text-white text-sm md:text-sm truncate">{post.username}</p>
-                        <p className="text-[10px] md:text-xs text-gray-500">{formatTimestamp(post.createdAt)}</p>
-                      </div>
+            {/* Chat Content */}
+            <div className="flex-1 overflow-hidden">
+              {isAuthenticated && user ? (
+                <TowerChat
+                  towerId={selectedTower.towerId}
+                  currentUserId={user.firebaseUid}
+                  currentUsername={user.username}
+                  isModerator={false}
+                />
+              ) : (
+                <div className="h-full flex items-center justify-center p-8">
+                  <div className="text-center max-w-sm">
+                    <div className="w-16 h-16 bg-cyan-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <MapPin className="w-8 h-8 text-cyan-400" />
                     </div>
+                    <h3 className="text-xl font-bold mb-2">Sign in to Chat</h3>
+                    <p className="text-gray-400 text-sm">
+                      You need to be signed in to send messages and chat with others in this tower.
+                    </p>
                   </div>
-                  
-                  <p className="text-gray-300 text-sm md:text-sm mb-2 md:mb-2.5 leading-relaxed break-words">{post.content}</p>
-                  
-                  {post.images && post.images.length > 0 && (
-                    <div className="grid grid-cols-2 gap-2 mb-2 md:mb-2.5">
-                      {post.images.map((img, idx) => (
-                        <img
-                          key={idx}
-                          src={img}
-                          alt={`Post image ${idx + 1}`}
-                          className="w-full h-24 md:h-28 object-cover rounded-lg border border-gray-700"
-                        />
-                      ))}
-                    </div>
-                  )}
-                  
-                  {post.imageCount > 0 && (
-                    <div className="flex items-center gap-1 md:gap-1.5 text-cyan-400 text-xs md:text-sm pt-2 md:pt-2.5 border-t border-gray-700">
-                      <span className="text-base">📷</span>
-                      <span className="font-medium">{post.imageCount}</span>
-                    </div>
-                  )}
-
-                  {/* Reply Button */}
-                  <div className="pt-2 md:pt-2.5 border-t border-gray-700 mt-2 md:mt-2.5">
-                    <button
-                      onClick={() => setReplyingTo(post)}
-                      className="flex items-center gap-1.5 text-gray-400 hover:text-cyan-400 transition-colors text-xs md:text-sm"
-                    >
-                      <Reply className="w-4 h-4" />
-                      <span>Reply</span>
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Input Area - Fixed at bottom */}
-            <div className="absolute bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-800">
-              {/* Reply Banner */}
-              {replyingTo && (
-                <div className="p-2 md:p-3 border-b border-gray-800 bg-gray-800/50 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Reply className="w-4 h-4 text-cyan-400" />
-                    <span className="text-xs md:text-sm text-gray-300">
-                      Replying to <span className="text-cyan-400 font-semibold">@{replyingTo.username}</span>
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => setReplyingTo(null)}
-                    className="p-1 hover:bg-gray-700 rounded transition-colors"
-                    title="Cancel reply"
-                  >
-                    <X className="w-4 h-4 text-gray-400" />
-                  </button>
                 </div>
               )}
-
-              {/* Image Preview */}
-              {selectedImages.length > 0 && (
-                <div className="p-2 md:p-3 border-b border-gray-800 flex gap-2 overflow-x-auto">
-                  {selectedImages.map((img, idx) => (
-                    <div key={idx} className="relative flex-shrink-0">
-                      <img
-                        src={URL.createObjectURL(img)}
-                        alt={`Selected ${idx + 1}`}
-                        className="w-16 h-16 md:w-20 md:h-20 object-cover rounded-lg border border-gray-700"
-                      />
-                      <button
-                        onClick={() => removeImage(idx)}
-                        className="absolute -top-1 -right-1 p-2 bg-black/80 hover:bg-black rounded-lg transition-colors"
-                      >
-                        <X className="w-4 h-4 text-white" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Input Controls */}
-              <div className="p-2 md:p-3 flex items-end gap-2">
-                {/* Hidden file inputs */}
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleImageSelect}
-                  className="hidden"
-                />
-                <input
-                  ref={cameraInputRef}
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  onChange={handleImageSelect}
-                  className="hidden"
-                />
-
-                {/* Camera button */}
-                <button
-                  onClick={handleCameraClick}
-                  className="flex-shrink-0 p-1.5 md:p-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-400 rounded-lg transition-colors"
-                  title="Take photo"
-                >
-                  <Camera className="w-4 h-4 md:w-5 md:h-5" />
-                </button>
-
-                {/* Gallery button */}
-                <button
-                  onClick={handleGalleryClick}
-                  className="flex-shrink-0 p-1.5 md:p-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-400 rounded-lg transition-colors"
-                  title="Choose from gallery"
-                >
-                  <ImageIcon className="w-4 h-4 md:w-5 md:h-5" />
-                </button>
-
-                {/* Text input */}
-                <input
-                  type="text"
-                  value={messageText}
-                  onChange={(e) => setMessageText(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                  placeholder="Type a message..."
-                  className="flex-1 px-2 md:px-4 py-2 md:py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-sm md:text-base text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors"
-                />
-
-                {/* Send button */}
-                <button
-                  onClick={handleSendMessage}
-                  disabled={!messageText.trim() && selectedImages.length === 0}
-                  className="flex-shrink-0 p-1.5 md:p-2 bg-cyan-500 hover:bg-cyan-600 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg transition-colors"
-                  title="Send"
-                >
-                  <Send className="w-4 h-4 md:w-5 md:h-5" />
-                </button>
-              </div>
             </div>
           </motion.div>
         )}

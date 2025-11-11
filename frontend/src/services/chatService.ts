@@ -9,6 +9,11 @@ export interface ChatMessage {
   timestamp: number;
   createdAt?: string;
   
+  // Post-related fields
+  isPost?: boolean;
+  postId?: string;
+  image?: string;
+  
   // Moderation fields
   moderated?: boolean;
   moderationAction?: 'DELETED' | 'HIDDEN' | 'FLAGGED';
