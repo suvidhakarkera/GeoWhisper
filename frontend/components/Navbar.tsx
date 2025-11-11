@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useTheme } from 'next-themes';
 import { useUser } from '@/contexts/UserContext';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -14,6 +14,7 @@ export default function Navbar() {
   const { theme, setTheme } = useTheme();
   const { user, isAuthenticated, logout } = useUser();
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     setMounted(true);
@@ -138,7 +139,7 @@ export default function Navbar() {
               className="md:hidden overflow-hidden"
             >
               <div className="flex flex-col gap-2 pt-6 pb-4 border-t border-gray-800 mt-4">
-                <MobileNavLink href="/" onClick={() => setMobileMenuOpen(false)}>
+                <MobileNavLink href="/" onClick={() => setMobileMenuOpen(false)} isActive={pathname === '/'}>
                   Home
                 </MobileNavLink>
                 <MobileNavLink href="/nearby" onClick={() => setMobileMenuOpen(false)}>
@@ -147,10 +148,10 @@ export default function Navbar() {
                 <MobileNavLink href="/my-posts" onClick={() => setMobileMenuOpen(false)}>
                   My Posts
                 </MobileNavLink>
-                <MobileNavLink href="/profile" onClick={() => setMobileMenuOpen(false)}>
+                <MobileNavLink href="/profile" onClick={() => setMobileMenuOpen(false)} isActive={pathname === '/profile'}>
                   Profile
                 </MobileNavLink>
-                <MobileNavLink href="/maps" onClick={() => setMobileMenuOpen(false)}>
+                <MobileNavLink href="/maps" onClick={() => setMobileMenuOpen(false)} isActive={pathname === '/maps'}>
                   Maps
                 </MobileNavLink>
 
@@ -197,16 +198,20 @@ export default function Navbar() {
   );
 }
 
-function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
+function NavLink({ href, children, isActive }: { href: string; children: React.ReactNode; isActive: boolean }) {
   return (
     <Link href={href}>
       <motion.span
-        className="relative px-4 py-2 text-sm font-semibold text-gray-400 hover:text-white transition-colors cursor-pointer group"
+        className={`relative px-5 py-2.5 text-base font-semibold transition-colors cursor-pointer group ${
+          isActive ? 'text-white' : 'text-gray-400 hover:text-white'
+        }`}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
       >
         {children}
-        <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-gradient-to-r from-cyan-400 to-blue-500 group-hover:w-3/4 transition-all duration-300"></span>
+        <span className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 bg-gradient-to-r from-cyan-400 to-blue-500 transition-all duration-300 ${
+          isActive ? 'w-3/4' : 'w-0 group-hover:w-3/4'
+        }`}></span>
       </motion.span>
     </Link>
   );
@@ -215,20 +220,30 @@ function NavLink({ href, children }: { href: string; children: React.ReactNode }
 function MobileNavLink({ 
   href, 
   children, 
-  onClick 
+  onClick,
+  isActive
 }: { 
   href: string; 
   children: React.ReactNode;
   onClick: () => void;
+  isActive: boolean;
 }) {
   return (
     <Link href={href} onClick={onClick}>
       <motion.div
         whileTap={{ scale: 0.98 }}
-        className="px-4 py-3 text-sm font-semibold text-gray-300 hover:text-white hover:bg-gray-800/50 rounded-lg transition-all cursor-pointer flex items-center justify-between group"
+        className={`px-5 py-3.5 text-base font-semibold transition-all cursor-pointer flex items-center justify-between group rounded-lg ${
+          isActive 
+            ? 'text-white bg-gray-800/70 border border-cyan-500/30' 
+            : 'text-gray-300 hover:text-white hover:bg-gray-800/50'
+        }`}
       >
         {children}
-        <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-cyan-400 group-hover:translate-x-1 transition-all" />
+        <ChevronRight className={`w-5 h-5 transition-all ${
+          isActive 
+            ? 'text-cyan-400' 
+            : 'text-gray-600 group-hover:text-cyan-400 group-hover:translate-x-1'
+        }`} />
       </motion.div>
     </Link>
   );
