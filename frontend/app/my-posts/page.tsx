@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { User as UserIcon, Calendar, MapPin, Clock, Search, MessageCircle } from 'lucide-react';
+import { User as UserIcon, Calendar, MapPin, Clock, Search, MessageCircle, Trash2, X } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { postService, Post } from '@/src/services/postService';
 import { ref, query, orderByChild, equalTo, get } from 'firebase/database';
@@ -48,6 +48,23 @@ export default function MyPostsPage() {
       }, 100);
     }
   }, [authLoading, isAuthenticated, router, user]);
+
+  // Keyboard shortcut for search (Ctrl+K or Cmd+K)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        document.getElementById('search-input')?.focus();
+      }
+      // Escape to clear search
+      if (e.key === 'Escape' && searchQuery) {
+        setSearchQuery('');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [searchQuery]);
 
   const loadUserPosts = async () => {
     try {
@@ -141,6 +158,56 @@ export default function MyPostsPage() {
     }
   };
 
+  // Delete a post
+  const handleDeletePost = async (postId: string) => {
+    if (!confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
+      return;
+    }
+
+    if (!user?.firebaseUid) {
+      alert('User not authenticated');
+      return;
+    }
+
+    try {
+      await postService.deletePost(postId, user.firebaseUid);
+      
+      // Remove from local state immediately for better UX
+      setUserPosts(prev => prev.filter(post => post.id !== postId));
+      
+      alert('Post deleted successfully!');
+    } catch (error: any) {
+      console.error('Error deleting post:', error);
+      alert(error.message || 'Failed to delete post');
+    }
+  };
+
+  // Delete a chat message
+  const handleDeleteChatMessage = async (chatId: string, towerId: string) => {
+    if (!confirm('Are you sure you want to delete this message? This action cannot be undone.')) {
+      return;
+    }
+
+    if (!database) {
+      alert('Database not initialized');
+      return;
+    }
+
+    try {
+      const { ref: refFunc, remove } = await import('firebase/database');
+      const messageRef = refFunc(database, `chats/${towerId}/messages/${chatId}`);
+      await remove(messageRef);
+      
+      // Remove from local state immediately for better UX
+      setUserChats(prev => prev.filter(chat => chat.id !== chatId));
+      
+      alert('Message deleted successfully!');
+    } catch (error: any) {
+      console.error('Error deleting message:', error);
+      alert(error.message || 'Failed to delete message');
+    }
+  };
+
   // Format the member since date
   const getMemberSince = () => {
     if (!user?.createdAt) {
@@ -199,22 +266,32 @@ export default function MyPostsPage() {
     }
   };
 
-  // Filter and sort posts
+  // Filter and sort posts (enhanced search)
   const filteredPosts = userPosts
-    .filter(post => 
-      post.content.toLowerCase().includes(searchQuery.toLowerCase())
-    )
+    .filter(post => {
+      const query = searchQuery.toLowerCase();
+      return (
+        post.content.toLowerCase().includes(query) ||
+        (post.username && post.username.toLowerCase().includes(query)) ||
+        (post.towerId && post.towerId.toLowerCase().includes(query))
+      );
+    })
     .sort((a, b) => {
       const dateA = new Date(a.createdAt).getTime();
       const dateB = new Date(b.createdAt).getTime();
       return sortBy === 'newest' ? dateB - dateA : dateA - dateB;
     });
 
-  // Filter and sort chats
+  // Filter and sort chats (enhanced search)
   const filteredChats = userChats
-    .filter(chat => 
-      chat.message.toLowerCase().includes(searchQuery.toLowerCase())
-    )
+    .filter(chat => {
+      const query = searchQuery.toLowerCase();
+      return (
+        chat.message.toLowerCase().includes(query) ||
+        (chat.username && chat.username.toLowerCase().includes(query)) ||
+        (chat.towerId && chat.towerId.toLowerCase().includes(query))
+      );
+    })
     .sort((a, b) => {
       return sortBy === 'newest' ? b.timestamp - a.timestamp : a.timestamp - b.timestamp;
     });
@@ -294,16 +371,29 @@ export default function MyPostsPage() {
           {/* Search and Filter Bar */}
           <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 rounded-xl p-4 mb-6 shadow-lg">
             <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-              {/* Search */}
-              <div className="relative w-full sm:w-96">
+              {/* Enhanced Search */}
+              <div className="relative w-full sm:flex-1 sm:max-w-2xl">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
+                  id="search-input"
                   type="text"
-                  placeholder={`Search ${activeTab}...`}
+                  placeholder={`Search by content, username, or tower ID...`}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-black/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 transition-colors"
+                  className="w-full pl-10 pr-24 py-2.5 bg-black/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all"
                 />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-12 top-1/2 transform -translate-y-1/2 p-1 hover:bg-gray-700 rounded-full transition-colors"
+                    title="Clear search"
+                  >
+                    <X className="w-4 h-4 text-gray-400" />
+                  </button>
+                )}
+                <kbd className="absolute right-3 top-1/2 transform -translate-y-1/2 px-2 py-0.5 text-xs bg-gray-800 border border-gray-600 rounded text-gray-400 font-mono">
+                  {typeof navigator !== 'undefined' && navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'}+K
+                </kbd>
               </div>
 
               {/* Sort Dropdown */}
@@ -318,17 +408,29 @@ export default function MyPostsPage() {
             </div>
           </div>
 
-          {/* Content Header */}
+          {/* Content Header with Search Results */}
           <div className="mb-4">
             <h2 className="text-2xl font-bold text-gray-100 mb-1">
               {activeTab === 'all' ? 'All Activity' : activeTab === 'posts' ? 'Post History' : 'Chat History'}
             </h2>
-            <p className="text-gray-400 text-sm">
-              Showing {displayItems.length} items
-              {loadingPosts && loadingChats ? ' (loading posts and chats...)' : 
-               loadingPosts ? ' (loading posts...)' : 
-               loadingChats ? ' (loading chats...)' : ''}
-            </p>
+            <div className="flex items-center gap-2 text-sm">
+              <p className="text-gray-400">
+                Showing {displayItems.length} 
+                {searchQuery && (
+                  <>
+                    {' '}of {activeTab === 'all' ? userPosts.length + userChats.length : activeTab === 'posts' ? userPosts.length : userChats.length}
+                  </>
+                )} items
+                {loadingPosts && loadingChats ? ' (loading posts and chats...)' : 
+                 loadingPosts ? ' (loading posts...)' : 
+                 loadingChats ? ' (loading chats...)' : ''}
+              </p>
+              {searchQuery && (
+                <span className="px-2 py-0.5 bg-cyan-600/20 border border-cyan-600/30 rounded-full text-cyan-400 text-xs font-medium">
+                  Filtered by: &quot;{searchQuery}&quot;
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Content Grid - 3 Columns */}
@@ -401,6 +503,14 @@ export default function MyPostsPage() {
                     <div className="text-gray-400 text-xs">
                       {formatTimeDetailed(item.createdAt)}
                     </div>
+                    <button
+                      onClick={() => handleDeletePost(item.id)}
+                      className="flex items-center gap-1 px-3 py-1.5 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded-lg transition-colors text-xs"
+                      title="Delete this post"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      <span>Delete</span>
+                    </button>
                   </div>
                 </div>
               ) : (
@@ -445,6 +555,14 @@ export default function MyPostsPage() {
                     <div className="text-gray-400 text-xs">
                       {formatTimeDetailed(item.timestamp)}
                     </div>
+                    <button
+                      onClick={() => handleDeleteChatMessage(item.id, item.towerId)}
+                      className="flex items-center gap-1 px-3 py-1.5 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded-lg transition-colors text-xs"
+                      title="Delete this message"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      <span>Delete</span>
+                    </button>
                   </div>
                 </div>
               );

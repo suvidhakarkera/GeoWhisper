@@ -125,6 +125,12 @@ public class PostService {
             if (post == null)
                 continue;
 
+            // Filter out seeded posts
+            String userId = (String) post.get("userId");
+            if (userId != null && userId.startsWith("seed_user_")) {
+                continue;
+            }
+
             double postLat = ((Number) post.get("latitude")).doubleValue();
             double postLon = ((Number) post.get("longitude")).doubleValue();
 
@@ -169,11 +175,12 @@ public class PostService {
     }
 
     /**
-     * Add a post as a chat message to the tower's chat in Firebase Realtime Database
+     * Add a post as a chat message to the tower's chat in Firebase Realtime
+     * Database
      */
-    private void addPostAsChatMessage(String towerId, String userId, String username, 
-                                      String content, List<String> imageUrls, 
-                                      String postId, long timestamp) {
+    private void addPostAsChatMessage(String towerId, String userId, String username,
+            String content, List<String> imageUrls,
+            String postId, long timestamp) {
         try {
             // Get reference to the tower's chat messages
             DatabaseReference chatRef = FirebaseDatabase.getInstance()
@@ -193,7 +200,7 @@ public class PostService {
             messageData.put("createdAt", new Date(timestamp).toString());
             messageData.put("isPost", true); // Flag to identify this as a post
             messageData.put("postId", postId); // Reference to the original post
-            
+
             // Add image if available
             if (imageUrls != null && !imageUrls.isEmpty()) {
                 messageData.put("image", imageUrls.get(0)); // Add first image URL
@@ -256,10 +263,20 @@ public class PostService {
                 for (DocumentSnapshot doc : postSnapshot.getDocuments()) {
                     Map<String, Object> post = doc.getData();
                     if (post != null) {
+                        // Filter out seeded posts (userId starts with "seed_user_")
+                        String userId = (String) post.get("userId");
+                        if (userId != null && userId.startsWith("seed_user_")) {
+                            continue; // Skip seeded posts
+                        }
                         post.put("id", doc.getId());
                         posts.add(post);
                     }
                 }
+            }
+
+            // Only include tower if it has at least one non-seeded post
+            if (posts.isEmpty()) {
+                continue;
             }
 
             // Create tower response
@@ -313,7 +330,7 @@ public class PostService {
      */
     public List<Map<String, Object>> getPostsForTower(String towerId, Integer limit)
             throws ExecutionException, InterruptedException {
-        
+
         // Get tower to verify it exists and get post IDs
         Optional<Tower> towerOpt = towerService.getTowerById(towerId);
         if (towerOpt.isEmpty()) {
@@ -322,7 +339,7 @@ public class PostService {
 
         Tower tower = towerOpt.get();
         List<String> postIds = tower.getPostIds();
-        
+
         if (postIds == null || postIds.isEmpty()) {
             return List.of(); // No posts in this tower
         }
@@ -334,18 +351,23 @@ public class PostService {
         // Fetch post details
         List<Map<String, Object>> posts = new ArrayList<>();
         int batchSize = 10;
-        
+
         for (int i = 0; i < limitedPostIds.size(); i += batchSize) {
             List<String> batch = limitedPostIds.subList(i, Math.min(i + batchSize, limitedPostIds.size()));
-            
+
             QuerySnapshot postSnapshot = firestore.collection("posts")
                     .whereIn(FieldPath.documentId(), batch)
                     .get()
                     .get();
-            
+
             for (DocumentSnapshot doc : postSnapshot.getDocuments()) {
                 Map<String, Object> post = doc.getData();
                 if (post != null) {
+                    // Filter out seeded posts
+                    String postUserId = (String) post.get("userId");
+                    if (postUserId != null && postUserId.startsWith("seed_user_")) {
+                        continue;
+                    }
                     post.put("id", doc.getId());
                     posts.add(post);
                 }
@@ -410,9 +432,50 @@ public class PostService {
                 // Log but don't fail if tower update fails
                 System.err.println("Warning: Failed to update tower after post deletion: " + e.getMessage());
             }
+
+            // Delete the corresponding chat message (if it was added as a chat message)
+            try {
+                deletePostChatMessage(towerId, postId);
+            } catch (Exception e) {
+                // Log but don't fail if chat message deletion fails
+                System.err.println("Warning: Failed to delete chat message for post " + postId + ": " + e.getMessage());
+            }
         }
 
         return true;
+    }
+
+    /**
+     * Delete a post's chat message from Firebase Realtime Database
+     */
+    private void deletePostChatMessage(String towerId, String postId) {
+        try {
+            com.google.firebase.database.DatabaseReference chatRef = com.google.firebase.database.FirebaseDatabase
+                    .getInstance()
+                    .getReference("chats")
+                    .child(towerId)
+                    .child("messages");
+
+            // Query for messages with this postId
+            chatRef.orderByChild("postId").equalTo(postId).addListenerForSingleValueEvent(
+                    new com.google.firebase.database.ValueEventListener() {
+                        @Override
+                        public void onDataChange(com.google.firebase.database.DataSnapshot snapshot) {
+                            for (com.google.firebase.database.DataSnapshot childSnapshot : snapshot.getChildren()) {
+                                childSnapshot.getRef().removeValueAsync();
+                                System.out
+                                        .println("✅ Deleted chat message for post " + postId + " in tower " + towerId);
+                            }
+                        }
+
+                        @Override
+                        public void onCancelled(com.google.firebase.database.DatabaseError error) {
+                            System.err.println("❌ Error deleting chat message: " + error.getMessage());
+                        }
+                    });
+        } catch (Exception e) {
+            System.err.println("❌ Failed to delete chat message: " + e.getMessage());
+        }
     }
 
 }

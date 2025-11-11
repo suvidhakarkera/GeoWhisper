@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { ref, onValue, push, set, off } from 'firebase/database';
-import { Send, AlertTriangle, Flag, Trash2, EyeOff, Loader2, Image as ImageIcon, X } from 'lucide-react';
+import { Send, AlertTriangle, Flag, Trash2, EyeOff, Loader2, Image as ImageIcon, X, Sparkles, MessageSquare } from 'lucide-react';
 import { chatService, ChatMessage, ContentModerationResponse } from '@/services/chatService';
 import { database } from '@/config/firebase';
+import { API_BASE_URL } from '@/config/api';
 
 interface TowerChatProps {
   towerId: string;
@@ -27,6 +28,11 @@ export default function TowerChat({
   const [dbError, setDbError] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [chatSummary, setChatSummary] = useState<string | null>(null);
+  const [vibeSummary, setVibeSummary] = useState<string | null>(null);
+  const [loadingSummary, setLoadingSummary] = useState(false);
+  const [loadingVibe, setLoadingVibe] = useState(false);
+  const [showSummary, setShowSummary] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -239,6 +245,106 @@ export default function TowerChat({
     await sendMessage();
   };
 
+  // Fetch chat summary
+  const fetchChatSummary = async () => {
+    try {
+      setLoadingSummary(true);
+      
+      const response = await fetch(`${API_BASE_URL}/api/chat/summary`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          towerId: towerId,
+          messageLimit: 50 // Get summary of last 50 messages
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch chat summary');
+      }
+
+      const data = await response.json();
+      setChatSummary(data.summary || 'No summary available');
+      setShowSummary(true);
+    } catch (error) {
+      console.error('Error fetching chat summary:', error);
+      setChatSummary('Unable to generate summary at this time.');
+      setShowSummary(true);
+    } finally {
+      setLoadingSummary(false);
+    }
+  };
+
+  // Fetch vibe summary
+  const fetchVibeSummary = async () => {
+    try {
+      setLoadingVibe(true);
+      
+      const response = await fetch(`${API_BASE_URL}/api/ai/vibe-summary/tower/${towerId}?limit=20`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch vibe summary');
+      }
+
+      const data = await response.json();
+      setVibeSummary(data.data?.summary || data.summary || 'No vibe available');
+    } catch (error) {
+      console.error('Error fetching vibe summary:', error);
+      setVibeSummary('Unable to get vibe at this time.');
+    } finally {
+      setLoadingVibe(false);
+    }
+  };
+
+  // Delete a post
+  const handleDeletePost = async (postId: string) => {
+    if (!confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const { postService } = await import('@/services/postService');
+      await postService.deletePost(postId, currentUserId);
+      alert('Post deleted successfully!');
+      // The message will be automatically removed from the chat via Firebase listener
+    } catch (error: any) {
+      console.error('Error deleting post:', error);
+      alert(error.message || 'Failed to delete post');
+    }
+  };
+
+  // Delete a chat message
+  const handleDeleteChatMessage = async (messageId: string) => {
+    if (!confirm('Are you sure you want to delete this message? This action cannot be undone.')) {
+      return;
+    }
+
+    if (!database) {
+      alert('Database not initialized');
+      return;
+    }
+
+    try {
+      const messageRef = ref(database, `chats/${towerId}/messages/${messageId}`);
+      
+      // Import remove from firebase/database
+      const { remove } = await import('firebase/database');
+      await remove(messageRef);
+      
+      // The message will be automatically removed from the UI via Firebase listener
+    } catch (error: any) {
+      console.error('Error deleting message:', error);
+      alert(error.message || 'Failed to delete message');
+    }
+  };
+
   // Moderate message (moderator only)
   const handleModerateMessage = async (messageId: string, action: 'DELETE' | 'HIDE' | 'FLAG') => {
     if (!isModerator) return;
@@ -262,6 +368,58 @@ export default function TowerChat({
 
   return (
     <div className="flex flex-col h-full bg-gray-900 text-white">
+      {/* Summary Action Buttons */}
+      <div className="bg-gray-800 border-b border-gray-700 px-4 py-2">
+        <div className="flex gap-2 items-center justify-between">
+          <div className="flex gap-2">
+            <button
+              onClick={fetchChatSummary}
+              disabled={loadingSummary || messages.length === 0}
+              className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed rounded-lg text-sm transition-colors"
+              title="Generate AI chat summary"
+            >
+              <MessageSquare className="w-4 h-4" />
+              {loadingSummary ? 'Generating...' : 'Chat Summary'}
+            </button>
+            
+            <button
+              onClick={fetchVibeSummary}
+              disabled={loadingVibe}
+              className="flex items-center gap-2 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-700 disabled:cursor-not-allowed rounded-lg text-sm transition-colors"
+              title="Get vibe of this tower"
+            >
+              <Sparkles className="w-4 h-4" />
+              {loadingVibe ? 'Loading...' : 'Vibe Check'}
+            </button>
+          </div>
+          
+          {vibeSummary && (
+            <div className="text-sm text-purple-300 font-medium italic">
+              ✨ {vibeSummary}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Chat Summary Display */}
+      {showSummary && chatSummary && (
+        <div className="bg-gradient-to-r from-blue-900/40 to-cyan-900/40 border-b border-blue-700/50 px-4 py-3">
+          <div className="flex items-start gap-3">
+            <MessageSquare className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <h4 className="text-sm font-semibold text-blue-300 mb-1">Chat Summary</h4>
+              <p className="text-sm text-gray-200 whitespace-pre-wrap">{chatSummary}</p>
+            </div>
+            <button
+              onClick={() => setShowSummary(false)}
+              className="text-gray-400 hover:text-white transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Database Error Banner */}
       {dbError && (
         <div className="bg-red-900/50 border-b border-red-700 px-4 py-3">
@@ -352,6 +510,31 @@ export default function TowerChat({
                   <div className="text-xs text-gray-400 mt-1">
                     {new Date(msg.timestamp).toLocaleTimeString()}
                   </div>
+
+                  {/* Delete Button (for own messages) */}
+                  {isOwnMessage && !formatted.isModerated && (
+                    <div className="mt-2">
+                      {msg.isPost && msg.postId ? (
+                        <button
+                          onClick={() => handleDeletePost(msg.postId!)}
+                          className="flex items-center gap-1 text-red-400 hover:text-red-300 text-xs transition-colors"
+                          title="Delete this post"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          <span>Delete Post</span>
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleDeleteChatMessage(msg.messageId || msg.id)}
+                          className="flex items-center gap-1 text-red-400 hover:text-red-300 text-xs transition-colors"
+                          title="Delete this message"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          <span>Delete Message</span>
+                        </button>
+                      )}
+                    </div>
+                  )}
 
                   {/* Moderator Actions */}
                   {isModerator && !formatted.isModerated && (
