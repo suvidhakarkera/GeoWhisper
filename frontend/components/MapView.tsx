@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import Map, { Marker, Popup } from 'react-map-gl';
-import { MapPin, Loader2, AlertCircle, X, Send, Camera, Image as ImageIcon } from 'lucide-react';
+import { MapPin, Loader2, AlertCircle, X, Send, Camera, Image as ImageIcon, Reply } from 'lucide-react';
 import { postService, Tower, TowerPost } from '@/src/services/postService';
 import { TowerIcon } from './TowerIcon';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -30,6 +30,7 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
   const [towersLoading, setTowersLoading] = useState(false);
   const [messageText, setMessageText] = useState('');
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [replyingTo, setReplyingTo] = useState<TowerPost | null>(null);
   const mapRef = useRef<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -200,12 +201,16 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
   const handleSendMessage = async () => {
     if (!messageText.trim() && selectedImages.length === 0) return;
     
-    // TODO: Implement actual post creation
+    // TODO: Implement actual post creation with reply support
     console.log('Sending message:', messageText, 'Images:', selectedImages);
+    if (replyingTo) {
+      console.log('Reply to:', replyingTo.id, 'by', replyingTo.username);
+    }
     
     // Clear inputs
     setMessageText('');
     setSelectedImages([]);
+    setReplyingTo(null);
   };
 
   // Render loading state
@@ -413,12 +418,42 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
                       <span className="font-medium">{post.imageCount}</span>
                     </div>
                   )}
+
+                  {/* Reply Button */}
+                  <div className="pt-2 md:pt-2.5 border-t border-gray-700 mt-2 md:mt-2.5">
+                    <button
+                      onClick={() => setReplyingTo(post)}
+                      className="flex items-center gap-1.5 text-gray-400 hover:text-cyan-400 transition-colors text-xs md:text-sm"
+                    >
+                      <Reply className="w-4 h-4" />
+                      <span>Reply</span>
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
 
             {/* Input Area - Fixed at bottom */}
             <div className="absolute bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-800">
+              {/* Reply Banner */}
+              {replyingTo && (
+                <div className="p-2 md:p-3 border-b border-gray-800 bg-gray-800/50 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Reply className="w-4 h-4 text-cyan-400" />
+                    <span className="text-xs md:text-sm text-gray-300">
+                      Replying to <span className="text-cyan-400 font-semibold">@{replyingTo.username}</span>
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => setReplyingTo(null)}
+                    className="p-1 hover:bg-gray-700 rounded transition-colors"
+                    title="Cancel reply"
+                  >
+                    <X className="w-4 h-4 text-gray-400" />
+                  </button>
+                </div>
+              )}
+
               {/* Image Preview */}
               {selectedImages.length > 0 && (
                 <div className="p-2 md:p-3 border-b border-gray-800 flex gap-2 overflow-x-auto">
