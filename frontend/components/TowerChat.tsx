@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { getDatabase, ref, onValue, push, set, off } from 'firebase/database';
+import { ref, onValue, push, set, off } from 'firebase/database';
 import { Send, AlertTriangle, Flag, Trash2, EyeOff, Loader2 } from 'lucide-react';
 import { chatService, ChatMessage, ContentModerationResponse } from '@/services/chatService';
+import { database } from '@/config/firebase';
 
 interface TowerChatProps {
   towerId: string;
@@ -23,8 +24,8 @@ export default function TowerChat({
   const [sending, setSending] = useState(false);
   const [checking, setChecking] = useState(false);
   const [moderationWarning, setModerationWarning] = useState<ContentModerationResponse | null>(null);
+  const [dbError, setDbError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const database = getDatabase();
 
   // Scroll to bottom when new messages arrive
   const scrollToBottom = () => {
@@ -37,44 +38,58 @@ export default function TowerChat({
 
   // Listen for real-time messages
   useEffect(() => {
+    if (!database) {
+      console.error('Firebase Database not initialized');
+      setDbError('Chat service not available. Firebase not configured.');
+      return;
+    }
+
     const messagesRef = ref(database, `chats/${towerId}/messages`);
 
-    const unsubscribe = onValue(messagesRef, (snapshot) => {
-      const messagesData: ChatMessage[] = [];
-      
-      snapshot.forEach((childSnapshot) => {
-        const msg = childSnapshot.val();
-        messagesData.push({
-          id: childSnapshot.key!,
-          messageId: childSnapshot.key!,
-          userId: msg.userId,
-          username: msg.username,
-          message: msg.message,
-          timestamp: msg.timestamp,
-          createdAt: msg.createdAt,
-          // Moderation fields
-          moderated: msg.moderated,
-          moderationAction: msg.moderationAction,
-          moderationReason: msg.moderationReason,
-          moderatedAt: msg.moderatedAt,
-          moderatedBy: msg.moderatedBy,
-          hidden: msg.hidden,
-          flagged: msg.flagged,
-          flagReason: msg.flagReason,
-          flaggedAt: msg.flaggedAt,
-          flaggedBy: msg.flaggedBy,
+    const unsubscribe = onValue(
+      messagesRef, 
+      (snapshot) => {
+        const messagesData: ChatMessage[] = [];
+        
+        snapshot.forEach((childSnapshot) => {
+          const msg = childSnapshot.val();
+          messagesData.push({
+            id: childSnapshot.key!,
+            messageId: childSnapshot.key!,
+            userId: msg.userId,
+            username: msg.username,
+            message: msg.message,
+            timestamp: msg.timestamp,
+            createdAt: msg.createdAt,
+            // Moderation fields
+            moderated: msg.moderated,
+            moderationAction: msg.moderationAction,
+            moderationReason: msg.moderationReason,
+            moderatedAt: msg.moderatedAt,
+            moderatedBy: msg.moderatedBy,
+            hidden: msg.hidden,
+            flagged: msg.flagged,
+            flagReason: msg.flagReason,
+            flaggedAt: msg.flaggedAt,
+            flaggedBy: msg.flaggedBy,
+          });
         });
-      });
 
-      // Sort by timestamp
-      messagesData.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
-      setMessages(messagesData);
-    });
+        // Sort by timestamp
+        messagesData.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+        setMessages(messagesData);
+        setDbError(null);
+      },
+      (error) => {
+        console.error('Firebase onValue error:', error);
+        setDbError('Failed to load messages. Check Firebase permissions.');
+      }
+    );
 
     return () => {
       off(messagesRef);
     };
-  }, [towerId, database]);
+  }, [towerId]);
 
   // Check message before sending
   const handleCheckMessage = async () => {
@@ -111,6 +126,11 @@ export default function TowerChat({
   const sendMessage = async () => {
     if (!newMessage.trim() || sending) return;
 
+    if (!database) {
+      alert('Chat service not available. Firebase not configured.');
+      return;
+    }
+
     setSending(true);
 
     try {
@@ -127,9 +147,14 @@ export default function TowerChat({
 
       setNewMessage('');
       setModerationWarning(null);
-    } catch (error) {
+      setDbError(null);
+    } catch (error: any) {
       console.error('Error sending message:', error);
-      alert('Failed to send message. Please try again.');
+      const errorMsg = error?.code === 'PERMISSION_DENIED' 
+        ? 'Permission denied. Check Firebase Realtime Database rules.'
+        : 'Failed to send message. Please try again.';
+      alert(errorMsg);
+      setDbError(errorMsg);
     } finally {
       setSending(false);
     }
@@ -164,11 +189,31 @@ export default function TowerChat({
 
   return (
     <div className="flex flex-col h-full bg-gray-900 text-white">
+      {/* Database Error Banner */}
+      {dbError && (
+        <div className="bg-red-900/50 border-b border-red-700 px-4 py-3">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm text-red-200">{dbError}</p>
+              <p className="text-xs text-red-300 mt-1">Check browser console for details</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {messages.length === 0 ? (
           <div className="text-center text-gray-500 py-8">
-            No messages yet. Be the first to chat!
+            {dbError ? (
+              <>
+                <AlertTriangle className="w-12 h-12 mx-auto mb-2 text-red-500" />
+                <p>Unable to load messages</p>
+              </>
+            ) : (
+              <>No messages yet. Be the first to chat!</>
+            )}
           </div>
         ) : (
           messages.map((msg) => {

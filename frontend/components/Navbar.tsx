@@ -51,6 +51,7 @@ export default function Navbar() {
           {/* Desktop Navigation Links */}
           <div className="hidden md:flex items-center gap-6">
             <NavLink href="/">Home</NavLink>
+            <NavLink href="/nearby">Nearby</NavLink>
             <NavLink href="/my-posts">My Posts</NavLink>
             <NavLink href="/profile">Profile</NavLink>
             <NavLink href="/maps">Maps</NavLink>
@@ -139,6 +140,9 @@ export default function Navbar() {
               <div className="flex flex-col gap-2 pt-6 pb-4 border-t border-gray-800 mt-4">
                 <MobileNavLink href="/" onClick={() => setMobileMenuOpen(false)}>
                   Home
+                </MobileNavLink>
+                <MobileNavLink href="/nearby" onClick={() => setMobileMenuOpen(false)}>
+                  Nearby Towers
                 </MobileNavLink>
                 <MobileNavLink href="/my-posts" onClick={() => setMobileMenuOpen(false)}>
                   My Posts

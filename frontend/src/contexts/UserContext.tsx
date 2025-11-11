@@ -67,6 +67,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     
     // Also store individual fields for backward compatibility
     storage.setItem('firebaseUid', userData.firebaseUid);
+    storage.setItem('userId', userData.firebaseUid); // Store as userId as well for services
     storage.setItem('userEmail', userData.email);
     storage.setItem('username', userData.username);
   };
@@ -76,7 +77,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     setUser(null);
 
     // Clear all auth data from both storages
-    ['authToken', 'userData', 'firebaseUid', 'userEmail', 'username', 'rememberMe'].forEach(key => {
+    ['authToken', 'userData', 'firebaseUid', 'userId', 'userEmail', 'username', 'rememberMe'].forEach(key => {
       localStorage.removeItem(key);
       sessionStorage.removeItem(key);
     });

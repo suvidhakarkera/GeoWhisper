@@ -10,6 +10,7 @@
 
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
 import { getAuth, Auth, GoogleAuthProvider } from 'firebase/auth';
+import { getDatabase, Database } from 'firebase/database';
 
 /**
  * Firebase configuration object
@@ -30,6 +31,8 @@ const firebaseConfig = {
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || '',
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '',
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || '',
+  databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL || 
+    `https://${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || ''}-default-rtdb.firebaseio.com`,
 };
 
 /**
@@ -79,6 +82,7 @@ const isFirebaseConfigured = (): boolean => {
 let app: FirebaseApp | undefined;
 let auth: Auth | undefined;
 let googleProvider: GoogleAuthProvider | undefined;
+let database: Database | undefined;
 
 // Only initialize on client-side (not during SSR)
 if (typeof window !== 'undefined') {
@@ -96,6 +100,11 @@ if (typeof window !== 'undefined') {
       // Initialize Firebase Authentication
       auth = getAuth(app);
       console.log('✅ Firebase Auth initialized');
+      
+      // Initialize Firebase Realtime Database
+      database = getDatabase(app);
+      console.log('✅ Firebase Realtime Database initialized');
+      console.log('📝 Database URL:', firebaseConfig.databaseURL);
       
       // Initialize Google Auth Provider
       googleProvider = new GoogleAuthProvider();
@@ -131,12 +140,14 @@ if (typeof window !== 'undefined') {
  * Export Firebase instances for use in components
  * 
  * Usage:
- * import { auth, googleProvider } from '@/config/firebase';
+ * import { auth, googleProvider, database } from '@/config/firebase';
  * import { signInWithPopup } from 'firebase/auth';
+ * import { ref, push, set } from 'firebase/database';
  * 
  * const result = await signInWithPopup(auth, googleProvider);
+ * const messagesRef = ref(database, 'chats/towerId/messages');
  */
-export { auth, googleProvider, isFirebaseConfigured };
+export { auth, googleProvider, database, isFirebaseConfigured };
 
 // Extra: export a status helper for UI diagnostics
 export const firebaseConfigStatus = () => {

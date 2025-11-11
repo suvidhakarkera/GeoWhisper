@@ -6,15 +6,18 @@ import { motion } from 'framer-motion';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { postService } from '@/src/services/postService';
-import { MapPin, Send, Loader2, AlertCircle } from 'lucide-react';
+import { locationService, UserLocation } from '@/services/locationService';
+import { MapPin, Send, Loader2, AlertCircle, Navigation, CheckCircle } from 'lucide-react';
 
 export default function CreatePostPage() {
   const router = useRouter();
   const [content, setContent] = useState('');
-  const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [location, setLocation] = useState<UserLocation | null>(null);
   const [loading, setLoading] = useState(false);
   const [locationLoading, setLocationLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isInTower, setIsInTower] = useState(false);
+  const [towerInfo, setTowerInfo] = useState<string | null>(null);
 
   useEffect(() => {
     // Check authentication
@@ -26,10 +29,21 @@ export default function CreatePostPage() {
 
     // Get user's current location
     setLocationLoading(true);
-    postService
+    locationService
       .getCurrentLocation()
-      .then((loc) => {
+      .then(async (loc) => {
         setLocation(loc);
+        
+        // Check if user is in a tower
+        const tower = await locationService.findUserTower(loc);
+        if (tower) {
+          setIsInTower(true);
+          setTowerInfo(`Tower ${tower.towerId} (${Math.round(tower.distance)}m away, ${tower.postCount} posts)`);
+        } else {
+          setIsInTower(false);
+          setTowerInfo('Your post will create a new tower here!');
+        }
+        
         setLocationLoading(false);
       })
       .catch((err) => {
@@ -103,27 +117,52 @@ export default function CreatePostPage() {
           )}
 
           {/* Location Status */}
-          <div className="mb-6 p-4 bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 rounded-xl">
-            <div className="flex items-center space-x-3">
-              <MapPin className={`w-5 h-5 ${location ? 'text-cyan-400' : 'text-gray-500'}`} />
-              <div className="flex-1">
-                {locationLoading ? (
-                  <div className="flex items-center space-x-2">
-                    <Loader2 className="w-4 h-4 animate-spin text-cyan-400" />
-                    <span className="text-gray-400 text-sm">Getting your location...</span>
-                  </div>
-                ) : location ? (
-                  <div>
-                    <p className="text-sm text-gray-400">Location captured</p>
-                    <p className="text-xs text-gray-500 font-mono">
-                      {location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}
-                    </p>
-                  </div>
-                ) : (
-                  <p className="text-sm text-red-400">Location unavailable</p>
-                )}
+          <div className="mb-6 space-y-3">
+            <div className="p-4 bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 rounded-xl">
+              <div className="flex items-center space-x-3">
+                <Navigation className={`w-5 h-5 ${location ? 'text-cyan-400' : 'text-gray-500'}`} />
+                <div className="flex-1">
+                  {locationLoading ? (
+                    <div className="flex items-center space-x-2">
+                      <Loader2 className="w-4 h-4 animate-spin text-cyan-400" />
+                      <span className="text-gray-400 text-sm">Getting your location...</span>
+                    </div>
+                  ) : location ? (
+                    <div>
+                      <p className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4 text-green-400" />
+                        Location captured
+                      </p>
+                      <p className="text-xs text-gray-500 font-mono mt-1">
+                        {location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}
+                        {location.accuracy && ` (±${Math.round(location.accuracy)}m)`}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-red-400">Location unavailable</p>
+                  )}
+                </div>
               </div>
             </div>
+
+            {/* Tower Status */}
+            {!locationLoading && towerInfo && (
+              <div className={`p-4 rounded-xl border ${
+                isInTower 
+                  ? 'bg-green-900/20 border-green-700/50' 
+                  : 'bg-blue-900/20 border-blue-700/50'
+              }`}>
+                <div className="flex items-center space-x-3">
+                  <MapPin className={`w-5 h-5 ${isInTower ? 'text-green-400' : 'text-blue-400'}`} />
+                  <div className="flex-1">
+                    <p className={`text-sm font-medium ${isInTower ? 'text-green-400' : 'text-blue-400'}`}>
+                      {isInTower ? 'Posting to existing tower' : 'Creating new tower'}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-1">{towerInfo}</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Post Form */}

@@ -61,31 +61,67 @@ class PostService {
   /**
    * Create a new post
    */
-  async createPost(postData: CreatePostData): Promise<Post> {
-    const userId = localStorage.getItem('userId');
-    const username = localStorage.getItem('username') || 'Anonymous';
+  async createPost(postData: CreatePostData, images?: File[]): Promise<Post> {
+    // Try to get userId from different storage keys (backward compatibility)
+    const userId = localStorage.getItem('firebaseUid') || 
+                   sessionStorage.getItem('firebaseUid') ||
+                   localStorage.getItem('userId') ||
+                   sessionStorage.getItem('userId');
+    
+    const username = localStorage.getItem('username') || 
+                     sessionStorage.getItem('username') || 
+                     'Anonymous';
 
     if (!userId) {
-      throw new Error('User not authenticated');
+      throw new Error('User not authenticated. Please sign in to create posts.');
     }
 
-    const response = await fetch(`${API_BASE_URL}/posts`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-User-Id': userId,
-        'X-Username': username,
-      },
-      body: JSON.stringify(postData),
-    });
+    // Use FormData for multipart/form-data (backend expects this)
+    const formData = new FormData();
+    formData.append('content', postData.content);
+    formData.append('latitude', postData.latitude.toString());
+    formData.append('longitude', postData.longitude.toString());
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to create post');
+    // Add images if provided
+    if (images && images.length > 0) {
+      images.forEach((image) => {
+        formData.append('images', image);
+      });
     }
 
-    const result = await response.json();
-    return result.data;
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/posts`, {
+        method: 'POST',
+        headers: {
+          'X-User-Id': userId,
+          'X-Username': username,
+          // Don't set Content-Type - browser will set it with boundary for FormData
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        // Try to parse error as JSON, but handle cases where it's not JSON
+        let errorMessage = 'Failed to create post';
+        try {
+          const error = await response.json();
+          errorMessage = error.message || errorMessage;
+        } catch (e) {
+          // Response wasn't JSON, use default message
+          errorMessage = `Failed to create post: ${response.status} ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
+      }
+
+      const result = await response.json();
+      return result.data;
+    } catch (error: any) {
+      // Handle network errors (backend not running, etc.)
+      if (error.message.includes('Failed to fetch') || error.name === 'TypeError') {
+        throw new Error('Cannot connect to server. Please ensure the backend is running at ' + API_BASE_URL);
+      }
+      throw error;
+    }
   }
 
   /**
