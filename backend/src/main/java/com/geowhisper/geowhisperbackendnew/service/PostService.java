@@ -254,4 +254,115 @@ public class PostService {
         return towerStats;
     }
 
+    /**
+     * Get posts for a specific tower (for vibe summary)
+     * 
+     * @param towerId The ID of the tower
+     * @param limit   Maximum number of recent posts to fetch (default: 20)
+     * @return List of posts for the tower
+     */
+    public List<Map<String, Object>> getPostsForTower(String towerId, Integer limit)
+            throws ExecutionException, InterruptedException {
+        
+        // Get tower to verify it exists and get post IDs
+        Optional<Tower> towerOpt = towerService.getTowerById(towerId);
+        if (towerOpt.isEmpty()) {
+            throw new IllegalArgumentException("Tower not found: " + towerId);
+        }
+
+        Tower tower = towerOpt.get();
+        List<String> postIds = tower.getPostIds();
+        
+        if (postIds == null || postIds.isEmpty()) {
+            return List.of(); // No posts in this tower
+        }
+
+        // Limit the number of posts
+        int maxPosts = limit != null ? Math.min(limit, postIds.size()) : Math.min(20, postIds.size());
+        List<String> limitedPostIds = postIds.subList(Math.max(0, postIds.size() - maxPosts), postIds.size());
+
+        // Fetch post details
+        List<Map<String, Object>> posts = new ArrayList<>();
+        int batchSize = 10;
+        
+        for (int i = 0; i < limitedPostIds.size(); i += batchSize) {
+            List<String> batch = limitedPostIds.subList(i, Math.min(i + batchSize, limitedPostIds.size()));
+            
+            QuerySnapshot postSnapshot = firestore.collection("posts")
+                    .whereIn(FieldPath.documentId(), batch)
+                    .get()
+                    .get();
+            
+            for (DocumentSnapshot doc : postSnapshot.getDocuments()) {
+                Map<String, Object> post = doc.getData();
+                if (post != null) {
+                    post.put("id", doc.getId());
+                    posts.add(post);
+                }
+            }
+        }
+
+        return posts;
+    }
+
+    /**
+     * Delete a post
+     * 
+     * @param postId The ID of the post to delete
+     * @param userId The ID of the user requesting deletion (for authorization)
+     * @return true if deleted, false if user is not authorized
+     * @throws IllegalArgumentException if post not found
+     */
+    public boolean deletePost(String postId, String userId)
+            throws ExecutionException, InterruptedException {
+
+        // Get the post document
+        DocumentReference postRef = firestore.collection("posts").document(postId);
+        DocumentSnapshot postDoc = postRef.get().get();
+
+        if (!postDoc.exists()) {
+            throw new IllegalArgumentException("Post not found with ID: " + postId);
+        }
+
+        Map<String, Object> postData = postDoc.getData();
+        if (postData == null) {
+            throw new IllegalArgumentException("Post data is null");
+        }
+
+        // Check authorization - only post owner can delete
+        String postOwnerId = (String) postData.get("userId");
+        if (!userId.equals(postOwnerId)) {
+            return false; // Not authorized
+        }
+
+        // Get tower ID before deletion
+        String towerId = (String) postData.get("towerId");
+
+        // Delete associated images from storage
+        List<String> imageUrls = (List<String>) postData.get("images");
+        if (imageUrls != null && !imageUrls.isEmpty()) {
+            try {
+                storageService.deleteImages(imageUrls);
+            } catch (Exception e) {
+                // Log but don't fail deletion if image deletion fails
+                System.err.println("Warning: Failed to delete images for post " + postId + ": " + e.getMessage());
+            }
+        }
+
+        // Delete the post from Firestore
+        postRef.delete().get();
+
+        // Remove post from tower
+        if (towerId != null && !towerId.isEmpty()) {
+            try {
+                towerService.removePostFromTower(towerId, postId);
+            } catch (Exception e) {
+                // Log but don't fail if tower update fails
+                System.err.println("Warning: Failed to update tower after post deletion: " + e.getMessage());
+            }
+        }
+
+        return true;
+    }
+
 }

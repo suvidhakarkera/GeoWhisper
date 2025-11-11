@@ -67,9 +67,9 @@ public class ChatSummaryService {
                 return future;
             }
             
-            // Extract message texts and count unique participants
+            // Extract message texts with usernames and count unique participants
             List<String> messageTexts = messages.stream()
-                    .map(ChatMessage::getMessage)
+                    .map(msg -> msg.getUsername() + ": " + msg.getMessage())
                     .collect(Collectors.toList());
             
             int uniqueParticipants = (int) messages.stream()
@@ -77,11 +77,13 @@ public class ChatSummaryService {
                     .distinct()
                     .count();
             
-            String messagesText = String.join("\n- ", messageTexts);
+            // Format messages as a bulleted list for better AI comprehension
+            String messagesText = "- " + String.join("\n- ", messageTexts);
             String timeRange = getTimeRangeString(request);
             
             log.info("Processing {} messages from {} participants for tower: {}", 
                     messages.size(), uniqueParticipants, request.getTowerId());
+            log.debug("Messages being sent to AI:\n{}", messagesText);
             
             final int messageCount = messages.size();
             final int participantCount = uniqueParticipants;
@@ -89,11 +91,15 @@ public class ChatSummaryService {
             openAIService.generateChatSummary(messagesText, messageCount, timeRange)
                     .thenAccept(aiResponse -> {
                 try {
+                    log.info("AI Response received:\n{}", aiResponse);
+                    
                     // Parse AI response
                     String summary = extractSection(aiResponse, "SUMMARY:");
                     String topicsStr = extractSection(aiResponse, "TOPICS:");
                     String sentiment = extractSection(aiResponse, "SENTIMENT:");
                     String insights = extractSection(aiResponse, "INSIGHTS:");
+                    
+                    log.debug("Extracted - Summary: {}, Topics: {}, Sentiment: {}", summary, topicsStr, sentiment);
                     
                     List<String> topics = Arrays.stream(topicsStr.split(","))
                             .map(String::trim)
