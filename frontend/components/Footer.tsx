@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Github, Twitter, MessageCircle, MapPin, Heart, ExternalLink } from 'lucide-react';
+import { Github, MapPin, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 
 interface FooterProps {
@@ -10,13 +10,13 @@ interface FooterProps {
 
 export default function Footer({ hideOnMobile = true }: FooterProps) {
   return (
-    <footer className={`relative border-t border-gray-800/50 bg-gradient-to-b from-black to-gray-900/50 mt-24 ${hideOnMobile ? 'hidden md:block' : ''}`}>
+    <footer className={`relative border-t border-gray-800/50 bg-gradient-to-b from-black to-gray-900/50 mt-16 ${hideOnMobile ? 'hidden md:block' : ''}`}>
       {/* Decorative top border */}
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent"></div>
       
-      <div className="max-w-7xl mx-auto px-6 py-12">
+      <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Main Footer Content */}
-        <div className="grid md:grid-cols-2 gap-12 mb-8">
+        <div className="grid md:grid-cols-2 gap-8 mb-6">
           {/* Brand Column */}
           <div className="md:col-span-1">
             <Link href="/">
@@ -42,46 +42,34 @@ export default function Footer({ hideOnMobile = true }: FooterProps) {
           </div>
 
           {/* Right Column - Features and Social Links */}
-          <div className="flex flex-col justify-end gap-6 items-end">
+          <div className="flex flex-col justify-end gap-4 items-start md:items-end">
             {/* Product Links */}
-            <div>
-              <ul className="flex flex-row gap-6 justify-end">
-                <FooterLink href="/features">Features</FooterLink>
-                <FooterLink href="/hot-zones">Hot Zones</FooterLink>
-                <FooterLink href="/pricing">Pricing</FooterLink>
-                <FooterLink href="/roadmap">Roadmap</FooterLink>
+            <div className="w-full">
+              <ul className="flex flex-row flex-wrap gap-4 sm:gap-6 justify-start md:justify-end">
+                <FooterLink href="/">Home</FooterLink>
+                <FooterLink href="/nearby">Nearby</FooterLink>
+                <FooterLink href="/my-posts">My Posts</FooterLink>
+                <FooterLink href="/maps">Maps</FooterLink>
               </ul>
             </div>
             
             {/* Social Links */}
-            <div className="flex justify-end">
-              <div className="flex items-center gap-4">
-                <span className="text-sm text-gray-500">Follow us:</span>
-                <div className="flex items-center gap-3">
-                  <SocialIcon 
-                    href="https://github.com" 
-                    icon={<Github className="w-5 h-5" />}
-                    label="GitHub"
-                  />
-                  <SocialIcon 
-                    href="https://twitter.com" 
-                    icon={<Twitter className="w-5 h-5" />}
-                    label="Twitter"
-                  />
-                  <SocialIcon 
-                    href="https://discord.com" 
-                    icon={<MessageCircle className="w-5 h-5" />}
-                    label="Discord"
-                  />
-                </div>
+            <div className="flex justify-start md:justify-end w-full">
+              <div className="flex items-center gap-3 sm:gap-4">
+                <span className="text-xs sm:text-sm text-gray-500">Follow us:</span>
+                <SocialIcon 
+                  href="https://github.com/Sankirthan-R/GeoWhisper" 
+                  icon={<Github className="w-5 h-5" />}
+                  label="GitHub"
+                />
               </div>
             </div>
           </div>
         </div>
 
         {/* Bottom Bar */}
-        <div className="border-t border-gray-800/50 pt-8">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="border-t border-gray-800/50 pt-6">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-3">
             <div className="text-sm text-gray-500 flex items-center gap-2">
               <span>© 2025 GeoWhisper. All rights reserved.</span>
               

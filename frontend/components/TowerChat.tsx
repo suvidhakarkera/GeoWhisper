@@ -48,6 +48,16 @@ export default function TowerChat({
   useEffect(() => {
     const getUserLocation = async () => {
       setCheckingPermissions(true);
+      
+      // Check if geolocation is available
+      if (!navigator.geolocation) {
+        console.error('Geolocation is not supported by this browser');
+        setLocationError('Geolocation is not supported by your browser.');
+        setCanInteract(false);
+        setCheckingPermissions(false);
+        return;
+      }
+      
       try {
         const position = await new Promise<GeolocationPosition>((resolve, reject) => {
           navigator.geolocation.getCurrentPosition(resolve, reject, {
@@ -89,9 +99,39 @@ export default function TowerChat({
           setCanInteract(false);
           setLocationError('Unable to verify your location permissions');
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error getting location:', error);
-        setLocationError('Unable to get your location. Interaction may be restricted.');
+        
+        // Provide more specific error messages
+        let errorMessage = 'Unable to get your location. Interaction may be restricted.';
+        
+        // Check if it's a GeolocationPositionError
+        if (error && typeof error === 'object' && 'code' in error) {
+          switch (error.code) {
+            case 1: // PERMISSION_DENIED
+              errorMessage = 'Location permission denied. Please enable location access in your browser settings to interact with this tower.';
+              console.log('Location permission denied by user');
+              break;
+            case 2: // POSITION_UNAVAILABLE
+              errorMessage = 'Location information is unavailable. Please check your device settings.';
+              console.log('Position unavailable');
+              break;
+            case 3: // TIMEOUT
+              errorMessage = 'Location request timed out. Please try again.';
+              console.log('Geolocation timeout');
+              break;
+            default:
+              errorMessage = 'Failed to get location. Please ensure location services are enabled.';
+          }
+        } else if (!navigator.geolocation) {
+          errorMessage = 'Geolocation is not supported by your browser.';
+          console.log('Geolocation not supported');
+        } else {
+          // Generic error
+          console.log('Unknown geolocation error:', error);
+        }
+        
+        setLocationError(errorMessage);
         setCanInteract(false);
       } finally {
         setCheckingPermissions(false);
@@ -127,12 +167,19 @@ export default function TowerChat({
         
         snapshot.forEach((childSnapshot) => {
           const msg = childSnapshot.val();
+          
+          // Remove "Created a post:" prefix from post messages
+          let messageText = msg.message;
+          if (messageText && messageText.startsWith('Created a post:')) {
+            messageText = messageText.replace('Created a post:', '').trim();
+          }
+          
           messagesData.push({
             id: childSnapshot.key!,
             messageId: childSnapshot.key!,
             userId: msg.userId,
             username: msg.username,
-            message: msg.message,
+            message: messageText,
             timestamp: msg.timestamp,
             createdAt: msg.createdAt,
             // Post-related fields
@@ -589,40 +636,67 @@ export default function TowerChat({
             if (!formatted.shouldShow) return null;
 
             const isOwnMessage = msg.userId === currentUserId;
+            
+            // Get user initials for avatar
+            const getInitials = (username: string) => {
+              if (!username) return '?';
+              const parts = username.split('_');
+              if (parts.length >= 2) {
+                return (parts[0][0] + parts[1][0]).toUpperCase();
+              }
+              return username.substring(0, 2).toUpperCase();
+            };
 
             return (
               <div
                 key={msg.id}
                 className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} group`}
               >
-                <div
-                  className={`max-w-[75%] rounded-2xl p-3 shadow-lg transition-all ${
-                    formatted.isModerated
-                      ? 'bg-gradient-to-br from-red-900/40 to-red-800/40 border border-red-500/30 backdrop-blur-sm'
-                      : msg.isPost
-                      ? 'bg-gradient-to-br from-cyan-900/50 to-blue-900/50 border border-cyan-500/30 backdrop-blur-sm' // Special styling for posts
-                      : isOwnMessage
-                      ? 'bg-gradient-to-br from-blue-600 to-blue-700 shadow-blue-500/30'
-                      : 'bg-gradient-to-br from-gray-700/80 to-gray-800/80 backdrop-blur-sm border border-gray-600/30'
-                  }`}
-                >
-                  {!formatted.isModerated && (
-                    <div className="text-xs text-gray-300 mb-2 font-semibold flex items-center gap-2">
-                      <span className={isOwnMessage ? 'text-blue-200' : 'text-gray-200'}>
+                <div className="flex flex-col gap-1 max-w-[75%]">
+                  {/* Avatar and username above the message for other users */}
+                  {!isOwnMessage && (
+                    <div className="flex items-center gap-2 px-2">
+                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-slate-600 to-slate-700 border border-slate-500/30 flex items-center justify-center text-white text-xs font-bold shadow-md">
+                        {getInitials(msg.username)}
+                      </div>
+                      <span className="text-xs font-semibold text-gray-300">
                         {msg.username}
                       </span>
-                      {msg.isPost && (
+                    </div>
+                  )}
+                  
+                  <div
+                    className={`relative rounded-2xl p-3 shadow-lg transition-all ${
+                      formatted.isModerated
+                        ? 'bg-gradient-to-br from-red-900/40 to-red-800/40 border border-red-500/30 backdrop-blur-sm'
+                        : msg.isPost
+                        ? 'bg-gradient-to-br from-cyan-900/50 to-blue-900/50 border border-cyan-500/30 backdrop-blur-sm' // Special styling for posts
+                        : isOwnMessage
+                        ? 'bg-[#2d3e50] backdrop-blur-sm'
+                        : 'bg-gradient-to-br from-gray-700/80 to-gray-800/80 backdrop-blur-sm border border-gray-600/30'
+                    }`}
+                  >
+                    {/* Chat bubble tail/pointer */}
+                    {!isOwnMessage ? (
+                      // Left tail for other users' messages
+                      <div className="absolute -left-2 top-4 w-0 h-0 border-t-[8px] border-t-transparent border-r-[10px] border-r-gray-700/80 border-b-[8px] border-b-transparent"></div>
+                    ) : (
+                      // Right tail for own messages
+                      <div className="absolute -right-2 top-4 w-0 h-0 border-t-[8px] border-t-transparent border-l-[10px] border-l-[#2d3e50] border-b-[8px] border-b-transparent"></div>
+                    )}
+                    
+                    {!formatted.isModerated && msg.isPost && (
+                      <div className="text-xs text-gray-300 mb-2 font-semibold flex items-center gap-2">
                         <span className="px-2 py-0.5 bg-cyan-500/20 text-cyan-300 text-xs rounded-full font-medium">
                           📍 Post
                         </span>
-                      )}
-                      {msg.flagged && isModerator && (
-                        <span className="px-2 py-0.5 bg-yellow-500/20 text-yellow-400 text-xs rounded-full font-medium">
-                          <Flag className="inline w-3 h-3" /> Flagged
-                        </span>
-                      )}
-                    </div>
-                  )}
+                        {msg.flagged && isModerator && (
+                          <span className="px-2 py-0.5 bg-yellow-500/20 text-yellow-400 text-xs rounded-full font-medium">
+                            <Flag className="inline w-3 h-3" /> Flagged
+                          </span>
+                        )}
+                      </div>
+                    )}
                   
                   {/* Display image if present (for both posts and regular messages) */}
                   {((msg as any).hasImage || msg.image) && (msg as any).image && !formatted.isModerated && (
@@ -645,36 +719,34 @@ export default function TowerChat({
                     </div>
                   )}
 
+                  {/* Delete Button (for own messages) - Top Right */}
+                  {isOwnMessage && !formatted.isModerated && (
+                    <div>
+                      {msg.isPost && msg.postId ? (
+                        <button
+                          onClick={() => handleDeletePost(msg.postId!)}
+                          className="absolute top-2 right-2 p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 rounded-lg transition-all duration-300 border border-red-500/20 hover:border-red-500/40 opacity-0 group-hover:opacity-100"
+                          title="Delete this post"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleDeleteChatMessage(msg.messageId || msg.id)}
+                          className="absolute top-2 right-2 p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 rounded-lg transition-all duration-300 border border-red-500/20 hover:border-red-500/40 opacity-0 group-hover:opacity-100"
+                          title="Delete this message"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  )}
+
                   <div className={`text-xs mt-2 flex items-center justify-between ${isOwnMessage ? 'text-blue-200' : 'text-gray-400'}`}>
                     <span className="opacity-75">
                       {new Date(msg.timestamp).toLocaleTimeString()}
                     </span>
                   </div>
-
-                  {/* Delete Button (for own messages) */}
-                  {isOwnMessage && !formatted.isModerated && (
-                    <div className="mt-2">
-                      {msg.isPost && msg.postId ? (
-                        <button
-                          onClick={() => handleDeletePost(msg.postId!)}
-                          className="flex items-center gap-1.5 px-2.5 py-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 text-xs font-medium rounded-lg transition-all border border-red-500/20 hover:border-red-500/30"
-                          title="Delete this post"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                          <span>Delete Post</span>
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => handleDeleteChatMessage(msg.messageId || msg.id)}
-                          className="flex items-center gap-1.5 px-2.5 py-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 text-xs font-medium rounded-lg transition-all border border-red-500/20 hover:border-red-500/30"
-                          title="Delete this message"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                          <span>Delete Message</span>
-                        </button>
-                      )}
-                    </div>
-                  )}
 
                   {/* Moderator Actions */}
                   {isModerator && !formatted.isModerated && (
@@ -702,6 +774,7 @@ export default function TowerChat({
                       </button>
                     </div>
                   )}
+                </div>
                 </div>
               </div>
             );

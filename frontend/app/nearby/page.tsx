@@ -7,6 +7,7 @@ import { locationService, UserLocation, NearbyTower } from '@/services/locationS
 import TowerChat from '@/components/TowerChat';
 import { useUser } from '@/contexts/UserContext';
 import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 import PostCreationModal, { PostData } from '@/components/PostCreationModal';
 import { postService } from '@/src/services/postService';
 
@@ -442,6 +443,8 @@ export default function NearbyPage() {
         userLocation={userLocation ? { latitude: userLocation.latitude, longitude: userLocation.longitude } : null}
         onSubmit={handlePostSubmit}
       />
+
+      <Footer />
     </div>
   );
 }

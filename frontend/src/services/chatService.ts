@@ -116,6 +116,12 @@ class ChatService {
     isModerated: boolean;
     moderationReason?: string;
   } {
+    // Remove "Created a post:" prefix from message text if present
+    let messageText = message.message;
+    if (messageText && messageText.startsWith('Created a post:')) {
+      messageText = messageText.replace('Created a post:', '').trim();
+    }
+    
     // Check if message is moderated
     if (message.moderated) {
       if (message.moderationAction === 'DELETED') {
@@ -147,7 +153,7 @@ class ChatService {
     // Check if message is flagged (for moderators)
     if (message.flagged && isModerator) {
       return {
-        displayMessage: message.message,
+        displayMessage: messageText,
         shouldShow: true,
         isModerated: false,
         moderationReason: `Flagged: ${message.flagReason}`,
@@ -156,7 +162,7 @@ class ChatService {
 
     // Normal message
     return {
-      displayMessage: message.message,
+      displayMessage: messageText,
       shouldShow: true,
       isModerated: false,
     };

@@ -24,7 +24,7 @@ export default function ProfilePage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [userPosts, setUserPosts] = useState<Post[]>([]);
   const [recentZones, setRecentZones] = useState<RecentZone[]>([]);
-  const [loadingActivity, setLoadingActivity] = useState(true);
+  const [loadingActivity, setLoadingActivity] = useState(false); // Start as false for instant display
   const [totalChats, setTotalChats] = useState(0);
 
   useEffect(() => {
@@ -44,19 +44,23 @@ export default function ProfilePage() {
     if (!user?.firebaseUid) return;
     
     try {
-      setLoadingActivity(true);
+      // Don't set loading to true - let the page display immediately
       
-      // Load user's posts
-      const posts = await postService.getUserPosts(user.firebaseUid);
-      setUserPosts(posts);
+      // Load user's posts in parallel with zones (don't wait)
+      const postsPromise = postService.getUserPosts(user.firebaseUid);
       
-      // Load user's chat activity and find recent zones
-      await loadRecentZones();
+      // Show initial counts from user object immediately
+      postsPromise.then(posts => {
+        setUserPosts(posts);
+      }).catch(error => {
+        console.error('Failed to load posts:', error);
+      });
+      
+      // Load recent zones asynchronously (doesn't block initial display)
+      loadRecentZones();
       
     } catch (error) {
       console.error('Failed to load user activity:', error);
-    } finally {
-      setLoadingActivity(false);
     }
   };
 
@@ -64,21 +68,20 @@ export default function ProfilePage() {
     if (!user?.firebaseUid || !database) return;
     
     try {
-      // Get all towers
+      // Get all towers (this is async and won't block the page load)
       const towersResponse = await postService.getTowers();
       const towers = towersResponse.data || [];
       
       // Map to track zone activity
       const zoneActivity = new Map<string, RecentZone>();
       
-      // Limit to checking only first 20 towers to reduce load time
-      const towersToCheck = towers.slice(0, 20);
+      // Only check first 10 towers for better performance
+      const towersToCheck = towers.slice(0, 10);
       
-      // Check each tower for user's posts and chats
+      // Check each tower for user's posts only (skip chats for performance)
       for (const tower of towersToCheck) {
         const towerId = tower.towerId;
         let postCount = 0;
-        let chatCount = 0;
         let lastActivity = 0;
         
         // Count user's posts in this tower
@@ -95,13 +98,12 @@ export default function ProfilePage() {
           }
         }
         
-        // Skip chat loading to improve performance - just count posts
         // If user has activity in this zone, add it
         if (postCount > 0) {
           zoneActivity.set(towerId, {
             towerId,
             postCount,
-            chatCount: 0, // Skip chat counting for performance
+            chatCount: 0,
             lastActivity,
           });
         }
@@ -110,11 +112,9 @@ export default function ProfilePage() {
       // Convert to array and sort by last activity
       const sortedZones = Array.from(zoneActivity.values())
         .sort((a, b) => b.lastActivity - a.lastActivity)
-        .slice(0, 4); // Get top 4 most recent zones
+        .slice(0, 4);
       
       setRecentZones(sortedZones);
-      
-      // Set total chats to 0 for now (can be calculated separately if needed)
       setTotalChats(0);
       
     } catch (error) {
@@ -178,8 +178,19 @@ export default function ProfilePage() {
     return (
       <div className="min-h-screen bg-black text-white">
         <Navbar />
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-gray-400">Loading profile...</div>
+        <div className="w-full px-4 sm:px-6 lg:px-8 pt-20 pb-8">
+          <div className="mx-auto w-full max-w-[1200px]">
+            <div className="flex items-center justify-center mb-4 sm:mb-6 md:mb-8">
+              <h1 className="text-lg sm:text-xl md:text-2xl font-semibold">Profile</h1>
+            </div>
+            <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl sm:rounded-2xl border border-gray-700 p-4 sm:p-6 md:p-8 lg:p-12 shadow-2xl">
+              <div className="flex flex-col items-center">
+                <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 lg:w-40 lg:h-40 rounded-full bg-gradient-to-br from-purple-700/50 to-indigo-700/50 border border-gray-600 animate-pulse"></div>
+                <div className="mt-4 h-8 w-48 bg-gray-700 rounded animate-pulse"></div>
+                <div className="mt-2 h-4 w-32 bg-gray-700 rounded animate-pulse"></div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
