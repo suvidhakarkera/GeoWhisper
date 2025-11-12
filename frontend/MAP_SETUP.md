@@ -38,14 +38,14 @@ npm run dev
 When you visit the `/maps` page:
 1. Browser will ask for location permission
 2. Click "Allow" to enable location access
-3. The map will center on your location with a 500m radius
+3. The map will center on your location with a 550m radius
 
 ## Features Implemented
 
 ### MapView Component (`components/MapView.tsx`)
 - ✅ Real-time user location tracking
 - ✅ Geolocation permission handling
-- ✅ 500-meter radius circle visualization
+- ✅ 550-meter radius circle visualization
 - ✅ User location marker with animation
 - ✅ Location info card
 - ✅ Error handling for all edge cases:

@@ -272,8 +272,7 @@ export default function MyPostsPage() {
       const query = searchQuery.toLowerCase();
       return (
         post.content.toLowerCase().includes(query) ||
-        (post.username && post.username.toLowerCase().includes(query)) ||
-        (post.towerId && post.towerId.toLowerCase().includes(query))
+        (post.username && post.username.toLowerCase().includes(query))
       );
     })
     .sort((a, b) => {

@@ -13,6 +13,7 @@ interface TowerChatProps {
   currentUsername: string;
   isModerator?: boolean;
   postCount?: number;
+  isCurrentTower?: boolean; // Whether this is the tower the user is currently in (within 550m)
 }
 
 export default function TowerChat({ 
@@ -20,7 +21,8 @@ export default function TowerChat({
   currentUserId, 
   currentUsername, 
   isModerator = false,
-  postCount = 0
+  postCount = 0,
+  isCurrentTower = false
 }: TowerChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
@@ -46,7 +48,7 @@ export default function TowerChat({
 
   // Get user location on mount
   useEffect(() => {
-    const getUserLocation = async () => {
+    const getUserLocation = async (retryCount = 0) => {
       setCheckingPermissions(true);
       
       // Check if geolocation is available
@@ -59,11 +61,20 @@ export default function TowerChat({
       }
       
       try {
+        // Always get user location first (needed for sending messages)
         const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+          if (!navigator.geolocation) {
+            reject(new Error('Geolocation is not supported by your browser'));
+            return;
+          }
+          
+          // Try with high accuracy first, then fall back to lower accuracy if needed
+          const useHighAccuracy = retryCount === 0;
+          
           navigator.geolocation.getCurrentPosition(resolve, reject, {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 30000,
+            enableHighAccuracy: useHighAccuracy,
+            timeout: useHighAccuracy ? 15000 : 20000, // More time for retry
+            maximumAge: useHighAccuracy ? 60000 : 120000, // Accept older cache on retry
           });
         });
 
@@ -72,6 +83,15 @@ export default function TowerChat({
           longitude: position.coords.longitude,
         };
         setUserLocation(location);
+
+        // If this is the user's current tower, automatically grant access
+        if (isCurrentTower) {
+          console.log('This is the current tower - automatically granting interaction access');
+          setCanInteract(true);
+          setDistanceFromTower(0); // User is within the tower
+          setCheckingPermissions(false);
+          return;
+        }
 
         // Check if user can interact with this tower and get distance
         console.log('Checking interaction permission for tower:', towerId, 'at location:', location);
@@ -139,7 +159,7 @@ export default function TowerChat({
     };
 
     getUserLocation();
-  }, [towerId]);
+  }, [towerId, isCurrentTower]);
 
   // Scroll to bottom when new messages arrive
   const scrollToBottom = () => {
@@ -295,7 +315,14 @@ export default function TowerChat({
     if ((!newMessage.trim() && !selectedImage) || sending) return;
 
     if (!userLocation) {
-      alert('Unable to send message. Location not available.');
+      console.error('User location not available:', userLocation);
+      alert('Unable to send message. Location not available. Please refresh the page and allow location access.');
+      return;
+    }
+
+    if (!userLocation.latitude || !userLocation.longitude) {
+      console.error('Invalid coordinates:', userLocation);
+      alert('Unable to send message. Invalid location coordinates.');
       return;
     }
 
@@ -307,6 +334,9 @@ export default function TowerChat({
     setSending(true);
 
     try {
+      // Use the existing user location (already validated)
+      const currentLocation = userLocation;
+
       let imageData: string | undefined;
 
       // If there's an image, convert to base64
@@ -320,12 +350,21 @@ export default function TowerChat({
       }
 
       // Send message through backend API
-      console.log('Sending message to tower:', towerId, 'from location:', userLocation);
+      console.log('=== SENDING MESSAGE ===');
+      console.log('Tower ID:', towerId);
+      console.log('User location:', {
+        latitude: currentLocation.latitude,
+        longitude: currentLocation.longitude
+      });
+      console.log('Is current tower:', isCurrentTower);
+      console.log('Can interact:', canInteract);
+      console.log('Distance from tower:', distanceFromTower, 'm');
+      
       const result = await chatService.sendMessage(
         towerId,
         newMessage.trim() || '📷 Photo',
-        userLocation.latitude,
-        userLocation.longitude,
+        currentLocation.latitude,
+        currentLocation.longitude,
         imageData
       );
 
@@ -511,11 +550,15 @@ export default function TowerChat({
               <div className="relative z-[100]">
                 <button
                   onClick={() => setShowRangePopup(!showRangePopup)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 backdrop-blur-sm rounded-lg text-xs font-medium transition-all border-2 border-gray-700 hover:border-blue-400 text-white whitespace-nowrap"
+                  className={`flex items-center gap-1.5 px-3 py-1.5 backdrop-blur-sm rounded-lg text-xs font-medium transition-all border-2 text-white whitespace-nowrap ${
+                    locationError 
+                      ? 'bg-red-500/10 hover:bg-red-500/20 border-red-500/50 hover:border-red-500' 
+                      : 'bg-white/5 hover:bg-white/10 border-gray-700 hover:border-blue-400'
+                  }`}
                   title="Click for details"
                 >
-                  <EyeOff className="w-3.5 h-3.5" />
-                  <span>View Only</span>
+                  {locationError ? <AlertTriangle className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                  <span>{locationError ? 'Location Error' : 'View Only'}</span>
                 </button>
 
                 {/* Popup - Click outside to close, positioned to stay within screen */}
@@ -533,10 +576,12 @@ export default function TowerChat({
                         </div>
                         <div className="flex-1">
                           <h4 className="font-bold text-white text-sm mb-2">
-                            View Only Mode
+                            {locationError ? 'Location Access Required' : 'View Only Mode'}
                           </h4>
                           <p className="text-xs text-gray-300 mb-2 leading-relaxed">
-                            {distanceFromTower ? (
+                            {locationError ? (
+                              <>{locationError}</>
+                            ) : distanceFromTower ? (
                               <>
                                 You are <span className="font-bold text-blue-400">{Math.round(distanceFromTower)}m</span> away from this tower.
                               </>
@@ -544,9 +589,11 @@ export default function TowerChat({
                               <>Checking your location...</>
                             )}
                           </p>
-                          <p className="text-xs text-gray-400 leading-relaxed">
-                            You are outside the 550m range. You can view messages but cannot send messages or interact with content.
-                          </p>
+                          {!locationError && (
+                            <p className="text-xs text-gray-400 leading-relaxed">
+                              You are outside the 550m range. You can view messages but cannot send messages or interact with content.
+                            </p>
+                          )}
                           <button
                             onClick={() => setShowRangePopup(false)}
                             className="mt-4 w-full px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg text-sm font-medium transition-all border-2 border-gray-700 hover:border-blue-400"
