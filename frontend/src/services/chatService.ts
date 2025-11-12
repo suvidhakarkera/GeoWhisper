@@ -197,14 +197,27 @@ class ChatService {
         }),
       });
 
-      const result = await response.json();
-
+      // Handle empty responses
       if (!response.ok) {
+        let errorMessage = 'Failed to send message';
+        try {
+          const result = await response.json();
+          errorMessage = result.message || errorMessage;
+        } catch (jsonError) {
+          // If JSON parsing fails, use a generic error based on status
+          if (response.status === 403) {
+            errorMessage = 'You must be within 550m of the tower to send messages';
+          } else if (response.status === 500) {
+            errorMessage = 'Server error. Please try again.';
+          }
+        }
         return {
           success: false,
-          error: result.message || 'Failed to send message',
+          error: errorMessage,
         };
       }
+
+      const result = await response.json();
 
       return {
         success: true,

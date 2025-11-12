@@ -100,7 +100,7 @@ export default function Home() {
             {/* Stats */}
             <div className="grid grid-cols-3 gap-4 sm:gap-8 mt-12 sm:mt-20 max-w-3xl mx-auto px-2">
               <div className="text-center">
-                <div className="text-2xl sm:text-4xl font-bold text-transparent bg-clip-text bg-linear-to-r from-blue-400/70 via-blue-400/70 to-blue-400/70 mb-1 sm:mb-2">500m</div>
+                <div className="text-2xl sm:text-4xl font-bold text-transparent bg-clip-text bg-linear-to-r from-blue-400/70 via-blue-400/70 to-blue-400/70 mb-1 sm:mb-2">550m</div>
                 <div className="text-[10px] sm:text-sm text-gray-500 uppercase tracking-wide">Range Radius</div>
               </div>
               <div className="text-center border-x border-gray-800">
@@ -186,7 +186,7 @@ export default function Home() {
               number="01"
               icon={<Compass className="w-8 h-8" />}
               title="Drop Your Pin"
-              description="Share your location and see what's happening within 500 meters of you"
+              description="Share your location and see what's happening within 550 meters of you"
               delay={0.1}
             />
             <StepCard
@@ -256,7 +256,7 @@ export default function Home() {
                 <div className="h-full flex items-center justify-center">
                   <div className="text-center">
                     <MapPin className="w-32 h-32 text-blue-400 mx-auto mb-6" />
-                    <p className="text-2xl font-bold text-transparent bg-clip-text bg-linear-to-r from-blue-400/70 via-blue-400/70 to-blue-400/70">500 Meter Radius</p>
+                    <p className="text-2xl font-bold text-transparent bg-clip-text bg-linear-to-r from-blue-400/70 via-blue-400/70 to-blue-400/70">550 Meter Radius</p>
                     <p className="text-gray-400 mt-2">Your hyperlocal community zone</p>
                   </div>
                 </div>

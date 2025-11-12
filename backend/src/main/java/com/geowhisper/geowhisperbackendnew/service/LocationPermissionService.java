@@ -77,10 +77,16 @@ public class LocationPermissionService {
             return Double.MAX_VALUE;
         }
 
-        return GeoUtils.calculateDistance(
+        log.debug("Tower {} center: lat={}, lon={}", towerId, tower.getLatitude(), tower.getLongitude());
+        
+        double distance = GeoUtils.calculateDistance(
                 userLatitude, userLongitude,
                 tower.getLatitude(), tower.getLongitude()
         );
+        
+        log.debug("Calculated distance: {:.2f}m", distance);
+        
+        return distance;
     }
 
     /**
@@ -99,14 +105,23 @@ public class LocationPermissionService {
         
         double distance = getDistanceFromTower(towerId, userLatitude, userLongitude);
         
+        log.info("=== VALIDATING INTERACTION ===");
+        log.info("Tower ID: {}", towerId);
+        log.info("User location: lat={}, lon={}", userLatitude, userLongitude);
+        log.info("Distance from tower center: {:.2f}m", distance);
+        log.info("Interaction radius: {:.0f}m", INTERACTION_RADIUS_METERS);
+        log.info("Can interact: {}", distance <= INTERACTION_RADIUS_METERS);
+        
         if (distance > INTERACTION_RADIUS_METERS) {
-            throw new IllegalStateException(
-                String.format(
+            String errorMsg = String.format(
                     "You must be within %.0fm of the tower to %s. You are %.0fm away (view-only mode).",
                     INTERACTION_RADIUS_METERS, actionName, distance
-                )
             );
+            log.warn("Permission denied: {}", errorMsg);
+            throw new IllegalStateException(errorMsg);
         }
+        
+        log.info("Permission granted to {} at tower {}", actionName, towerId);
     }
 
     /**

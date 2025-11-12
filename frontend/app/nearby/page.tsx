@@ -52,17 +52,17 @@ export default function NearbyPage() {
         )
       }));
 
-      // Find tower user is currently in (within 500m)
-      const currentUserTower = towersWithDistance.find(t => t.distance <= 500) || null;
+      // Find tower user is currently in (within 550m)
+      const currentUserTower = towersWithDistance.find(t => t.distance <= 550) || null;
       setCurrentTower(currentUserTower);
       
       if (currentUserTower) {
         setSelectedTowerId(currentUserTower.towerId);
       }
 
-      // Get nearby towers within 500m (excluding current tower)
+      // Get nearby towers within 550m (excluding current tower)
       const nearbyTowersList = towersWithDistance
-        .filter(t => t.distance <= 500 && t.towerId !== currentUserTower?.towerId)
+        .filter(t => t.distance <= 550 && t.towerId !== currentUserTower?.towerId)
         .sort((a, b) => a.distance - b.distance);
       
       setNearbyTowers(nearbyTowersList);
@@ -265,7 +265,7 @@ export default function NearbyPage() {
               <div className="mb-6 bg-gray-900 border border-gray-800 rounded-lg p-4">
                 <p className="text-gray-400 text-center">
                   <MapPin className="inline w-5 h-5 mr-2" />
-                  You're not in any tower (no posts within 500m)
+                  You're not in any tower (no posts within 550m)
                 </p>
                 <p className="text-sm text-gray-500 text-center mt-2">
                   Create a post to start a new tower here!
@@ -382,6 +382,7 @@ export default function NearbyPage() {
                       currentUserId={user.firebaseUid}
                       currentUsername={user.username}
                       isModerator={false}
+                      isCurrentTower={currentTower?.towerId === selectedTowerId}
                       postCount={
                         currentTower?.towerId === selectedTowerId
                           ? currentTower.postCount

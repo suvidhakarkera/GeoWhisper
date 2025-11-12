@@ -35,6 +35,34 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
 
   const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || '';
 
+  // Helper function to calculate distance between two points in meters
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const R = 6371e3; // Earth's radius in meters
+    const φ1 = lat1 * Math.PI / 180;
+    const φ2 = lat2 * Math.PI / 180;
+    const Δφ = (lat2 - lat1) * Math.PI / 180;
+    const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c; // Distance in meters
+  };
+
+  // Determine if selected tower is the user's current tower (within 550m)
+  const isCurrentTower = useMemo(() => {
+    if (!selectedTower || !userLocation) return false;
+    const distance = calculateDistance(
+      userLocation.latitude,
+      userLocation.longitude,
+      selectedTower.latitude,
+      selectedTower.longitude
+    );
+    return distance <= 550;
+  }, [selectedTower, userLocation]);
+
   // Fetch towers on component mount
   useEffect(() => {
     const fetchTowers = async () => {
@@ -324,6 +352,7 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
                   currentUserId={user.firebaseUid}
                   currentUsername={user.username}
                   isModerator={false}
+                  isCurrentTower={isCurrentTower}
                   postCount={selectedTower.postCount || 0}
                 />
               ) : (
