@@ -27,6 +27,9 @@ public class PostService {
     @Autowired
     private TowerService towerService;
 
+    @Autowired
+    private LocationPermissionService locationPermissionService;
+
     /**
      * Create a new post without images (backward compatibility)
      */
@@ -378,7 +381,7 @@ public class PostService {
     }
 
     /**
-     * Delete a post
+     * Delete a post (legacy method without location validation - kept for backward compatibility)
      * 
      * @param postId The ID of the post to delete
      * @param userId The ID of the user requesting deletion (for authorization)
@@ -386,6 +389,23 @@ public class PostService {
      * @throws IllegalArgumentException if post not found
      */
     public boolean deletePost(String postId, String userId)
+            throws ExecutionException, InterruptedException {
+        // Call the new method with null location (will skip location validation)
+        return deletePost(postId, userId, null, null);
+    }
+
+    /**
+     * Delete a post with location validation
+     * 
+     * @param postId The ID of the post to delete
+     * @param userId The ID of the user requesting deletion (for authorization)
+     * @param userLatitude User's current latitude (for location validation)
+     * @param userLongitude User's current longitude (for location validation)
+     * @return true if deleted, false if user is not authorized
+     * @throws IllegalArgumentException if post not found
+     * @throws IllegalStateException if user is too far from tower
+     */
+    public boolean deletePost(String postId, String userId, Double userLatitude, Double userLongitude)
             throws ExecutionException, InterruptedException {
 
         // Get the post document
@@ -409,6 +429,12 @@ public class PostService {
 
         // Get tower ID before deletion
         String towerId = (String) postData.get("towerId");
+        
+        // Validate user location if coordinates provided
+        if (userLatitude != null && userLongitude != null && towerId != null) {
+            locationPermissionService.validateInteractionPermission(
+                towerId, userLatitude, userLongitude, "delete posts");
+        }
 
         // Delete associated images from storage
         List<String> imageUrls = (List<String>) postData.get("images");

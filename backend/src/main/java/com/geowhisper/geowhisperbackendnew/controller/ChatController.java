@@ -2,6 +2,7 @@ package com.geowhisper.geowhisperbackendnew.controller;
 
 import com.geowhisper.geowhisperbackendnew.dto.*;
 import com.geowhisper.geowhisperbackendnew.service.ChatModerationService;
+import com.geowhisper.geowhisperbackendnew.service.ChatService;
 import com.geowhisper.geowhisperbackendnew.service.ChatSummaryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -11,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -24,6 +26,7 @@ public class ChatController {
     
     private final ChatModerationService chatModerationService;
     private final ChatSummaryService chatSummaryService;
+    private final ChatService chatService;
     
     /**
      * Generate AI-powered summary of chat messages
@@ -150,4 +153,62 @@ public class ChatController {
                     return ResponseEntity.internalServerError().build();
                 });
     }
+    
+    /**
+     * Send a chat message to a tower (with location validation)
+     * POST /api/chat/{towerId}/messages
+     * 
+     * Requires user to be within 550m of tower center
+     */
+    @PostMapping("/{towerId}/messages")
+    @Operation(summary = "Send chat message", 
+               description = "Send a message to tower chat (requires user to be within 550m)")
+    public CompletableFuture<ResponseEntity<ApiResponse>> sendMessage(
+            @PathVariable String towerId,
+            @RequestHeader("X-User-Id") String userId,
+            @RequestHeader(value = "X-Username", defaultValue = "Anonymous") String username,
+            @Valid @RequestBody SendChatMessageRequest request) {
+        
+        log.info("User {} sending message to tower {}", userId, towerId);
+        
+        return chatService.sendMessage(towerId, userId, username, request)
+                .thenApply(result -> ResponseEntity.ok(ApiResponse.success(
+                        "Message sent successfully", result)))
+                .exceptionally(ex -> {
+                    if (ex.getCause() instanceof IllegalStateException) {
+                        // Location permission denied
+                        log.warn("Permission denied for user {} on tower {}: {}", 
+                                userId, towerId, ex.getCause().getMessage());
+                        return ResponseEntity.status(403)
+                                .body(ApiResponse.error(ex.getCause().getMessage()));
+                    }
+                    log.error("Error sending message: {}", ex.getMessage(), ex);
+                    return ResponseEntity.internalServerError()
+                            .body(ApiResponse.error("Failed to send message: " + ex.getMessage()));
+                });
+    }
+    
+    /**
+     * Check if user can send messages to a tower
+     * GET /api/chat/{towerId}/can-send?latitude=X&longitude=Y
+     */
+    @GetMapping("/{towerId}/can-send")
+    @Operation(summary = "Check message permission", 
+               description = "Check if user can send messages based on location")
+    public ResponseEntity<ApiResponse> canSendMessage(
+            @PathVariable String towerId,
+            @RequestParam double latitude,
+            @RequestParam double longitude) {
+        
+        boolean canSend = chatService.canSendMessage(towerId, latitude, longitude);
+        
+        Map<String, Object> result = new HashMap<>();
+        result.put("canSend", canSend);
+        result.put("towerId", towerId);
+        
+        return ResponseEntity.ok(ApiResponse.success(
+                canSend ? "User can send messages" : "User cannot send messages (too far)", 
+                result));
+    }
 }
+

@@ -203,11 +203,14 @@ public class PostController {
      * 
      * DELETE /api/posts/{postId}
      * Headers: X-User-Id (required for authorization)
+     * Query params: latitude, longitude (required for location validation)
      */
     @DeleteMapping("/{postId}")
     public ResponseEntity<?> deletePost(
             @PathVariable String postId,
-            @RequestHeader("X-User-Id") String userId) {
+            @RequestHeader("X-User-Id") String userId,
+            @RequestParam(required = false) Double latitude,
+            @RequestParam(required = false) Double longitude) {
 
         // Validate inputs
         if (postId == null || postId.trim().isEmpty()) {
@@ -220,8 +223,13 @@ public class PostController {
                     .body(ApiResponse.error("User ID is required"));
         }
 
+        if (latitude == null || longitude == null) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("User location (latitude, longitude) is required for this operation"));
+        }
+
         try {
-            boolean deleted = postService.deletePost(postId, userId);
+            boolean deleted = postService.deletePost(postId, userId, latitude, longitude);
 
             if (deleted) {
                 return ResponseEntity.ok(ApiResponse.success(
@@ -232,6 +240,10 @@ public class PostController {
                         .body(ApiResponse.error("You are not authorized to delete this post"));
             }
 
+        } catch (IllegalStateException e) {
+            // Location permission error
+            return ResponseEntity.status(403)
+                    .body(ApiResponse.error(e.getMessage()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(404)
                     .body(ApiResponse.error("Post not found: " + e.getMessage()));

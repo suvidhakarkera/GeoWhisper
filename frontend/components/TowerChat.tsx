@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { ref, onValue, push, set, off } from 'firebase/database';
-import { Send, AlertTriangle, Flag, Trash2, EyeOff, Loader2, Image as ImageIcon, X, Sparkles, MessageSquare } from 'lucide-react';
+import { Send, AlertTriangle, Flag, Trash2, EyeOff, Loader2, Image as ImageIcon, X, Sparkles, MessageSquare, MessageCircle } from 'lucide-react';
 import { chatService, ChatMessage, ContentModerationResponse } from '@/services/chatService';
 import { database } from '@/config/firebase';
 import { API_BASE_URL } from '@/config/api';
@@ -35,8 +35,71 @@ export default function TowerChat({
   const [loadingSummary, setLoadingSummary] = useState(false);
   const [loadingVibe, setLoadingVibe] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [canInteract, setCanInteract] = useState<boolean | null>(null); // null = loading
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [distanceFromTower, setDistanceFromTower] = useState<number | null>(null);
+  const [showRangePopup, setShowRangePopup] = useState(false);
+  const [checkingPermissions, setCheckingPermissions] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Get user location on mount
+  useEffect(() => {
+    const getUserLocation = async () => {
+      setCheckingPermissions(true);
+      try {
+        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 30000,
+          });
+        });
+
+        const location = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        };
+        setUserLocation(location);
+
+        // Check if user can interact with this tower and get distance
+        console.log('Checking interaction permission for tower:', towerId, 'at location:', location);
+        const response = await fetch(
+          `${API_BASE_URL}/api/towers/${towerId}/can-interact?latitude=${location.latitude}&longitude=${location.longitude}`
+        );
+        
+        if (response.ok) {
+          const result = await response.json();
+          const data = result.data;
+          console.log('Permission check result:', data);
+          console.log('Can interact:', data.canInteract, 'Distance:', data.distance, 'm');
+          
+          setCanInteract(data.canInteract);
+          setDistanceFromTower(data.distance);
+          
+          if (!data.canInteract) {
+            setLocationError(data.message || 'You are too far from this tower to interact');
+            console.log('User is out of range:', data.message);
+          } else {
+            console.log('User can interact with this tower!');
+          }
+        } else {
+          console.error('Failed to check permissions:', response.status);
+          setCanInteract(false);
+          setLocationError('Unable to verify your location permissions');
+        }
+      } catch (error) {
+        console.error('Error getting location:', error);
+        setLocationError('Unable to get your location. Interaction may be restricted.');
+        setCanInteract(false);
+      } finally {
+        setCheckingPermissions(false);
+      }
+    };
+
+    getUserLocation();
+  }, [towerId]);
 
   // Scroll to bottom when new messages arrive
   const scrollToBottom = () => {
@@ -180,60 +243,62 @@ export default function TowerChat({
     }
   };
 
-  // Send message to Firebase
+  // Send message through backend API with location validation
   const sendMessage = async () => {
     if ((!newMessage.trim() && !selectedImage) || sending) return;
 
-    if (!database) {
-      alert('Chat service not available. Firebase not configured.');
+    if (!userLocation) {
+      alert('Unable to send message. Location not available.');
+      return;
+    }
+
+    if (!canInteract) {
+      alert('You must be within 550 meters of this tower to send messages.');
       return;
     }
 
     setSending(true);
 
     try {
-      const messagesRef = ref(database, `chats/${towerId}/messages`);
-      const newMessageRef = push(messagesRef);
+      let imageData: string | undefined;
 
-      const messageData: any = {
-        message: newMessage.trim() || '📷 Photo',
-        userId: currentUserId,
-        username: currentUsername,
-        timestamp: Date.now(),
-        createdAt: new Date().toISOString(),
-      };
-
-      // If there's an image, convert to base64 and include it
+      // If there's an image, convert to base64
       if (selectedImage) {
         const reader = new FileReader();
-        reader.onloadend = async () => {
-          messageData.image = reader.result as string;
-          messageData.hasImage = true;
-          
-          await set(newMessageRef, messageData);
-          
-          setNewMessage('');
-          setSelectedImage(null);
-          setImagePreview(null);
-          setModerationWarning(null);
-          setDbError(null);
-          setSending(false);
-        };
-        reader.readAsDataURL(selectedImage);
-        return; // Exit early, reader callback will handle the rest
+        imageData = await new Promise<string>((resolve, reject) => {
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(selectedImage);
+        });
       }
 
-      // No image, just send text
-      await set(newMessageRef, messageData);
+      // Send message through backend API
+      console.log('Sending message to tower:', towerId, 'from location:', userLocation);
+      const result = await chatService.sendMessage(
+        towerId,
+        newMessage.trim() || '📷 Photo',
+        userLocation.latitude,
+        userLocation.longitude,
+        imageData
+      );
 
+      console.log('Send message result:', result);
+
+      if (!result.success) {
+        console.error('Failed to send message:', result.error);
+        throw new Error(result.error || 'Failed to send message');
+      }
+
+      // Clear inputs on success
+      console.log('Message sent successfully!');
       setNewMessage('');
+      setSelectedImage(null);
+      setImagePreview(null);
       setModerationWarning(null);
       setDbError(null);
     } catch (error: any) {
       console.error('Error sending message:', error);
-      const errorMsg = error?.code === 'PERMISSION_DENIED' 
-        ? 'Permission denied. Check Firebase Realtime Database rules.'
-        : 'Failed to send message. Please try again.';
+      const errorMsg = error.message || 'Failed to send message. Please try again.';
       alert(errorMsg);
       setDbError(errorMsg);
     } finally {
@@ -369,35 +434,92 @@ export default function TowerChat({
   };
 
   return (
-    <div className="flex flex-col h-full bg-gray-900 text-white">
-      {/* Summary Action Buttons */}
-      <div className="bg-gray-800 border-b border-gray-700 px-4 py-2">
-        <div className="flex gap-2 items-center justify-between">
-          <div className="flex gap-2">
+    <div className="flex flex-col h-full bg-gradient-to-br from-gray-900 via-gray-900 to-black text-white relative">
+      {/* Modern Header with Action Buttons */}
+      <div className="bg-gradient-to-r from-gray-800/80 to-gray-900/80 backdrop-blur-xl border-b border-gray-700/50 px-2 py-3 shadow-lg relative z-[50]">
+        <div className="flex gap-2 items-center justify-between flex-wrap">
+          <div className="flex gap-2 items-center flex-wrap">
             <button
               onClick={fetchChatSummary}
               disabled={loadingSummary || messages.length === 0}
-              className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed rounded-lg text-sm transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 disabled:bg-gray-700/50 disabled:text-gray-500 disabled:cursor-not-allowed rounded-lg text-xs font-medium transition-all border-2 border-gray-700 hover:border-blue-400 disabled:border-gray-700 text-white whitespace-nowrap"
               title="Generate AI chat summary"
             >
-              <MessageSquare className="w-4 h-4" />
-              {loadingSummary ? 'Generating...' : 'Chat Summary'}
+              <MessageSquare className="w-3.5 h-3.5" />
+              <span>{loadingSummary ? 'Generating...' : 'Summary'}</span>
             </button>
             
             <button
               onClick={fetchVibeSummary}
               disabled={loadingVibe || postCount === 0}
-              className="flex items-center gap-2 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-700 disabled:cursor-not-allowed rounded-lg text-sm transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 disabled:bg-gray-700/50 disabled:text-gray-500 disabled:cursor-not-allowed rounded-lg text-xs font-medium transition-all border-2 border-gray-700 hover:border-blue-400 disabled:border-gray-700 text-white whitespace-nowrap"
               title={postCount === 0 ? "No posts in this tower yet" : "Get vibe of this tower"}
             >
-              <Sparkles className="w-4 h-4" />
-              {loadingVibe ? 'Loading...' : 'Vibe Check'}
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>{loadingVibe ? 'Loading...' : 'Vibe Check'}</span>
             </button>
+
+            {/* View Only Mode Indicator - Show when checking or when out of range */}
+            {(checkingPermissions || canInteract === false) && (
+              <div className="relative z-[100]">
+                <button
+                  onClick={() => setShowRangePopup(!showRangePopup)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 backdrop-blur-sm rounded-lg text-xs font-medium transition-all border-2 border-gray-700 hover:border-blue-400 text-white whitespace-nowrap"
+                  title="Click for details"
+                >
+                  <EyeOff className="w-3.5 h-3.5" />
+                  <span>View Only</span>
+                </button>
+
+                {/* Popup - Click outside to close, positioned to stay within screen */}
+                {showRangePopup && (
+                  <>
+                    {/* Backdrop to close popup */}
+                    <div 
+                      className="fixed inset-0 bg-black/50 z-[99998]"
+                      onClick={() => setShowRangePopup(false)}
+                    />
+                    <div className="fixed top-20 left-1/2 -translate-x-1/2 w-80 max-w-[90vw] bg-black border-2 border-blue-400/50 rounded-xl z-[99999] p-5 shadow-2xl">
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 bg-gray-800 rounded-lg border border-gray-700">
+                          <AlertTriangle className="w-5 h-5 text-gray-300" />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-bold text-white text-sm mb-2">
+                            View Only Mode
+                          </h4>
+                          <p className="text-xs text-gray-300 mb-2 leading-relaxed">
+                            {distanceFromTower ? (
+                              <>
+                                You are <span className="font-bold text-blue-400">{Math.round(distanceFromTower)}m</span> away from this tower.
+                              </>
+                            ) : (
+                              <>Checking your location...</>
+                            )}
+                          </p>
+                          <p className="text-xs text-gray-400 leading-relaxed">
+                            You are outside the 550m range. You can view messages but cannot send messages or interact with content.
+                          </p>
+                          <button
+                            onClick={() => setShowRangePopup(false)}
+                            className="mt-4 w-full px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg text-sm font-medium transition-all border-2 border-gray-700 hover:border-blue-400"
+                          >
+                            Got it
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
           
           {vibeSummary && (
-            <div className="text-sm text-purple-300 font-medium italic">
-              ✨ {vibeSummary}
+            <div className="mt-2 px-3 py-2 bg-gray-800/60 border border-cyan-500/20 rounded-xl backdrop-blur-sm">
+              <p className="text-xs text-cyan-400 font-medium">
+                ✨ {vibeSummary}
+              </p>
             </div>
           )}
         </div>
@@ -405,16 +527,18 @@ export default function TowerChat({
 
       {/* Chat Summary Display */}
       {showSummary && chatSummary && (
-        <div className="bg-gradient-to-r from-blue-900/40 to-cyan-900/40 border-b border-blue-700/50 px-4 py-3">
+        <div className="bg-gray-800/60 border-b border-gray-700/50 px-4 py-4 backdrop-blur-sm">
           <div className="flex items-start gap-3">
-            <MessageSquare className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
+            <div className="p-2 bg-gray-700/50 rounded-lg">
+              <MessageSquare className="w-5 h-5 text-gray-300" />
+            </div>
             <div className="flex-1">
-              <h4 className="text-sm font-semibold text-blue-300 mb-1">Chat Summary</h4>
-              <p className="text-sm text-gray-200 whitespace-pre-wrap">{chatSummary}</p>
+              <h4 className="text-sm font-bold text-gray-200 mb-2">Chat Summary</h4>
+              <p className="text-sm text-gray-400 whitespace-pre-wrap leading-relaxed">{chatSummary}</p>
             </div>
             <button
               onClick={() => setShowSummary(false)}
-              className="text-gray-400 hover:text-white transition-colors"
+              className="p-1.5 bg-gray-700/50 hover:bg-gray-600/50 rounded-lg text-gray-400 hover:text-gray-300 transition-all"
             >
               <X className="w-4 h-4" />
             </button>
@@ -424,28 +548,38 @@ export default function TowerChat({
 
       {/* Database Error Banner */}
       {dbError && (
-        <div className="bg-red-900/50 border-b border-red-700 px-4 py-3">
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0" />
+        <div className="bg-gradient-to-r from-red-900/60 to-orange-900/60 border-b border-red-500/30 px-4 py-3 backdrop-blur-sm">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-red-500/20 rounded-lg">
+              <AlertTriangle className="w-5 h-5 text-red-400" />
+            </div>
             <div className="flex-1">
-              <p className="text-sm text-red-200">{dbError}</p>
-              <p className="text-xs text-red-300 mt-1">Check browser console for details</p>
+              <p className="text-sm font-medium text-red-200">{dbError}</p>
+              <p className="text-xs text-red-300/80 mt-1">Check browser console for details</p>
             </div>
           </div>
         </div>
       )}
 
-      {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      {/* Messages Area - Modern Scrollable */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
         {messages.length === 0 ? (
-          <div className="text-center text-gray-500 py-8">
+          <div className="text-center text-gray-400 py-12">
             {dbError ? (
               <>
-                <AlertTriangle className="w-12 h-12 mx-auto mb-2 text-red-500" />
-                <p>Unable to load messages</p>
+                <div className="inline-block p-4 bg-red-500/10 rounded-2xl mb-3">
+                  <AlertTriangle className="w-12 h-12 text-red-400" />
+                </div>
+                <p className="font-medium">Unable to load messages</p>
               </>
             ) : (
-              <>No messages yet. Be the first to chat!</>
+              <>
+                <div className="inline-block p-4 bg-blue-500/10 rounded-2xl mb-3">
+                  <MessageCircle className="w-12 h-12 text-blue-400" />
+                </div>
+                <p className="font-medium">No messages yet</p>
+                <p className="text-sm text-gray-500 mt-1">Be the first to start the conversation!</p>
+              </>
             )}
           </div>
         ) : (
@@ -459,29 +593,31 @@ export default function TowerChat({
             return (
               <div
                 key={msg.id}
-                className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
+                className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} group`}
               >
                 <div
-                  className={`max-w-[70%] rounded-lg p-3 ${
+                  className={`max-w-[75%] rounded-2xl p-3 shadow-lg transition-all ${
                     formatted.isModerated
-                      ? 'bg-red-900/30 border border-red-700'
+                      ? 'bg-gradient-to-br from-red-900/40 to-red-800/40 border border-red-500/30 backdrop-blur-sm'
                       : msg.isPost
-                      ? 'bg-cyan-900/40 border border-cyan-700' // Special styling for posts
+                      ? 'bg-gradient-to-br from-cyan-900/50 to-blue-900/50 border border-cyan-500/30 backdrop-blur-sm' // Special styling for posts
                       : isOwnMessage
-                      ? 'bg-blue-600'
-                      : 'bg-gray-700'
+                      ? 'bg-gradient-to-br from-blue-600 to-blue-700 shadow-blue-500/30'
+                      : 'bg-gradient-to-br from-gray-700/80 to-gray-800/80 backdrop-blur-sm border border-gray-600/30'
                   }`}
                 >
                   {!formatted.isModerated && (
-                    <div className="text-xs text-gray-300 mb-1 font-semibold">
-                      {msg.username}
+                    <div className="text-xs text-gray-300 mb-2 font-semibold flex items-center gap-2">
+                      <span className={isOwnMessage ? 'text-blue-200' : 'text-gray-200'}>
+                        {msg.username}
+                      </span>
                       {msg.isPost && (
-                        <span className="ml-2 text-cyan-400 text-xs">
+                        <span className="px-2 py-0.5 bg-cyan-500/20 text-cyan-300 text-xs rounded-full font-medium">
                           📍 Post
                         </span>
                       )}
                       {msg.flagged && isModerator && (
-                        <span className="ml-2 text-yellow-400">
+                        <span className="px-2 py-0.5 bg-yellow-500/20 text-yellow-400 text-xs rounded-full font-medium">
                           <Flag className="inline w-3 h-3" /> Flagged
                         </span>
                       )}
@@ -494,23 +630,25 @@ export default function TowerChat({
                       <img 
                         src={(msg as any).image} 
                         alt="Chat attachment" 
-                        className="max-w-full h-auto rounded-lg max-h-64 object-cover"
+                        className="max-w-full h-auto rounded-xl max-h-64 object-cover border border-gray-600/30"
                       />
                     </div>
                   )}
                   
-                  <div className={formatted.isModerated ? 'text-gray-400 italic' : ''}>
+                  <div className={`text-sm leading-relaxed ${formatted.isModerated ? 'text-gray-400 italic' : isOwnMessage ? 'text-white' : 'text-gray-100'}`}>
                     {formatted.displayMessage}
                   </div>
 
                   {formatted.moderationReason && isOwnMessage && (
-                    <div className="text-xs text-red-400 mt-1">
-                      Reason: {formatted.moderationReason}
+                    <div className="text-xs text-red-300 mt-2 px-2 py-1 bg-red-500/10 rounded-lg border border-red-500/20">
+                      <span className="font-medium">Reason:</span> {formatted.moderationReason}
                     </div>
                   )}
 
-                  <div className="text-xs text-gray-400 mt-1">
-                    {new Date(msg.timestamp).toLocaleTimeString()}
+                  <div className={`text-xs mt-2 flex items-center justify-between ${isOwnMessage ? 'text-blue-200' : 'text-gray-400'}`}>
+                    <span className="opacity-75">
+                      {new Date(msg.timestamp).toLocaleTimeString()}
+                    </span>
                   </div>
 
                   {/* Delete Button (for own messages) */}
@@ -519,7 +657,7 @@ export default function TowerChat({
                       {msg.isPost && msg.postId ? (
                         <button
                           onClick={() => handleDeletePost(msg.postId!)}
-                          className="flex items-center gap-1 text-red-400 hover:text-red-300 text-xs transition-colors"
+                          className="flex items-center gap-1.5 px-2.5 py-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 text-xs font-medium rounded-lg transition-all border border-red-500/20 hover:border-red-500/30"
                           title="Delete this post"
                         >
                           <Trash2 className="w-3 h-3" />
@@ -528,7 +666,7 @@ export default function TowerChat({
                       ) : (
                         <button
                           onClick={() => handleDeleteChatMessage(msg.messageId || msg.id)}
-                          className="flex items-center gap-1 text-red-400 hover:text-red-300 text-xs transition-colors"
+                          className="flex items-center gap-1.5 px-2.5 py-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 text-xs font-medium rounded-lg transition-all border border-red-500/20 hover:border-red-500/30"
                           title="Delete this message"
                         >
                           <Trash2 className="w-3 h-3" />
@@ -540,24 +678,24 @@ export default function TowerChat({
 
                   {/* Moderator Actions */}
                   {isModerator && !formatted.isModerated && (
-                    <div className="flex gap-2 mt-2">
+                    <div className="flex gap-2 mt-3">
                       <button
                         onClick={() => handleModerateMessage(msg.messageId || msg.id, 'DELETE')}
-                        className="text-red-400 hover:text-red-300 text-xs"
+                        className="px-2.5 py-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 text-xs font-medium rounded-lg transition-all border border-red-500/20 hover:border-red-500/30"
                         title="Delete"
                       >
                         <Trash2 className="w-3 h-3" />
                       </button>
                       <button
                         onClick={() => handleModerateMessage(msg.messageId || msg.id, 'HIDE')}
-                        className="text-yellow-400 hover:text-yellow-300 text-xs"
+                        className="px-2.5 py-1 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 hover:text-yellow-300 text-xs font-medium rounded-lg transition-all border border-yellow-500/20 hover:border-yellow-500/30"
                         title="Hide"
                       >
                         <EyeOff className="w-3 h-3" />
                       </button>
                       <button
                         onClick={() => handleModerateMessage(msg.messageId || msg.id, 'FLAG')}
-                        className="text-orange-400 hover:text-orange-300 text-xs"
+                        className="px-2.5 py-1 bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 hover:text-orange-300 text-xs font-medium rounded-lg transition-all border border-orange-500/20 hover:border-orange-500/30"
                         title="Flag"
                       >
                         <Flag className="w-3 h-3" />
@@ -574,18 +712,20 @@ export default function TowerChat({
 
       {/* Moderation Warning */}
       {moderationWarning && (
-        <div className="px-4 py-3 bg-yellow-900/50 border-t border-yellow-700">
-          <div className="flex items-start gap-2">
-            <AlertTriangle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
+        <div className="px-4 py-3 bg-gradient-to-r from-yellow-900/40 to-orange-900/40 border-t border-yellow-500/30 backdrop-blur-sm">
+          <div className="flex items-start gap-3">
+            <div className="p-2 bg-yellow-500/20 rounded-lg">
+              <AlertTriangle className="w-5 h-5 text-yellow-400 flex-shrink-0" />
+            </div>
             <div className="flex-1">
-              <div className="font-semibold text-yellow-400">
+              <div className="font-bold text-yellow-300">
                 {moderationWarning.suggestedAction === 'BLOCK' ? 'Message Blocked' : 'Warning'}
               </div>
               <div className="text-sm text-gray-300 mt-1">
                 {moderationWarning.explanation}
               </div>
               {moderationWarning.violations.length > 0 && (
-                <ul className="text-xs text-gray-400 mt-1 list-disc pl-4">
+                <ul className="text-xs text-gray-400 mt-2 space-y-0.5 list-disc pl-4">
                   {moderationWarning.violations.map((v, i) => (
                     <li key={i}>{v}</li>
                   ))}
@@ -597,13 +737,13 @@ export default function TowerChat({
             <div className="flex gap-2 mt-3">
               <button
                 onClick={() => setModerationWarning(null)}
-                className="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-sm"
+                className="px-4 py-2 bg-gray-700/80 hover:bg-gray-600/80 backdrop-blur-sm text-white rounded-xl font-medium transition-all border border-gray-600/30 hover:border-gray-500/50"
               >
                 Edit Message
               </button>
               <button
                 onClick={sendAnyway}
-                className="px-3 py-1 bg-yellow-600 hover:bg-yellow-500 rounded text-sm"
+                className="px-4 py-2 bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-500 hover:to-yellow-600 text-white rounded-xl font-medium transition-all shadow-lg shadow-yellow-500/30"
               >
                 Send Anyway
               </button>
@@ -612,19 +752,20 @@ export default function TowerChat({
         </div>
       )}
 
-      {/* Input Area */}
-      <div className="p-4 bg-gray-800 border-t border-gray-700">
+      {/* Input Area - Only show if user can interact (within 550m) and checking is complete */}
+      {!checkingPermissions && canInteract === true && (
+        <div className="p-4 bg-gradient-to-b from-gray-800/80 to-gray-900/80 backdrop-blur-xl border-t border-gray-700/50">
         {/* Image Preview */}
         {imagePreview && (
           <div className="mb-3 relative inline-block">
             <img 
               src={imagePreview} 
               alt="Preview" 
-              className="max-h-32 rounded-lg border border-gray-600"
+              className="max-h-32 rounded-xl border-2 border-gray-600/50 shadow-lg"
             />
             <button
               onClick={handleRemoveImage}
-              className="absolute -top-2 -right-2 p-1 bg-red-600 hover:bg-red-700 rounded-full transition-colors"
+              className="absolute -top-2 -right-2 p-1.5 bg-gradient-to-br from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 rounded-full transition-all shadow-lg"
               type="button"
             >
               <X className="w-4 h-4" />
@@ -646,7 +787,7 @@ export default function TowerChat({
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={sending || checking}
-            className="px-3 py-2 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg transition-colors flex items-center gap-2"
+            className="px-3 py-2 bg-gray-700/80 hover:bg-gray-600/80 disabled:bg-gray-600/50 disabled:cursor-not-allowed rounded-xl transition-all backdrop-blur-sm flex items-center gap-2 border border-gray-600/30 hover:border-gray-500/50 shadow-lg"
             type="button"
             title="Add photo"
           >
@@ -664,13 +805,14 @@ export default function TowerChat({
               }
             }}
             placeholder="Type a message..."
-            className="flex-1 px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 text-white placeholder-gray-400"
+            className="flex-1 px-4 py-3 bg-gray-700/80 backdrop-blur-sm border border-gray-600/30 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 text-white placeholder-gray-400 transition-all shadow-inner"
             disabled={sending || checking}
           />
           <button
             onClick={handleCheckMessage}
             disabled={(!newMessage.trim() && !selectedImage) || sending || checking}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg transition-colors flex items-center gap-2"
+            className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed rounded-xl transition-all flex items-center gap-2 shadow-lg shadow-blue-500/30 hover:shadow-blue-500/40"
+            title="Send message"
           >
             {sending || checking ? (
               <Loader2 className="w-5 h-5 animate-spin" />
@@ -679,10 +821,12 @@ export default function TowerChat({
             )}
           </button>
         </div>
-        <div className="text-xs text-gray-500 mt-2">
-          Messages are checked for inappropriate content before sending • You can attach photos
+        <div className="text-xs text-gray-400 mt-2 flex items-center gap-1.5">
+          <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+          Messages are checked for inappropriate content • You can attach photos
         </div>
-      </div>
+        </div>
+      )}
     </div>
   );
 }

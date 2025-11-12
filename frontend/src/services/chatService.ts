@@ -161,6 +161,91 @@ class ChatService {
       isModerated: false,
     };
   }
+
+  /**
+   * Send a message to a tower chat with location validation
+   */
+  async sendMessage(
+    towerId: string,
+    message: string,
+    userLatitude: number,
+    userLongitude: number,
+    image?: string
+  ): Promise<{ success: boolean; messageId?: string; error?: string }> {
+    try {
+      const authToken = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+      if (!authToken) {
+        throw new Error('Not authenticated');
+      }
+
+      const userId = localStorage.getItem('userId') || sessionStorage.getItem('userId');
+      const username = localStorage.getItem('username') || sessionStorage.getItem('username') || 'Anonymous';
+
+      const response = await fetch(`${API_BASE_URL}/api/chat/${towerId}/messages`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Id': userId || '',
+          'X-Username': username,
+        },
+        body: JSON.stringify({
+          message,
+          userLatitude,
+          userLongitude,
+          image,
+          hasImage: !!image,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        return {
+          success: false,
+          error: result.message || 'Failed to send message',
+        };
+      }
+
+      return {
+        success: true,
+        messageId: result.data?.messageId,
+      };
+    } catch (error: any) {
+      console.error('Error sending message:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to send message',
+      };
+    }
+  }
+
+  /**
+   * Check if user can send messages to a tower based on location
+   */
+  async canSendMessage(
+    towerId: string,
+    latitude: number,
+    longitude: number
+  ): Promise<{ canSend: boolean; message?: string }> {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/chat/${towerId}/can-send?latitude=${latitude}&longitude=${longitude}`
+      );
+
+      const result = await response.json();
+      
+      return {
+        canSend: result.data?.canSend || false,
+        message: result.message,
+      };
+    } catch (error) {
+      console.error('Error checking send permission:', error);
+      return {
+        canSend: false,
+        message: 'Failed to check permissions',
+      };
+    }
+  }
 }
 
 export const chatService = new ChatService();
