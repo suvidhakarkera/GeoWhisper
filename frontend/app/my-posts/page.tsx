@@ -328,15 +328,15 @@ export default function MyPostsPage() {
       <div className="px-4 sm:px-6 lg:px-8 pt-20 pb-12">
         <div className="mx-auto w-full max-w-7xl">
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-100">My Posts</h1>
+          <div className="mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-100">My Posts</h1>
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-2 mb-6">
+          <div className="flex flex-wrap gap-2 mb-6">
             <button
               onClick={() => setActiveTab('all')}
-              className={`px-6 py-2 rounded-lg font-semibold transition-colors ${
+              className={`px-4 sm:px-6 py-2 rounded-lg font-semibold transition-colors text-sm sm:text-base ${
                 activeTab === 'all'
                   ? 'bg-cyan-600 text-white'
                   : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
@@ -346,25 +346,25 @@ export default function MyPostsPage() {
             </button>
             <button
               onClick={() => setActiveTab('posts')}
-              className={`px-6 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2 ${
+              className={`px-4 sm:px-6 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2 text-sm sm:text-base ${
                 activeTab === 'posts'
                   ? 'bg-cyan-600 text-white'
                   : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
               }`}
             >
               <MapPin className="w-4 h-4" />
-              Posts ({userPosts.length})
+              <span className="hidden xs:inline">Posts</span> ({userPosts.length})
             </button>
             <button
               onClick={() => setActiveTab('chats')}
-              className={`px-6 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2 ${
+              className={`px-4 sm:px-6 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2 text-sm sm:text-base ${
                 activeTab === 'chats'
                   ? 'bg-cyan-600 text-white'
                   : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
               }`}
             >
               <MessageCircle className="w-4 h-4" />
-              Chats ({userChats.length})
+              <span className="hidden xs:inline">Chats</span> ({userChats.length})
             </button>
           </div>
 
@@ -400,20 +400,20 @@ export default function MyPostsPage() {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as 'newest' | 'oldest')}
-                className="px-4 py-2 bg-black/50 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-cyan-500 transition-colors cursor-pointer"
+                className="w-full sm:w-auto px-4 py-2.5 bg-black/50 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-cyan-500 transition-colors cursor-pointer"
               >
-                <option value="newest" className="text-xs sm:text-base">Newest First</option>
-                <option value="oldest" className="text-xs sm:text-base">Oldest First</option>
+                <option value="newest">Newest First</option>
+                <option value="oldest">Oldest First</option>
               </select>
             </div>
           </div>
 
           {/* Content Header with Search Results */}
-          <div className="mb-4">
-            <h2 className="text-2xl font-bold text-gray-100 mb-1">
+          <div className="mb-4 sm:mb-6">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-100 mb-1 sm:mb-2">
               {activeTab === 'all' ? 'All Activity' : activeTab === 'posts' ? 'Post History' : 'Chat History'}
             </h2>
-            <div className="flex items-center gap-2 text-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-xs sm:text-sm">
               <p className="text-gray-400">
                 Showing {displayItems.length} 
                 {searchQuery && (
@@ -426,42 +426,42 @@ export default function MyPostsPage() {
                  loadingChats ? ' (loading chats...)' : ''}
               </p>
               {searchQuery && (
-                <span className="px-2 py-0.5 bg-cyan-600/20 border border-cyan-600/30 rounded-full text-cyan-400 text-xs font-medium">
+                <span className="px-2 py-0.5 bg-cyan-600/20 border border-cyan-600/30 rounded-full text-cyan-400 text-xs font-medium w-fit">
                   Filtered by: &quot;{searchQuery}&quot;
                 </span>
               )}
             </div>
           </div>
 
-          {/* Content Grid - 3 Columns */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Content Grid - Responsive Columns */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6">
             {(loadingPosts || loadingChats) ? (
               // Loading skeleton
               Array.from({ length: 6 }).map((_, idx) => (
                 <div
                   key={idx}
-                  className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 rounded-xl p-6 animate-pulse"
+                  className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 rounded-xl p-4 sm:p-5 lg:p-6 animate-pulse"
                 >
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-6 h-6 bg-gray-700 rounded"></div>
-                      <div className="h-4 bg-gray-700 rounded w-20"></div>
+                      <div className="w-5 h-5 sm:w-6 sm:h-6 bg-gray-700 rounded"></div>
+                      <div className="h-3 sm:h-4 bg-gray-700 rounded w-16 sm:w-20"></div>
                     </div>
-                    <div className="h-3 bg-gray-700 rounded w-32"></div>
+                    <div className="h-3 bg-gray-700 rounded w-24 sm:w-32"></div>
                   </div>
                   <div className="space-y-2 mb-4">
                     <div className="h-3 bg-gray-700 rounded"></div>
                     <div className="h-3 bg-gray-700 rounded w-3/4"></div>
                   </div>
                   <div className="flex items-center justify-between pt-4 border-t border-gray-700">
-                    <div className="h-3 bg-gray-700 rounded w-24"></div>
-                    <div className="h-3 bg-gray-700 rounded w-20"></div>
+                    <div className="h-3 bg-gray-700 rounded w-20 sm:w-24"></div>
+                    <div className="h-3 bg-gray-700 rounded w-16 sm:w-20"></div>
                   </div>
                 </div>
               ))
             ) : displayItems.length === 0 ? (
               <div className="col-span-full text-center py-12">
-                <p className="text-gray-400">
+                <p className="text-gray-400 text-sm sm:text-base">
                   {searchQuery ? `No ${activeTab} found matching your search` : `No ${activeTab} yet`}
                 </p>
               </div>
@@ -471,69 +471,69 @@ export default function MyPostsPage() {
                 return isPost ? (
                 <div
                   key={`post-${item.id}`}
-                  className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 rounded-xl p-6 hover:border-cyan-500/50 transition-all duration-300 shadow-lg hover:shadow-cyan-500/20"
+                  className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 rounded-xl p-4 sm:p-5 lg:p-6 hover:border-cyan-500/50 transition-all duration-300 shadow-lg hover:shadow-cyan-500/20"
                 >
                   {/* Post Header */}
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-2 text-cyan-400">
-                      <MapPin className="w-5 h-5" />
-                      <span className="font-semibold text-sm">
+                  <div className="flex items-start justify-between mb-3 sm:mb-4 gap-2">
+                    <div className="flex items-center gap-1.5 sm:gap-2 text-cyan-400">
+                      <MapPin className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                      <span className="font-semibold text-xs sm:text-sm">
                         Post
                       </span>
                     </div>
-                    <div className="flex flex-col items-end text-gray-400 text-xs">
+                    <div className="flex flex-col items-end text-gray-400 text-[10px] sm:text-xs">
                       <div className="flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        <span>{formatTimeDetailed(item.createdAt).split(',')[0]}</span>
+                        <Calendar className="w-3 h-3 flex-shrink-0" />
+                        <span className="whitespace-nowrap">{formatTimeDetailed(item.createdAt).split(',')[0]}</span>
                       </div>
                       <div className="flex items-center gap-1 mt-0.5">
-                        <Clock className="w-3 h-3" />
-                        <span>{formatTimeDetailed(item.createdAt).split(',')[1]?.trim()}</span>
+                        <Clock className="w-3 h-3 flex-shrink-0" />
+                        <span className="whitespace-nowrap">{formatTimeDetailed(item.createdAt).split(',')[1]?.trim()}</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Post Content */}
-                  <p className="text-gray-200 leading-relaxed mb-4 line-clamp-3">
+                  <p className="text-gray-200 text-sm sm:text-base leading-relaxed mb-3 sm:mb-4 line-clamp-3 break-words">
                     {item.content}
                   </p>
 
                   {/* Post Footer */}
-                  <div className="flex items-center justify-between pt-4 border-t border-gray-700">
-                    <div className="text-gray-400 text-xs">
+                  <div className="flex items-center justify-between pt-3 sm:pt-4 border-t border-gray-700 gap-2">
+                    <div className="text-gray-400 text-[10px] sm:text-xs truncate">
                       {formatTimeDetailed(item.createdAt)}
                     </div>
                     <button
                       onClick={() => handleDeletePost(item.id)}
-                      className="flex items-center gap-1 px-3 py-1.5 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded-lg transition-colors text-xs"
+                      className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded-lg transition-colors text-[10px] sm:text-xs flex-shrink-0"
                       title="Delete this post"
                     >
                       <Trash2 className="w-3 h-3" />
-                      <span>Delete</span>
+                      <span className="hidden xs:inline">Delete</span>
                     </button>
                   </div>
                 </div>
               ) : (
                 <div
                   key={`chat-${item.id}`}
-                  className="bg-gradient-to-br from-blue-900/20 to-gray-800 border border-blue-700/50 rounded-xl p-6 hover:border-blue-500/50 transition-all duration-300 shadow-lg hover:shadow-blue-500/20"
+                  className="bg-gradient-to-br from-blue-900/20 to-gray-800 border border-blue-700/50 rounded-xl p-4 sm:p-5 lg:p-6 hover:border-blue-500/50 transition-all duration-300 shadow-lg hover:shadow-blue-500/20"
                 >
                   {/* Chat Header */}
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-2 text-blue-400">
-                      <MessageCircle className="w-5 h-5" />
-                      <span className="font-semibold text-sm">
+                  <div className="flex items-start justify-between mb-3 sm:mb-4 gap-2">
+                    <div className="flex items-center gap-1.5 sm:gap-2 text-blue-400">
+                      <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                      <span className="font-semibold text-xs sm:text-sm break-words">
                         Chat in Tower {item.towerId}
                       </span>
                     </div>
-                    <div className="flex flex-col items-end text-gray-400 text-xs">
+                    <div className="flex flex-col items-end text-gray-400 text-[10px] sm:text-xs">
                       <div className="flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        <span>{formatTimeDetailed(item.timestamp).split(',')[0]}</span>
+                        <Calendar className="w-3 h-3 flex-shrink-0" />
+                        <span className="whitespace-nowrap">{formatTimeDetailed(item.timestamp).split(',')[0]}</span>
                       </div>
                       <div className="flex items-center gap-1 mt-0.5">
-                        <Clock className="w-3 h-3" />
-                        <span>{formatTimeDetailed(item.timestamp).split(',')[1]?.trim()}</span>
+                        <Clock className="w-3 h-3 flex-shrink-0" />
+                        <span className="whitespace-nowrap">{formatTimeDetailed(item.timestamp).split(',')[1]?.trim()}</span>
                       </div>
                     </div>
                   </div>
@@ -543,25 +543,25 @@ export default function MyPostsPage() {
                     <img 
                       src={item.image} 
                       alt="Chat attachment" 
-                      className="w-full h-32 object-cover rounded-lg mb-3"
+                      className="w-full h-28 sm:h-32 object-cover rounded-lg mb-3"
                     />
                   )}
-                  <p className="text-gray-200 leading-relaxed mb-4 line-clamp-3">
+                  <p className="text-gray-200 text-sm sm:text-base leading-relaxed mb-3 sm:mb-4 line-clamp-3 break-words">
                     {item.message}
                   </p>
 
                   {/* Chat Footer */}
-                  <div className="flex items-center justify-between pt-4 border-t border-gray-700">
-                    <div className="text-gray-400 text-xs">
+                  <div className="flex items-center justify-between pt-3 sm:pt-4 border-t border-gray-700 gap-2">
+                    <div className="text-gray-400 text-[10px] sm:text-xs truncate">
                       {formatTimeDetailed(item.timestamp)}
                     </div>
                     <button
                       onClick={() => handleDeleteChatMessage(item.id, item.towerId)}
-                      className="flex items-center gap-1 px-3 py-1.5 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded-lg transition-colors text-xs"
+                      className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded-lg transition-colors text-[10px] sm:text-xs flex-shrink-0"
                       title="Delete this message"
                     >
                       <Trash2 className="w-3 h-3" />
-                      <span>Delete</span>
+                      <span className="hidden xs:inline">Delete</span>
                     </button>
                   </div>
                 </div>

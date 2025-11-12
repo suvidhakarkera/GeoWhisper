@@ -156,7 +156,7 @@ export default function NearbyPage() {
             <p className="text-gray-400 mb-4">{error}</p>
             <button
               onClick={initLocation}
-              className="px-6 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-full transition-all hover:ring-2 hover:ring-cyan-400 border border-gray-700"
+              className="px-6 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-full transition-all hover:ring-2 hover:ring-blue-400 border border-gray-700"
             >
               Try Again
             </button>
@@ -185,7 +185,7 @@ export default function NearbyPage() {
           <button
             onClick={initLocation}
             disabled={loading}
-            className="px-4 py-2 bg-gray-900 hover:bg-gray-800 rounded-full transition-all text-sm hover:ring-2 hover:ring-cyan-400 border border-gray-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="px-4 py-2 bg-black/20 backdrop-blur-lg border-2 border-gray-600 text-white hover:border-blue-400 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? (
               <>
@@ -203,7 +203,7 @@ export default function NearbyPage() {
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <div className="text-center">
-              <Loader2 className="w-12 h-12 text-cyan-400 animate-spin mx-auto mb-4" />
+              <Loader2 className="w-12 h-12 text-blue-400 animate-spin mx-auto mb-4" />
               <p className="text-gray-400 text-lg">{loadingMessage}</p>
             </div>
           </div>
@@ -214,14 +214,14 @@ export default function NearbyPage() {
             {/* Current Tower */}
             {currentTower ? (
               <div className="mb-6">
-                <h2 className="text-lg font-semibold text-green-400 mb-3 flex items-center gap-2">
+                <h2 className="text-lg font-semibold text-gray-100 mb-3 flex items-center gap-2">
                   <MapPin className="w-5 h-5" />
                   You are in a tower!
                 </h2>
                 <div
                   onClick={() => setSelectedTowerId(currentTower.towerId)}
-                  className={`bg-gradient-to-br from-green-900/50 to-gray-900 border-2 border-green-600 rounded-lg p-4 cursor-pointer hover:from-green-800/50 transition-all ${
-                    selectedTowerId === currentTower.towerId ? 'ring-2 ring-green-400' : ''
+                  className={`bg-gradient-to-br from-gray-900 to-gray-800 border-2 border-gray-700 rounded-lg p-4 cursor-pointer hover:border-gray-600 transition-all ${
+                    selectedTowerId === currentTower.towerId ? 'ring-2 ring-gray-500' : ''
                   }`}
                 >
                   <div className="flex items-start justify-between mb-2">
@@ -232,7 +232,7 @@ export default function NearbyPage() {
                         {currentTower.postCount} posts
                       </p>
                     </div>
-                    <span className="text-xs bg-green-600 px-2 py-1 rounded">
+                    <span className="text-xs bg-gray-700 px-2 py-1 rounded">
                       {formatDistance(currentTower.distance)}
                     </span>
                   </div>
@@ -245,7 +245,7 @@ export default function NearbyPage() {
                       }
                       setSelectedTowerId(currentTower.towerId);
                     }}
-                    className="w-full mt-3 px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg flex items-center justify-center gap-2 transition-colors"
+                    className="w-full mt-3 px-4 py-2 bg-black/20 backdrop-blur-lg border-2 border-gray-600 text-white hover:border-blue-400 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all overflow-hidden group"
                   >
                     {isAuthenticated ? (
                       <>
@@ -293,7 +293,7 @@ export default function NearbyPage() {
                     key={tower.towerId}
                     onClick={() => setSelectedTowerId(tower.towerId)}
                     className={`bg-gray-900 border border-gray-800 rounded-lg p-4 cursor-pointer hover:bg-gray-800 transition-colors ${
-                      selectedTowerId === tower.towerId ? 'ring-2 ring-blue-500' : ''
+                      selectedTowerId === tower.towerId ? 'ring-2 ring-gray-500' : ''
                     }`}
                   >
                     <div className="flex items-start justify-between">
@@ -343,7 +343,7 @@ export default function NearbyPage() {
               <button
                 onClick={handleCreateClick}
                 disabled={!userLocation}
-                className="w-full px-4 py-3 bg-gray-900 hover:bg-gray-800 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-full font-semibold transition-all flex items-center justify-center gap-2 hover:ring-2 hover:ring-cyan-400 disabled:hover:ring-0 border border-gray-700 disabled:border-gray-600"
+                className="w-full px-4 py-3 bg-black/20 backdrop-blur-lg border-2 border-gray-600 text-white hover:border-blue-400 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all overflow-hidden group"
               >
                 {isAuthenticated ? (
                   <>
@@ -359,7 +359,7 @@ export default function NearbyPage() {
               </button>
               <button
                 onClick={() => router.push('/maps')}
-                className="w-full px-4 py-3 bg-gray-800 hover:bg-gray-700 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
+                className="w-full px-4 py-3 bg-black/20 backdrop-blur-lg border-2 border-gray-600 text-white hover:border-blue-400 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all overflow-hidden group"
               >
                 <MapPin className="w-5 h-5" />
                 View Map
@@ -398,7 +398,7 @@ export default function NearbyPage() {
                         </p>
                         <button
                           onClick={() => router.push('/signin')}
-                          className="px-6 py-3 bg-gray-900 hover:bg-gray-800 rounded-full font-semibold transition-all hover:ring-2 hover:ring-cyan-400 border border-gray-700"
+                          className="px-6 py-3 bg-gray-900 hover:bg-gray-800 rounded-full font-semibold transition-all hover:ring-2 hover:ring-blue-400 border border-gray-700"
                         >
                           Sign In
                         </button>
