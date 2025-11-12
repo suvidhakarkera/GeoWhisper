@@ -5,7 +5,6 @@ import { motion } from 'framer-motion';
 import dynamic from 'next/dynamic';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import FloatingCreateButton from '@/components/FloatingCreateButton';
 import PostCreationModal, { PostData } from '@/components/PostCreationModal';
 import { useUser } from '@/contexts/UserContext';
 import { useRouter } from 'next/navigation';
@@ -77,11 +76,7 @@ export default function MapsPage() {
         </div>
       </div>
 
-      {/* Floating Create Button */}
-      <FloatingCreateButton 
-        onClick={handleCreateClick}
-        disabled={!userLocation}
-      />
+      {/* Floating Create Button removed per request */}
 
       {/* Post Creation Modal */}
       <PostCreationModal

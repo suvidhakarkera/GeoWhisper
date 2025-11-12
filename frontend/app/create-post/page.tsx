@@ -8,6 +8,7 @@ import Footer from '@/components/Footer';
 import { postService } from '@/src/services/postService';
 import { locationService, UserLocation } from '@/services/locationService';
 import { MapPin, Send, Loader2, AlertCircle, Navigation, CheckCircle } from 'lucide-react';
+import { getTowerLabel } from '@/src/utils/towerNumber';
 
 export default function CreatePostPage() {
   const router = useRouter();
@@ -38,7 +39,7 @@ export default function CreatePostPage() {
         const tower = await locationService.findUserTower(loc);
         if (tower) {
           setIsInTower(true);
-          setTowerInfo(`Tower ${tower.towerId} (${Math.round(tower.distance)}m away, ${tower.postCount} posts)`);
+          setTowerInfo(`${getTowerLabel(tower.towerId)} (${Math.round(tower.distance)}m away, ${tower.postCount} posts)`);
         } else {
           setIsInTower(false);
           setTowerInfo('Your post will create a new tower here!');

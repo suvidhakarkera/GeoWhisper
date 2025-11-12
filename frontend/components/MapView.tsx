@@ -3,10 +3,11 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import Map, { Marker, Popup } from 'react-map-gl';
 import { MapPin, Loader2, AlertCircle, X } from 'lucide-react';
-import { postService, Tower } from '@/src/services/postService';
+import { locationService } from '@/src/services/locationService';
 import { TowerIcon } from './TowerIcon';
 import { motion, AnimatePresence } from 'framer-motion';
 import TowerChat from './TowerChat';
+import { getTowerLabel } from '@/src/utils/towerNumber';
 import { useUser } from '@/contexts/UserContext';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
@@ -21,7 +22,15 @@ interface UserLocation {
   longitude: number;
   accuracy: number;
 }
-
+// Minimal Tower type used by this component (matches locationService.getAllTowers())
+interface Tower {
+  towerId: string;
+  latitude: number;
+  longitude: number;
+  postCount: number;
+  // older towers may include posts, but MapView only needs the above
+  posts?: any[];
+}
 export default function MapView({ onLocationUpdate, onPostClick, onChatAccessChange }: MapViewProps) {
   const { user, isAuthenticated } = useUser();
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
@@ -68,9 +77,9 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
     const fetchTowers = async () => {
       setTowersLoading(true);
       try {
-        const response = await postService.getTowers();
-        if (response.success && response.data) {
-          setTowers(response.data);
+        const data = await locationService.getAllTowers();
+        if (Array.isArray(data)) {
+          setTowers(data);
         }
       } catch (error) {
         console.error('Error fetching towers:', error);
@@ -105,6 +114,13 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
       });
     }
   }, [onLocationUpdate]);
+
+  // Handle marker clicks: prevent opening the side panel for the user's current tower
+  const handleMarkerClick = useCallback((e: any, tower: Tower) => {
+    e.originalEvent.stopPropagation();
+    // Always open the side panel when a marker is clicked, including the current tower
+    setSelectedTower(tower);
+  }, [userLocation]);
 
   // Handle geolocation error
   const handleLocationError = useCallback((error: GeolocationPositionError) => {
@@ -260,16 +276,13 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
         onClick={() => setSelectedTower(null)}
       >
         {/* Tower Markers */}
-        {towers.map((tower) => (
+          {towers.map((tower) => (
           <Marker
             key={tower.towerId}
             longitude={tower.longitude}
             latitude={tower.latitude}
             anchor="center"
-            onClick={(e) => {
-              e.originalEvent.stopPropagation();
-              setSelectedTower(tower);
-            }}
+            onClick={(e) => handleMarkerClick(e, tower)}
           >
             <div className="cursor-pointer transform transition-all hover:scale-110">
               <TowerIcon className="w-10 h-10 text-slate-300 drop-shadow-2xl" size={40} />
@@ -284,9 +297,10 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
             latitude={userLocation.latitude}
             anchor="center"
           >
-            <div className="relative">
-              <div className="absolute inset-0 bg-cyan-400 rounded-full w-6 h-6 animate-ping opacity-75"></div>
-              <div className="relative bg-cyan-500 rounded-full w-6 h-6 border-4 border-white shadow-lg"></div>
+            {/* Make the user location marker non-interactive so it doesn't block tower marker clicks underneath */}
+            <div className="relative pointer-events-none">
+              <div className="absolute inset-0 bg-cyan-400 rounded-full w-6 h-6 animate-ping opacity-75 pointer-events-none"></div>
+              <div className="relative bg-cyan-500 rounded-full w-6 h-6 border-4 border-white shadow-lg pointer-events-none"></div>
             </div>
           </Marker>
         )}
@@ -331,9 +345,9 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
             className="fixed top-[72px] md:top-0 right-0 bottom-0 w-full md:w-[400px] bg-gray-900 border-l border-gray-800 shadow-2xl z-50 overflow-hidden flex flex-col"
           >
             {/* Header */}
-            <div className="bg-gray-900 text-white p-3 md:p-4 flex items-center justify-between border-b border-gray-800 flex-shrink-0">
+                <div className="bg-gray-900 text-white p-3 md:p-4 flex items-center justify-between border-b border-gray-800 flex-shrink-0">
               <div className="flex-1 min-w-0">
-                <h3 className="font-bold text-lg md:text-xl truncate">Tower {selectedTower.towerId}</h3>
+                <h3 className="font-bold text-lg md:text-xl truncate">{getTowerLabel(selectedTower.towerId)}</h3>
                 <p className="text-sm text-gray-400">Real-time chat</p>
               </div>
               <button

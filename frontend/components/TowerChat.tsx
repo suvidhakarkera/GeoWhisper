@@ -656,7 +656,7 @@ export default function TowerChat({
       )}
 
       {/* Messages Area - Modern Scrollable */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
+  <div className="flex-1 overflow-y-auto p-4 space-y-3 chat-scrollbar">
         {messages.length === 0 ? (
           <div className="text-center text-gray-400 py-12">
             {dbError ? (

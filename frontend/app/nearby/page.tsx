@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { MapPin, MessageCircle, Users, Loader2, Navigation, AlertCircle, LogIn, Send } from 'lucide-react';
 import { locationService, UserLocation, NearbyTower } from '@/services/locationService';
+import { getTowerLabel } from '@/src/utils/towerNumber';
 import TowerChat from '@/components/TowerChat';
 import { useUser } from '@/contexts/UserContext';
 import Navbar from '@/components/Navbar';
@@ -171,10 +172,10 @@ export default function NearbyPage() {
     <div className="min-h-screen bg-gray-950 text-white">
       <Navbar />
       {/* Header */}
-      <div className="bg-gray-900 border-b border-gray-800 p-4 pt-20">
+  <div className="bg-gray-900 border-b border-gray-800 p-4 pt-24">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Nearby Towers</h1>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold">Nearby Towers</h1>
             {userLocation && (
               <p className="text-sm text-gray-400 mt-1">
                 <Navigation className="inline w-4 h-4 mr-1" />
@@ -227,7 +228,7 @@ export default function NearbyPage() {
                 >
                   <div className="flex items-start justify-between mb-2">
                     <div>
-                      <h3 className="font-bold text-lg">Tower {currentTower.towerId}</h3>
+                      <h3 className="font-bold text-lg">{getTowerLabel(currentTower.towerId)}</h3>
                       <p className="text-sm text-gray-400">
                         <Users className="inline w-4 h-4 mr-1" />
                         {currentTower.postCount} posts
@@ -299,7 +300,7 @@ export default function NearbyPage() {
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <h3 className="font-semibold">Tower {tower.towerId}</h3>
+                        <h3 className="font-semibold">{getTowerLabel(tower.towerId)}</h3>
                         <p className="text-sm text-gray-400 mt-1">
                           <Users className="inline w-4 h-4 mr-1" />
                           {tower.postCount} posts
@@ -372,8 +373,8 @@ export default function NearbyPage() {
           <div className="lg:sticky lg:top-4 lg:h-[calc(100vh-2rem)]">
             {selectedTowerId ? (
               <div className="bg-gray-900 rounded-lg h-full flex flex-col">
-                <div className="p-4 border-b border-gray-800">
-                  <h2 className="text-xl font-bold">Tower {selectedTowerId}</h2>
+                  <div className="p-4 border-b border-gray-800">
+                  <h2 className="text-xl font-bold">{getTowerLabel(selectedTowerId || undefined)}</h2>
                   <p className="text-sm text-gray-400">Real-time chat</p>
                 </div>
                 <div className="flex-1 overflow-hidden">

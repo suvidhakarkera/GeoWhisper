@@ -436,9 +436,17 @@ public class PostService {
                 towerId, userLatitude, userLongitude, "delete posts");
         }
 
-        // Delete associated images from storage
-        List<String> imageUrls = (List<String>) postData.get("images");
-        if (imageUrls != null && !imageUrls.isEmpty()) {
+        // Delete associated images from storage (safe extraction)
+        Object imagesObj = postData.get("images");
+        List<String> imageUrls = new ArrayList<>();
+        if (imagesObj instanceof List<?>) {
+            for (Object o : (List<?>) imagesObj) {
+                if (o instanceof String) {
+                    imageUrls.add((String) o);
+                }
+            }
+        }
+        if (!imageUrls.isEmpty()) {
             try {
                 storageService.deleteImages(imageUrls);
             } catch (Exception e) {

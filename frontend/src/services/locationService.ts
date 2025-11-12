@@ -264,6 +264,23 @@ class LocationService {
    */
   async getAllTowers(): Promise<Array<{ towerId: string; latitude: number; longitude: number; postCount: number }>> {
     try {
+      // Use a short-lived session cache to avoid fetching the full towers list repeatedly
+      const cacheKey = 'gw_allTowers_cache_v1';
+      const cacheTTLms = 2 * 60 * 1000; // 2 minutes
+
+      try {
+        const raw = sessionStorage.getItem(cacheKey);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed?.ts && Date.now() - parsed.ts < cacheTTLms && Array.isArray(parsed.data)) {
+            return parsed.data;
+          }
+        }
+      } catch (e) {
+        // Ignore parsing errors and fall through to fetching
+        console.warn('Failed to read towers cache:', e);
+      }
+
       const response = await fetch(`${API_BASE_URL}/api/posts/towers`, {
         method: 'POST',
         headers: {
@@ -280,7 +297,15 @@ class LocationService {
       }
 
       const result = await response.json();
-      return result.data || [];
+      const data = result.data || [];
+
+      try {
+        sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data }));
+      } catch (e) {
+        // Ignore storage errors
+      }
+
+      return data;
     } catch (error) {
       console.error('Error fetching all towers:', error);
       return [];

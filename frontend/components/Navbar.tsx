@@ -206,7 +206,7 @@ function NavLink({ href, children, isActive }: { href: string; children: React.R
       >
         {children}
         <span 
-          className={`absolute -bottom-1 left-0 right-0 h-1 bg-blue-500 rounded-sm transition-all duration-300 ${
+          className={`absolute -bottom-1 left-1/2 transform -translate-x-1/2 h-1 bg-blue-500 rounded-sm transition-all duration-300 w-10 md:w-14 ${
             isActive 
               ? 'opacity-70' 
               : 'opacity-0 group-hover:opacity-70'

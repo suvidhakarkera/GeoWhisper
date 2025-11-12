@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 // removed framer-motion animations per request
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { User as UserIcon, CalendarDays, BarChart3, MapPinned, MessageCircle } from 'lucide-react';
+import { User as UserIcon, CalendarDays, BarChart3, MapPinned, MessageCircle, Loader2 } from 'lucide-react';
+import { getTowerLabel } from '@/src/utils/towerNumber';
 import { useUser } from '@/contexts/UserContext';
 import { postService, Post } from '@/src/services/postService';
 import { ref, get } from 'firebase/database';
@@ -24,7 +25,7 @@ export default function ProfilePage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [userPosts, setUserPosts] = useState<Post[]>([]);
   const [recentZones, setRecentZones] = useState<RecentZone[]>([]);
-  const [loadingActivity, setLoadingActivity] = useState(false); // Start as false for instant display
+  const [loadingActivity, setLoadingActivity] = useState(true);
   const [totalChats, setTotalChats] = useState(0);
 
   useEffect(() => {
@@ -42,25 +43,21 @@ export default function ProfilePage() {
 
   const loadUserActivity = async () => {
     if (!user?.firebaseUid) return;
-    
     try {
-      // Don't set loading to true - let the page display immediately
-      
-      // Load user's posts in parallel with zones (don't wait)
-      const postsPromise = postService.getUserPosts(user.firebaseUid);
-      
-      // Show initial counts from user object immediately
-      postsPromise.then(posts => {
-        setUserPosts(posts);
-      }).catch(error => {
-        console.error('Failed to load posts:', error);
-      });
-      
-      // Load recent zones asynchronously (doesn't block initial display)
-      loadRecentZones();
-      
+      setLoadingActivity(true);
+
+      // Load posts and recent zones in parallel
+      await Promise.all([
+        postService.getUserPosts(user.firebaseUid).then(posts => setUserPosts(posts)).catch(err => {
+          console.error('Failed to load posts:', err);
+          setUserPosts([]);
+        }),
+        loadRecentZones(),
+      ]);
     } catch (error) {
       console.error('Failed to load user activity:', error);
+    } finally {
+      setLoadingActivity(false);
     }
   };
 
@@ -127,7 +124,6 @@ export default function ProfilePage() {
     { label: 'Posts', value: userPosts.length },
     { label: 'Zones Visited', value: recentZones.length },
     { label: 'Chats Sent', value: totalChats },
-    { label: 'Total Likes', value: userPosts.reduce((sum, post) => sum + (post.likes || 0), 0) },
   ];
 
   // Format the member since date
@@ -201,7 +197,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white overflow-x-hidden w-full">
+    <div className="min-h-screen bg-black text-white w-full">
       <Navbar />
 
       <div className="w-full px-4 sm:px-6 lg:px-8 pt-20 pb-8">
@@ -231,20 +227,22 @@ export default function ProfilePage() {
               </div>
 
               {/* Activity on the right (2x2) */}
-              <div className="mt-6 lg:mt-0 lg:col-span-2 w-full">
+              <div className="mt-4 lg:mt-0 lg:col-span-2 w-full lg:self-center pr-3 lg:pr-6">
                 <div className="flex items-center gap-2 mb-3">
                   <BarChart3 className="w-4 h-4 text-cyan-400" />
                   <h3 className="text-xs sm:text-sm font-semibold text-gray-200">Your Activity</h3>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                <div className="flex items-center justify-between gap-3">
                   {stats.map((s) => (
                     <div
                       key={s.label}
-                      className="rounded-lg sm:rounded-xl border border-gray-700 bg-black/50 p-3 sm:p-4 md:p-5 text-center hover:border-cyan-500 transition-colors"
+                      className="flex-1 rounded-lg sm:rounded-xl border border-gray-700 bg-black/50 p-3 sm:p-4 md:p-5 text-center hover:border-cyan-500 transition-colors"
                     >
                       <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold">
-                        {loadingActivity ? '—' : s.value}
+                        {loadingActivity ? (
+                          <Loader2 className="w-6 h-6 mx-auto text-gray-400 animate-spin" />
+                        ) : s.value}
                       </div>
                       <div className="mt-1 text-xs text-gray-400">{s.label}</div>
                     </div>
@@ -254,7 +252,7 @@ export default function ProfilePage() {
             </div>
 
               {/* Recent Zones (placed under activity so it aligns) */}
-              <div className="mt-6 lg:mt-8 w-full">
+              <div className="mt-4 lg:mt-6 w-full">
                 <div className="flex items-center gap-2 mb-3">
                   <MapPinned className="w-4 h-4 text-cyan-400" />
                   <h3 className="text-xs sm:text-sm font-semibold text-gray-200">Recent Zones</h3>
@@ -281,8 +279,8 @@ export default function ProfilePage() {
                         <div className="flex items-center gap-2 mb-3">
                           <MapPinned className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400 flex-shrink-0" />
                           <h4 className="text-xs sm:text-sm font-semibold text-gray-200 truncate">
-                            Zone {zone.towerId.substring(0, 8)}...
-                          </h4>
+                              {getTowerLabel(zone.towerId)}
+                            </h4>
                         </div>
                         
                         <div className="space-y-2">

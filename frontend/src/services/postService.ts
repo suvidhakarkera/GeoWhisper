@@ -11,6 +11,8 @@ export interface Post {
   likes: number;
   commentCount: number;
   distance?: number;
+  // Optional tower reference (may be undefined for older posts)
+  towerId?: string;
 }
 
 export interface CreatePostData {

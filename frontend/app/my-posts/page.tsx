@@ -1,12 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { User as UserIcon, Calendar, MapPin, Clock, Search, MessageCircle, Trash2, X } from 'lucide-react';
+import { User as UserIcon, Calendar, MapPin, Clock, Search, MessageCircle, Trash2, X, ChevronDown } from 'lucide-react';
+import { getTowerLabel } from '@/src/utils/towerNumber';
 import { useUser } from '@/contexts/UserContext';
 import { postService, Post } from '@/src/services/postService';
+import { locationService } from '@/src/services/locationService';
 import { ref, query, orderByChild, equalTo, get } from 'firebase/database';
 import { database } from '@/config/firebase';
 
@@ -30,6 +32,8 @@ export default function MyPostsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest'>('newest');
   const [activeTab, setActiveTab] = useState<'posts' | 'chats' | 'all'>('all');
+  const [sortOpen, setSortOpen] = useState(false);
+  const sortRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     // Redirect to signup if not authenticated
@@ -66,6 +70,19 @@ export default function MyPostsPage() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [searchQuery]);
 
+  // Close sort dropdown on outside click
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      if (sortRef.current && !sortRef.current.contains(e.target as Node)) {
+        setSortOpen(false);
+      }
+    };
+    if (sortOpen) {
+      window.addEventListener('mousedown', onClick);
+    }
+    return () => window.removeEventListener('mousedown', onClick);
+  }, [sortOpen]);
+
   const loadUserPosts = async () => {
     try {
       setLoadingPosts(true);
@@ -100,10 +117,9 @@ export default function MyPostsPage() {
       console.log('Loading user chats...');
       const allMessages: ChatMessage[] = [];
       
-      // Get all towers first
-      const towersResponse = await postService.getTowers();
-      const towers = towersResponse.data || [];
-      console.log(`Found ${towers.length} towers to check`);
+  // Get all towers first (use cached list to avoid repeated heavy requests)
+  const towers = await locationService.getAllTowers();
+  console.log(`Found ${towers.length} towers to check`);
       
       // Limit to checking the most recent towers to avoid timeout
       const maxTowersToCheck = 50; // Only check first 50 towers
@@ -266,6 +282,36 @@ export default function MyPostsPage() {
     }
   };
 
+  // Robust helper to convert various timestamp formats to milliseconds since epoch
+  const toMillis = (timestamp: any): number => {
+    try {
+      if (timestamp == null) return 0;
+
+      // Firestore Timestamp-like: { seconds: number, nanos: number }
+      if (typeof timestamp === 'object' && typeof timestamp.seconds === 'number') {
+        return timestamp.seconds * 1000 + Math.floor((timestamp.nanos || 0) / 1e6);
+      }
+
+      // Firebase Timestamp with toDate()
+      if (typeof timestamp === 'object' && typeof timestamp.toDate === 'function') {
+        return timestamp.toDate().getTime();
+      }
+
+      // Number (ms) or numeric string
+      if (typeof timestamp === 'number') return timestamp;
+      if (typeof timestamp === 'string') {
+        const parsed = Date.parse(timestamp);
+        if (!isNaN(parsed)) return parsed;
+        const asNum = parseInt(timestamp);
+        if (!isNaN(asNum)) return asNum;
+      }
+
+      return 0;
+    } catch (e) {
+      return 0;
+    }
+  };
+
   // Filter and sort posts (enhanced search)
   const filteredPosts = userPosts
     .filter(post => {
@@ -276,8 +322,8 @@ export default function MyPostsPage() {
       );
     })
     .sort((a, b) => {
-      const dateA = new Date(a.createdAt).getTime();
-      const dateB = new Date(b.createdAt).getTime();
+      const dateA = toMillis(a.createdAt);
+      const dateB = toMillis(b.createdAt);
       return sortBy === 'newest' ? dateB - dateA : dateA - dateB;
     });
 
@@ -302,7 +348,7 @@ export default function MyPostsPage() {
     
     // All - combine and sort
     const combined = [
-      ...filteredPosts.map(p => ({ ...p, type: 'post' as const, sortTime: new Date(p.createdAt).getTime() })),
+      ...filteredPosts.map(p => ({ ...p, type: 'post' as const, sortTime: toMillis(p.createdAt) })),
       ...filteredChats.map(c => ({ ...c, type: 'chat' as const, sortTime: c.timestamp }))
     ];
     
@@ -324,7 +370,7 @@ export default function MyPostsPage() {
     <div className="min-h-screen bg-black text-white">
       <Navbar />
 
-      <div className="px-4 sm:px-6 lg:px-8 pt-20 pb-12">
+  <div className="px-4 sm:px-6 lg:px-8 pt-24 pb-12">
         <div className="mx-auto w-full max-w-7xl">
           {/* Header */}
           <div className="mb-6 sm:mb-8">
@@ -396,14 +442,38 @@ export default function MyPostsPage() {
               </div>
 
               {/* Sort Dropdown */}
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as 'newest' | 'oldest')}
-                className="w-full sm:w-auto px-4 py-2.5 bg-black/50 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-cyan-500 transition-colors cursor-pointer"
-              >
-                <option value="newest">Newest First</option>
-                <option value="oldest">Oldest First</option>
-              </select>
+              <div className="relative w-full sm:w-auto">
+                <div ref={sortRef} className="relative inline-block text-left w-full sm:w-auto">
+                  <button
+                    onClick={() => setSortOpen(open => !open)}
+                    aria-haspopup="true"
+                    aria-expanded={sortOpen}
+                    className="flex items-center gap-2 appearance-none px-4 py-2.5 bg-black/80 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-cyan-500 transition-colors cursor-pointer pr-3"
+                  >
+                    <span className="truncate">{sortBy === 'newest' ? 'Newest First' : 'Oldest First'}</span>
+                    <ChevronDown className="w-4 h-4 text-gray-400 ml-2" />
+                  </button>
+
+                  {sortOpen && (
+                    <div className="origin-top-right absolute right-0 mt-2 w-40 rounded-lg shadow-lg bg-black border border-gray-800 z-50">
+                      <div className="py-1">
+                        <button
+                          onClick={() => { setSortBy('newest'); setSortOpen(false); }}
+                          className={`w-full text-left px-4 py-2 text-sm ${sortBy === 'newest' ? 'text-cyan-400' : 'text-white'} hover:bg-gray-900/80`}
+                        >
+                          Newest First
+                        </button>
+                        <button
+                          onClick={() => { setSortBy('oldest'); setSortOpen(false); }}
+                          className={`w-full text-left px-4 py-2 text-sm ${sortBy === 'oldest' ? 'text-cyan-400' : 'text-white'} hover:bg-gray-900/80`}
+                        >
+                          Oldest First
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -519,12 +589,12 @@ export default function MyPostsPage() {
                 >
                   {/* Chat Header */}
                   <div className="flex items-start justify-between mb-3 sm:mb-4 gap-2">
-                    <div className="flex items-center gap-1.5 sm:gap-2 text-blue-400">
-                      <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-                      <span className="font-semibold text-xs sm:text-sm break-words">
-                        Chat in Tower {item.towerId}
-                      </span>
-                    </div>
+                            <div className="flex items-center gap-1.5 sm:gap-2 text-blue-400">
+                            <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                            <span className="font-semibold text-xs sm:text-sm break-words">
+                              Chat in {getTowerLabel(item.towerId)}
+                            </span>
+                          </div>
                     <div className="flex flex-col items-end text-gray-400 text-[10px] sm:text-xs">
                       <div className="flex items-center gap-1">
                         <Calendar className="w-3 h-3 flex-shrink-0" />

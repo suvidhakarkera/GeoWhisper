@@ -9,7 +9,7 @@ export interface UserLocation extends Location {
 }
 
 // Post types
-export interface Post {
+export interface MapPost {
   id: string;
   content: string;
   location: Location;
