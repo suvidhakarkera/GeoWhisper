@@ -13,7 +13,7 @@ import { postService } from '@/src/services/postService';
 export default function NearbyPage() {
   const router = useRouter();
   const { user, isAuthenticated } = useUser();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('Getting your location...');
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [currentTower, setCurrentTower] = useState<NearbyTower | null>(null);
@@ -52,8 +52,8 @@ export default function NearbyPage() {
         )
       }));
 
-      // Find tower user is currently in (within 50m)
-      const currentUserTower = towersWithDistance.find(t => t.distance <= 50) || null;
+      // Find tower user is currently in (within 500m)
+      const currentUserTower = towersWithDistance.find(t => t.distance <= 500) || null;
       setCurrentTower(currentUserTower);
       
       if (currentUserTower) {
@@ -145,31 +145,22 @@ export default function NearbyPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 text-blue-500 animate-spin mx-auto mb-4" />
-          <p className="text-gray-400 text-lg">{loadingMessage}</p>
-          <p className="text-gray-600 text-sm mt-2">This may take a few seconds...</p>
-        </div>
-      </div>
-    );
-  }
-
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-gray-900 rounded-lg p-6 text-center">
-          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-white mb-2">Location Error</h2>
-          <p className="text-gray-400 mb-4">{error}</p>
-          <button
-            onClick={initLocation}
-            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-          >
-            Try Again
-          </button>
+      <div className="min-h-screen bg-gray-950">
+        <Navbar />
+        <div className="min-h-screen flex items-center justify-center p-4">
+          <div className="max-w-md w-full bg-gray-900 rounded-lg p-6 text-center">
+            <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+            <h2 className="text-xl font-bold text-white mb-2">Location Error</h2>
+            <p className="text-gray-400 mb-4">{error}</p>
+            <button
+              onClick={initLocation}
+              className="px-6 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-full transition-all hover:ring-2 hover:ring-cyan-400 border border-gray-700"
+            >
+              Try Again
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -193,15 +184,31 @@ export default function NearbyPage() {
           </div>
           <button
             onClick={initLocation}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors text-sm"
+            disabled={loading}
+            className="px-4 py-2 bg-gray-900 hover:bg-gray-800 rounded-full transition-all text-sm hover:ring-2 hover:ring-cyan-400 border border-gray-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
-            Refresh
+            {loading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Loading...
+              </>
+            ) : (
+              'Refresh'
+            )}
           </button>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto p-4">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="text-center">
+              <Loader2 className="w-12 h-12 text-cyan-400 animate-spin mx-auto mb-4" />
+              <p className="text-gray-400 text-lg">{loadingMessage}</p>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Tower List */}
           <div>
             {/* Current Tower */}
@@ -258,7 +265,7 @@ export default function NearbyPage() {
               <div className="mb-6 bg-gray-900 border border-gray-800 rounded-lg p-4">
                 <p className="text-gray-400 text-center">
                   <MapPin className="inline w-5 h-5 mr-2" />
-                  You're not in any tower (no posts within 50m)
+                  You're not in any tower (no posts within 500m)
                 </p>
                 <p className="text-sm text-gray-500 text-center mt-2">
                   Create a post to start a new tower here!
@@ -336,7 +343,7 @@ export default function NearbyPage() {
               <button
                 onClick={handleCreateClick}
                 disabled={!userLocation}
-                className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
+                className="w-full px-4 py-3 bg-gray-900 hover:bg-gray-800 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-full font-semibold transition-all flex items-center justify-center gap-2 hover:ring-2 hover:ring-cyan-400 disabled:hover:ring-0 border border-gray-700 disabled:border-gray-600"
               >
                 {isAuthenticated ? (
                   <>
@@ -391,7 +398,7 @@ export default function NearbyPage() {
                         </p>
                         <button
                           onClick={() => router.push('/signin')}
-                          className="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold transition-colors"
+                          className="px-6 py-3 bg-gray-900 hover:bg-gray-800 rounded-full font-semibold transition-all hover:ring-2 hover:ring-cyan-400 border border-gray-700"
                         >
                           Sign In
                         </button>
@@ -424,7 +431,8 @@ export default function NearbyPage() {
               </div>
             )}
           </div>
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Post Creation Modal */}

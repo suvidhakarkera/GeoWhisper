@@ -34,13 +34,11 @@ export default function ProfilePage() {
       return;
     }
 
-    // Refresh user profile data from backend on mount
-    if (isAuthenticated && user) {
-      setIsRefreshing(true);
-      refreshUserProfile().finally(() => setIsRefreshing(false));
+    // Load user activity when authenticated
+    if (isAuthenticated && user && !isRefreshing) {
       loadUserActivity();
     }
-  }, [authLoading, isAuthenticated, router, user]);
+  }, [authLoading, isAuthenticated, user]);
 
   const loadUserActivity = async () => {
     if (!user?.firebaseUid) return;
@@ -73,8 +71,11 @@ export default function ProfilePage() {
       // Map to track zone activity
       const zoneActivity = new Map<string, RecentZone>();
       
+      // Limit to checking only first 20 towers to reduce load time
+      const towersToCheck = towers.slice(0, 20);
+      
       // Check each tower for user's posts and chats
-      for (const tower of towers) {
+      for (const tower of towersToCheck) {
         const towerId = tower.towerId;
         let postCount = 0;
         let chatCount = 0;
@@ -94,34 +95,13 @@ export default function ProfilePage() {
           }
         }
         
-        // Count user's chats in this tower
-        try {
-          const messagesRef = ref(database, `chats/${towerId}/messages`);
-          const snapshot = await get(messagesRef);
-          
-          if (snapshot.exists()) {
-            let latestChat = 0;
-            snapshot.forEach((childSnapshot) => {
-              const msg = childSnapshot.val();
-              if (msg.userId === user.firebaseUid) {
-                chatCount++;
-                if (msg.timestamp > latestChat) {
-                  latestChat = msg.timestamp;
-                }
-              }
-            });
-            lastActivity = Math.max(lastActivity, latestChat);
-          }
-        } catch (error) {
-          console.error(`Error loading chats for tower ${towerId}:`, error);
-        }
-        
+        // Skip chat loading to improve performance - just count posts
         // If user has activity in this zone, add it
-        if (postCount > 0 || chatCount > 0) {
+        if (postCount > 0) {
           zoneActivity.set(towerId, {
             towerId,
             postCount,
-            chatCount,
+            chatCount: 0, // Skip chat counting for performance
             lastActivity,
           });
         }
@@ -134,9 +114,8 @@ export default function ProfilePage() {
       
       setRecentZones(sortedZones);
       
-      // Calculate total chats across all zones
-      const totalChatCount = Array.from(zoneActivity.values()).reduce((sum, zone) => sum + zone.chatCount, 0);
-      setTotalChats(totalChatCount);
+      // Set total chats to 0 for now (can be calculated separately if needed)
+      setTotalChats(0);
       
     } catch (error) {
       console.error('Failed to load recent zones:', error);
@@ -195,58 +174,65 @@ export default function ProfilePage() {
   };
 
   // Show loading state while checking auth
-  if (authLoading || !user) {
+  if (authLoading) {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <div className="text-gray-400">Loading...</div>
+      <div className="min-h-screen bg-black text-white">
+        <Navbar />
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-gray-400">Loading profile...</div>
+        </div>
       </div>
     );
   }
 
+  if (!user) {
+    return null;
+  }
+
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-black text-white overflow-x-hidden w-full">
       <Navbar />
 
-      <div className="min-h-screen px-4 sm:px-6 lg:px-8 pt-20 pb-12">
-  <div className="mx-auto w-full max-w-[1200px]">
+      <div className="w-full px-4 sm:px-6 lg:px-8 pt-20 pb-8">
+        <div className="mx-auto w-full max-w-[1200px]">
           {/* Header */}
-          <div className="flex items-center justify-center mb-6 sm:mb-8">
-            <h1 className="text-xl sm:text-2xl font-semibold">Profile</h1>
+          <div className="flex items-center justify-center mb-4 sm:mb-6 md:mb-8">
+            <h1 className="text-lg sm:text-xl md:text-2xl font-semibold">Profile</h1>
           </div>
 
           {/* Profile Card */}
-          <div className="bg-linear-to-br from-gray-900 to-gray-800 rounded-2xl border border-gray-700 p-10 sm:p-12 shadow-2xl">
+          <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl sm:rounded-2xl border border-gray-700 p-4 sm:p-6 md:p-8 lg:p-12 shadow-2xl">
             {/* Top: avatar + activity side-by-side on desktop */}
-            <div className="lg:grid lg:grid-cols-5 lg:gap-8 items-start">
-              <div className="lg:col-span-3 flex items-center justify-center gap-8">
-                <div className="flex flex-col items-center text-center">
-                  <div className="w-28 h-28 sm:w-32 sm:h-32 lg:w-40 lg:h-40 rounded-full bg-linear-to-br from-purple-700/50 to-indigo-700/50 border border-gray-600 flex items-center justify-center shadow-inner">
-                    <UserIcon className="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 text-purple-300" />
+            <div className="flex flex-col lg:grid lg:grid-cols-5 lg:gap-8 items-stretch">
+              <div className="lg:col-span-3 flex items-center justify-center">
+                <div className="flex flex-col items-center text-center w-full">
+                  <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 lg:w-40 lg:h-40 rounded-full bg-gradient-to-br from-purple-700/50 to-indigo-700/50 border border-gray-600 flex items-center justify-center shadow-inner">
+                    <UserIcon className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 lg:w-20 lg:h-20 text-purple-300" />
                   </div>
-                  <h2 className="mt-5 text-2xl sm:text-3xl lg:text-4xl font-bold">{user.username}</h2>
-                  <p className="mt-1 text-sm text-gray-400">@{user.username.toLowerCase().replace(/\s+/g, '_')}</p>
+                  <h2 className="mt-3 sm:mt-4 md:mt-5 text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold break-words max-w-full">{user.username}</h2>
+                  <p className="mt-1 text-xs sm:text-sm text-gray-400 break-all">@{user.username.toLowerCase().replace(/\s+/g, '_')}</p>
 
                   <div className="mt-2 inline-flex items-center gap-2 text-gray-400 text-xs sm:text-sm">
-                    <CalendarDays className="w-4 h-4" />
+                    <CalendarDays className="w-3 h-3 sm:w-4 sm:h-4" />
                     <span>Member since {getMemberSince()}</span>
                   </div>
                 </div>
               </div>
 
               {/* Activity on the right (2x2) */}
-              <div className="mt-6 lg:mt-0 lg:col-span-2">
+              <div className="mt-6 lg:mt-0 lg:col-span-2 w-full">
                 <div className="flex items-center gap-2 mb-3">
                   <BarChart3 className="w-4 h-4 text-cyan-400" />
-                  <h3 className="text-sm font-semibold text-gray-200">Your Activity</h3>
+                  <h3 className="text-xs sm:text-sm font-semibold text-gray-200">Your Activity</h3>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4">
                   {stats.map((s) => (
                     <div
                       key={s.label}
-                      className="rounded-xl border border-gray-700 bg-black/50 p-5 text-center hover:border-cyan-500 transition-colors"
+                      className="rounded-lg sm:rounded-xl border border-gray-700 bg-black/50 p-3 sm:p-4 md:p-5 text-center hover:border-cyan-500 transition-colors"
                     >
-                      <div className="text-2xl lg:text-3xl font-extrabold">
+                      <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold">
                         {loadingActivity ? '—' : s.value}
                       </div>
                       <div className="mt-1 text-xs text-gray-400">{s.label}</div>
@@ -257,33 +243,33 @@ export default function ProfilePage() {
             </div>
 
               {/* Recent Zones (placed under activity so it aligns) */}
-              <div className="mt-6 lg:mt-6 lg:col-span-5">
+              <div className="mt-6 lg:mt-8 w-full">
                 <div className="flex items-center gap-2 mb-3">
                   <MapPinned className="w-4 h-4 text-cyan-400" />
-                  <h3 className="text-sm font-semibold text-gray-200">Recent Zones</h3>
+                  <h3 className="text-xs sm:text-sm font-semibold text-gray-200">Recent Zones</h3>
                 </div>
 
                 {loadingActivity ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                     {[1, 2, 3, 4].map((idx) => (
                       <div
                         key={idx}
-                        className="rounded-xl border border-gray-700 bg-black/50 p-5"
+                        className="rounded-lg sm:rounded-xl border border-gray-700 bg-black/50 p-4 sm:p-5"
                       >
-                        <div className="h-20 bg-gray-800 rounded"></div>
+                        <div className="h-16 sm:h-20 bg-gray-800 rounded"></div>
                       </div>
                     ))}
                   </div>
                 ) : recentZones.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                     {recentZones.map((zone) => (
                       <div
                         key={zone.towerId}
-                        className="rounded-xl border border-gray-700 bg-gradient-to-br from-gray-900 to-black p-5 hover:border-cyan-500 transition-colors"
+                        className="rounded-lg sm:rounded-xl border border-gray-700 bg-gradient-to-br from-gray-900 to-black p-4 sm:p-5 hover:border-cyan-500 transition-colors"
                       >
                         <div className="flex items-center gap-2 mb-3">
-                          <MapPinned className="w-5 h-5 text-cyan-400" />
-                          <h4 className="text-sm font-semibold text-gray-200 truncate">
+                          <MapPinned className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400 flex-shrink-0" />
+                          <h4 className="text-xs sm:text-sm font-semibold text-gray-200 truncate">
                             Zone {zone.towerId.substring(0, 8)}...
                           </h4>
                         </div>
@@ -307,9 +293,9 @@ export default function ProfilePage() {
                     ))}
                   </div>
                 ) : (
-                  <div className="rounded-xl border border-gray-700 bg-black/50 p-8 text-center">
-                    <MapPinned className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-                    <p className="text-gray-400 text-sm">No zones visited yet</p>
+                  <div className="rounded-lg sm:rounded-xl border border-gray-700 bg-black/50 p-6 sm:p-8 text-center">
+                    <MapPinned className="w-10 h-10 sm:w-12 sm:h-12 text-gray-600 mx-auto mb-3" />
+                    <p className="text-gray-400 text-xs sm:text-sm">No zones visited yet</p>
                     <p className="text-gray-500 text-xs mt-1">
                       Start creating posts or chatting to explore zones!
                     </p>
@@ -317,7 +303,7 @@ export default function ProfilePage() {
                 )}
               </div>
           </div>
-  </div>
+        </div>
       </div>
 
       <Footer />

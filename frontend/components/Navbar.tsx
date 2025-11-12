@@ -51,10 +51,10 @@ export default function Navbar() {
 
           {/* Desktop Navigation Links */}
           <div className="hidden md:flex items-center gap-6">
-            <NavLink href="/">Home</NavLink>
-            <NavLink href="/nearby">Nearby</NavLink>
-            <NavLink href="/my-posts">My Posts</NavLink>
-            <NavLink href="/maps">Maps</NavLink>
+            <NavLink href="/" isActive={pathname === '/'}>Home</NavLink>
+            <NavLink href="/nearby" isActive={pathname === '/nearby'}>Nearby</NavLink>
+            <NavLink href="/my-posts" isActive={pathname === '/my-posts'}>My Posts</NavLink>
+            <NavLink href="/maps" isActive={pathname === '/maps'}>Maps</NavLink>
           </div>
 
           {/* Right Section: Auth + Mobile Menu */}
@@ -141,13 +141,12 @@ export default function Navbar() {
                 <MobileNavLink href="/" onClick={() => setMobileMenuOpen(false)} isActive={pathname === '/'}>
                   Home
                 </MobileNavLink>
-                <MobileNavLink href="/nearby" onClick={() => setMobileMenuOpen(false)}>
+                <MobileNavLink href="/nearby" onClick={() => setMobileMenuOpen(false)} isActive={pathname === '/nearby'}>
                   Nearby Towers
                 </MobileNavLink>
-                <MobileNavLink href="/my-posts" onClick={() => setMobileMenuOpen(false)}>
+                <MobileNavLink href="/my-posts" onClick={() => setMobileMenuOpen(false)} isActive={pathname === '/my-posts'}>
                   My Posts
                 </MobileNavLink>
-               
                 <MobileNavLink href="/maps" onClick={() => setMobileMenuOpen(false)} isActive={pathname === '/maps'}>
                   Maps
                 </MobileNavLink>
@@ -206,9 +205,13 @@ function NavLink({ href, children, isActive }: { href: string; children: React.R
         whileTap={{ scale: 0.95 }}
       >
         {children}
-        <span className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 bg-gradient-to-r from-cyan-400 to-blue-500 transition-all duration-300 ${
-          isActive ? 'w-3/4' : 'w-0 group-hover:w-3/4'
-        }`}></span>
+        <span 
+          className={`absolute -bottom-1 left-0 right-0 h-1 bg-blue-500 rounded-sm transition-all duration-300 ${
+            isActive 
+              ? 'opacity-70' 
+              : 'opacity-0 group-hover:opacity-70'
+          }`}
+        ></span>
       </motion.span>
     </Link>
   );
