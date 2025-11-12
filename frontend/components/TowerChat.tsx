@@ -12,13 +12,15 @@ interface TowerChatProps {
   currentUserId: string;
   currentUsername: string;
   isModerator?: boolean;
+  postCount?: number;
 }
 
 export default function TowerChat({ 
   towerId, 
   currentUserId, 
   currentUsername, 
-  isModerator = false 
+  isModerator = false,
+  postCount = 0
 }: TowerChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
@@ -384,9 +386,9 @@ export default function TowerChat({
             
             <button
               onClick={fetchVibeSummary}
-              disabled={loadingVibe}
+              disabled={loadingVibe || postCount === 0}
               className="flex items-center gap-2 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-700 disabled:cursor-not-allowed rounded-lg text-sm transition-colors"
-              title="Get vibe of this tower"
+              title={postCount === 0 ? "No posts in this tower yet" : "Get vibe of this tower"}
             >
               <Sparkles className="w-4 h-4" />
               {loadingVibe ? 'Loading...' : 'Vibe Check'}

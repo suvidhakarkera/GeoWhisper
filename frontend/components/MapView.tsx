@@ -324,6 +324,7 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
                   currentUserId={user.firebaseUid}
                   currentUsername={user.username}
                   isModerator={false}
+                  postCount={selectedTower.postCount || 0}
                 />
               ) : (
                 <div className="h-full flex items-center justify-center p-8">

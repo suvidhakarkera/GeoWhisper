@@ -375,6 +375,11 @@ export default function NearbyPage() {
                       currentUserId={user.firebaseUid}
                       currentUsername={user.username}
                       isModerator={false}
+                      postCount={
+                        currentTower?.towerId === selectedTowerId
+                          ? currentTower.postCount
+                          : nearbyTowers.find(t => t.towerId === selectedTowerId)?.postCount || 0
+                      }
                     />
                   ) : (
                     <div className="h-full flex items-center justify-center p-8">
