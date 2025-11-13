@@ -40,6 +40,7 @@ export default function TowerChat({
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [canInteract, setCanInteract] = useState<boolean | null>(null); // null = loading
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [isOutOfRange, setIsOutOfRange] = useState(false); // Separate flag for out-of-range vs actual errors
   const [distanceFromTower, setDistanceFromTower] = useState<number | null>(null);
   const [showRangePopup, setShowRangePopup] = useState(false);
   const [checkingPermissions, setCheckingPermissions] = useState(true);
@@ -48,7 +49,7 @@ export default function TowerChat({
 
   // Get user location on mount
   useEffect(() => {
-    const getUserLocation = async (retryCount = 0) => {
+    const getUserLocation = async () => {
       setCheckingPermissions(true);
       
       // Check if geolocation is available
@@ -61,20 +62,17 @@ export default function TowerChat({
       }
       
       try {
-        // Always get user location first (needed for sending messages)
+        // Get user location with 3 second timeout
         const position = await new Promise<GeolocationPosition>((resolve, reject) => {
           if (!navigator.geolocation) {
             reject(new Error('Geolocation is not supported by your browser'));
             return;
           }
           
-          // Try with high accuracy first, then fall back to lower accuracy if needed
-          const useHighAccuracy = retryCount === 0;
-          
           navigator.geolocation.getCurrentPosition(resolve, reject, {
-            enableHighAccuracy: useHighAccuracy,
-            timeout: useHighAccuracy ? 15000 : 20000, // More time for retry
-            maximumAge: useHighAccuracy ? 60000 : 120000, // Accept older cache on retry
+            enableHighAccuracy: false, // Use cached location for faster response
+            timeout: 3000, // 3 second timeout
+            maximumAge: 120000, // Accept cached location up to 2 minutes old
           });
         });
 
@@ -95,35 +93,54 @@ export default function TowerChat({
 
         // Check if user can interact with this tower and get distance
         console.log('Checking interaction permission for tower:', towerId, 'at location:', location);
-        const response = await fetch(
-          `${API_BASE_URL}/api/towers/${towerId}/can-interact?latitude=${location.latitude}&longitude=${location.longitude}`
-        );
-        
-        if (response.ok) {
-          const result = await response.json();
-          const data = result.data;
-          console.log('Permission check result:', data);
-          console.log('Can interact:', data.canInteract, 'Distance:', data.distance, 'm');
+        try {
+          const response = await fetch(
+            `${API_BASE_URL}/api/towers/${towerId}/can-interact?latitude=${location.latitude}&longitude=${location.longitude}`
+          );
           
-          setCanInteract(data.canInteract);
-          setDistanceFromTower(data.distance);
-          
-          if (!data.canInteract) {
-            setLocationError(data.message || 'You are too far from this tower to interact');
-            console.log('User is out of range:', data.message);
+          if (response.ok) {
+            const result = await response.json();
+            const data = result.data;
+            console.log('Permission check result:', data);
+            console.log('Can interact:', data.canInteract, 'Distance:', data.distance, 'm');
+            
+            setCanInteract(data.canInteract);
+            setDistanceFromTower(data.distance);
+            
+            if (!data.canInteract) {
+              setIsOutOfRange(true);
+              setLocationError(null); // Clear any location errors
+              console.log('User is out of range:', data.message);
+            } else {
+              setIsOutOfRange(false);
+              console.log('User can interact with this tower!');
+            }
+          } else if (response.status === 403 || response.status === 401) {
+            // Permission denied at API level - treat as out of range for now
+            console.warn('Permission check failed with status:', response.status);
+            setCanInteract(false);
+            setIsOutOfRange(true);
+            setLocationError(null);
+            setDistanceFromTower(null);
           } else {
-            console.log('User can interact with this tower!');
+            console.error('Failed to check permissions:', response.status);
+            setCanInteract(false);
+            setIsOutOfRange(true);
+            setLocationError(null);
           }
-        } else {
-          console.error('Failed to check permissions:', response.status);
+        } catch (fetchError) {
+          console.error('Error checking tower permissions:', fetchError);
+          // If the API call fails, treat it as out of range rather than an error
           setCanInteract(false);
-          setLocationError('Unable to verify your location permissions');
+          setIsOutOfRange(true);
+          setLocationError(null);
         }
       } catch (error: any) {
         console.error('Error getting location:', error);
         
         // Provide more specific error messages
         let errorMessage = 'Unable to get your location. Interaction may be restricted.';
+        let isTimeout = false;
         
         // Check if it's a GeolocationPositionError
         if (error && typeof error === 'object' && 'code' in error) {
@@ -137,8 +154,9 @@ export default function TowerChat({
               console.log('Position unavailable');
               break;
             case 3: // TIMEOUT
-              errorMessage = 'Location request timed out. Please try again.';
-              console.log('Geolocation timeout');
+              // With 3 second timeout, treat this as out of range rather than an error
+              isTimeout = true;
+              console.log('Geolocation timeout - treating as out of range');
               break;
             default:
               errorMessage = 'Failed to get location. Please ensure location services are enabled.';
@@ -151,8 +169,15 @@ export default function TowerChat({
           console.log('Unknown geolocation error:', error);
         }
         
-        setLocationError(errorMessage);
-        setCanInteract(false);
+        if (isTimeout) {
+          // Treat timeout as out of range, not an error
+          setLocationError(null);
+          setIsOutOfRange(true);
+          setCanInteract(false);
+        } else {
+          setLocationError(errorMessage);
+          setCanInteract(false);
+        }
       } finally {
         setCheckingPermissions(false);
       }
@@ -553,12 +578,14 @@ export default function TowerChat({
                   className={`flex items-center gap-1.5 px-3 py-1.5 backdrop-blur-sm rounded-lg text-xs font-medium transition-all border-2 text-white whitespace-nowrap ${
                     locationError 
                       ? 'bg-red-500/10 hover:bg-red-500/20 border-red-500/50 hover:border-red-500' 
+                      : isOutOfRange
+                      ? 'bg-yellow-500/10 hover:bg-yellow-500/20 border-yellow-500/50 hover:border-yellow-500'
                       : 'bg-white/5 hover:bg-white/10 border-gray-700 hover:border-blue-400'
                   }`}
                   title="Click for details"
                 >
                   {locationError ? <AlertTriangle className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                  <span>{locationError ? 'Location Error' : 'View Only'}</span>
+                  <span>{locationError ? 'Location Error' : isOutOfRange ? 'Out of Range' : 'View Only'}</span>
                 </button>
 
                 {/* Popup - Click outside to close, positioned to stay within screen */}
@@ -576,11 +603,15 @@ export default function TowerChat({
                         </div>
                         <div className="flex-1">
                           <h4 className="font-bold text-white text-sm mb-2">
-                            {locationError ? 'Location Access Required' : 'View Only Mode'}
+                            {locationError ? 'Location Access Required' : isOutOfRange ? 'Out of Tower Range' : 'View Only Mode'}
                           </h4>
                           <p className="text-xs text-gray-300 mb-2 leading-relaxed">
                             {locationError ? (
                               <>{locationError}</>
+                            ) : isOutOfRange && distanceFromTower ? (
+                              <>
+                                You are <span className="font-bold text-yellow-400">{Math.round(distanceFromTower)}m</span> away from this tower.
+                              </>
                             ) : distanceFromTower ? (
                               <>
                                 You are <span className="font-bold text-blue-400">{Math.round(distanceFromTower)}m</span> away from this tower.
@@ -589,9 +620,17 @@ export default function TowerChat({
                               <>Checking your location...</>
                             )}
                           </p>
-                          {!locationError && (
+                          {locationError ? (
                             <p className="text-xs text-gray-400 leading-relaxed">
-                              You are outside the 550m range. You can view messages but cannot send messages or interact with content.
+                              Please enable location access in your browser settings to interact with this tower.
+                            </p>
+                          ) : isOutOfRange ? (
+                            <p className="text-xs text-gray-400 leading-relaxed">
+                              You are outside the 550m interaction range. <span className="font-semibold text-white">Only viewing is enabled.</span> Move closer to send messages.
+                            </p>
+                          ) : (
+                            <p className="text-xs text-gray-400 leading-relaxed">
+                              You can view messages but cannot send messages or interact with content.
                             </p>
                           )}
                           <button

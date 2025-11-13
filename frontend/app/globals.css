@@ -120,3 +120,13 @@ body {
   scrollbar-width: none !important; /* Firefox */
 }
 
+/* Hot Zone Pulse Animation for Tower Markers */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+

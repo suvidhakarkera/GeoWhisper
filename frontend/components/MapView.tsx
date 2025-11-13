@@ -30,6 +30,8 @@ interface Tower {
   postCount: number;
   // older towers may include posts, but MapView only needs the above
   posts?: any[];
+  engagementScore?: number; // For hot zones calculation (based on postCount)
+  hotZoneRank?: number; // 1-5 for top 5, 0 for others
 }
 export default function MapView({ onLocationUpdate, onPostClick, onChatAccessChange }: MapViewProps) {
   const { user, isAuthenticated } = useUser();
@@ -40,6 +42,7 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
   const [towers, setTowers] = useState<Tower[]>([]);
   const [selectedTower, setSelectedTower] = useState<Tower | null>(null);
   const [towersLoading, setTowersLoading] = useState(false);
+  const [hotZones, setHotZones] = useState<string[]>([]); // Top 5 hot zone tower IDs
   const mapRef = useRef<any>(null);
 
   const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || '';
@@ -90,6 +93,62 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
 
     fetchTowers();
   }, []);
+
+  // Calculate engagement and identify hot zones
+  useEffect(() => {
+    const calculateHotZones = async () => {
+      if (towers.length === 0 || !userLocation) return;
+
+      // Filter towers within 5km of user location
+      const towersWithinRange = towers.map((tower) => {
+        const distance = calculateDistance(
+          userLocation.latitude,
+          userLocation.longitude,
+          tower.latitude,
+          tower.longitude
+        );
+        
+        return {
+          ...tower,
+          distanceFromUser: distance,
+        };
+      }).filter(tower => tower.distanceFromUser <= 5000); // 5km = 5000 meters
+
+      // Calculate engagement score based on postCount only
+      // In future, can add chat message count when permissions are configured
+      const towersWithEngagement = towersWithinRange.map((tower) => {
+        // Use postCount as the primary engagement metric
+        const engagementScore = tower.postCount;
+
+        return {
+          ...tower,
+          engagementScore,
+        };
+      });
+
+      // Sort by engagement score (descending) and get top 5 from within range
+      const sortedTowers = [...towersWithEngagement].sort(
+        (a, b) => (b.engagementScore || 0) - (a.engagementScore || 0)
+      );
+
+      const top5 = sortedTowers.slice(0, 5);
+      const hotZoneIds = top5.map(t => t.towerId);
+
+      // Assign ranking to ALL towers (only those within range will have rank > 0)
+      const rankedTowers = towers.map(tower => {
+        const rank = hotZoneIds.indexOf(tower.towerId);
+        return {
+          ...tower,
+          hotZoneRank: rank >= 0 ? rank + 1 : 0,
+        };
+      });
+
+      setTowers(rankedTowers);
+      setHotZones(hotZoneIds);
+    };
+
+    calculateHotZones();
+  }, [towers.length, userLocation]); // Recalculate when tower count or user location changes
 
   // Handle geolocation success
   const handleLocationSuccess = useCallback((position: GeolocationPosition) => {
@@ -276,7 +335,61 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
         onClick={() => setSelectedTower(null)}
       >
         {/* Tower Markers */}
-          {towers.map((tower) => (
+          {towers.map((tower) => {
+          const isHotZone = tower.hotZoneRank && tower.hotZoneRank > 0;
+          const rank = tower.hotZoneRank || 0;
+          
+          // Different animation speeds and glow colors based on rank
+          const getHotZoneStyle = (rank: number) => {
+            switch(rank) {
+              case 1: // #1 hottest - fastest pulse, brightest glow
+                return {
+                  pulseSpeed: '0.8s',
+                  glowColor: 'rgba(255, 0, 0, 0.8)',
+                  ringColor: 'rgba(255, 50, 50, 0.6)',
+                  iconColor: 'text-red-500',
+                  scale: 1.3
+                };
+              case 2: // #2 - fast pulse, bright glow
+                return {
+                  pulseSpeed: '1.1s',
+                  glowColor: 'rgba(255, 100, 0, 0.7)',
+                  ringColor: 'rgba(255, 120, 50, 0.5)',
+                  iconColor: 'text-orange-500',
+                  scale: 1.25
+                };
+              case 3: // #3 - medium pulse
+                return {
+                  pulseSpeed: '1.4s',
+                  glowColor: 'rgba(255, 200, 0, 0.6)',
+                  ringColor: 'rgba(255, 200, 50, 0.4)',
+                  iconColor: 'text-yellow-500',
+                  scale: 1.2
+                };
+              case 4: // #4 - slower pulse
+                return {
+                  pulseSpeed: '1.7s',
+                  glowColor: 'rgba(150, 255, 50, 0.5)',
+                  ringColor: 'rgba(150, 255, 100, 0.3)',
+                  iconColor: 'text-lime-400',
+                  scale: 1.15
+                };
+              case 5: // #5 - slowest pulse
+                return {
+                  pulseSpeed: '2s',
+                  glowColor: 'rgba(0, 255, 150, 0.4)',
+                  ringColor: 'rgba(50, 255, 150, 0.2)',
+                  iconColor: 'text-green-400',
+                  scale: 1.1
+                };
+              default:
+                return null;
+            }
+          };
+
+          const hotZoneStyle = isHotZone ? getHotZoneStyle(rank) : null;
+
+          return (
           <Marker
             key={tower.towerId}
             longitude={tower.longitude}
@@ -284,11 +397,61 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
             anchor="center"
             onClick={(e) => handleMarkerClick(e, tower)}
           >
-            <div className="cursor-pointer transform transition-all hover:scale-110">
-              <TowerIcon className="w-10 h-10 text-slate-300 drop-shadow-2xl" size={40} />
+            <div className="relative cursor-pointer transform transition-all hover:scale-110" style={{ fontSize: 0 }}>
+              {/* Hot Zone Pulsing Ring Animation */}
+              {isHotZone && hotZoneStyle && (
+                <>
+                  {/* Outer pulsing ring */}
+                  <div 
+                    className="absolute inset-0 rounded-full animate-ping pointer-events-none"
+                    style={{
+                      width: `${40 * hotZoneStyle.scale}px`,
+                      height: `${40 * hotZoneStyle.scale}px`,
+                      backgroundColor: hotZoneStyle.ringColor,
+                      animationDuration: hotZoneStyle.pulseSpeed,
+                      transform: 'translate(-50%, -50%)',
+                      left: '50%',
+                      top: '50%',
+                    }}
+                  />
+                  {/* Inner glowing circle */}
+                  <div 
+                    className="absolute inset-0 rounded-full pointer-events-none"
+                    style={{
+                      width: '44px',
+                      height: '44px',
+                      boxShadow: `0 0 20px ${hotZoneStyle.glowColor}, 0 0 40px ${hotZoneStyle.glowColor}`,
+                      transform: 'translate(-50%, -50%)',
+                      left: '50%',
+                      top: '50%',
+                      animation: `pulse ${hotZoneStyle.pulseSpeed} ease-in-out infinite`,
+                    }}
+                  />
+                </>
+              )}
+              
+              {/* Tower Icon with conditional coloring */}
+              <TowerIcon 
+                className={`w-10 h-10 ${hotZoneStyle ? hotZoneStyle.iconColor : 'text-slate-300'} drop-shadow-2xl transition-colors duration-300`}
+                size={40} 
+              />
+              
+              {/* Hot Zone Rank Badge - Only show for ranks 1, 2, 3 */}
+              {isHotZone && rank > 0 && rank <= 3 && (
+                <div 
+                  className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-bold pointer-events-none"
+                  style={{
+                    backgroundColor: rank === 1 ? '#dc2626' : rank === 2 ? '#ea580c' : '#eab308',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
+                  }}
+                >
+                  {rank}
+                </div>
+              )}
             </div>
           </Marker>
-        ))}
+          );
+        })}
 
         {/* User Location Marker */}
         {userLocation && (
@@ -306,12 +469,34 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
         )}
       </Map>
 
-      {/* Loading Indicator */}
+      {/* Loading Indicator - Enhanced */}
       {towersLoading && (
-        <div className="absolute top-4 right-4 bg-black/80 backdrop-blur-lg border border-cyan-500/20 rounded-lg p-3 text-white flex items-center gap-2">
-          <Loader2 className="w-4 h-4 animate-spin" />
-          <span className="text-sm">Loading towers...</span>
-        </div>
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          className="absolute top-4 right-4 bg-gradient-to-r from-gray-900/95 to-gray-800/95 backdrop-blur-xl border border-cyan-500/30 rounded-xl p-4 text-white shadow-2xl"
+        >
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <Loader2 className="w-5 h-5 text-cyan-400 animate-spin" />
+              <div className="absolute inset-0 w-5 h-5 rounded-full bg-cyan-400/20 animate-ping"></div>
+            </div>
+            <div>
+              <div className="text-sm font-semibold text-cyan-400">Loading Towers</div>
+              <div className="text-xs text-gray-400 mt-0.5">Fetching chat zones...</div>
+            </div>
+          </div>
+          {/* Progress bar animation */}
+          <div className="mt-3 h-1 bg-gray-700/50 rounded-full overflow-hidden">
+            <motion.div
+              className="h-full bg-gradient-to-r from-cyan-500 to-blue-500"
+              initial={{ width: "0%" }}
+              animate={{ width: "100%" }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            />
+          </div>
+        </motion.div>
       )}
 
       {/* Location Info Card */}
