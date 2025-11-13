@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { MapPin, MessageCircle, Users, Loader2, Navigation, AlertCircle, LogIn, Send } from 'lucide-react';
 import { locationService, UserLocation, NearbyTower } from '@/services/locationService';
@@ -23,6 +23,7 @@ export default function NearbyPage() {
   const [selectedTowerId, setSelectedTowerId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const chatPanelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Get user location and find towers
@@ -81,6 +82,23 @@ export default function NearbyPage() {
       return `${Math.round(meters)}m away`;
     }
     return `${(meters / 1000).toFixed(1)}km away`;
+  };
+
+  // Scroll to chat panel (useful on mobile)
+  const scrollToChatPanel = () => {
+    setTimeout(() => {
+      chatPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  };
+
+  // Handle opening chat for a tower
+  const handleOpenChat = (towerId: string) => {
+    if (!isAuthenticated) {
+      router.push('/signin');
+      return;
+    }
+    setSelectedTowerId(towerId);
+    scrollToChatPanel();
   };
 
   // Handle create post button click
@@ -241,11 +259,7 @@ export default function NearbyPage() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (!isAuthenticated) {
-                        router.push('/signin');
-                        return;
-                      }
-                      setSelectedTowerId(currentTower.towerId);
+                      handleOpenChat(currentTower.towerId);
                     }}
                     className="w-full mt-3 px-4 py-2 bg-black/20 backdrop-blur-lg border-2 border-gray-600 text-white hover:border-blue-400 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all overflow-hidden group"
                   >
@@ -293,7 +307,11 @@ export default function NearbyPage() {
                 {nearbyTowers.map((tower) => (
                   <div
                     key={tower.towerId}
-                    onClick={() => setSelectedTowerId(tower.towerId)}
+                    onClick={() => {
+                      if (isAuthenticated) {
+                        handleOpenChat(tower.towerId);
+                      }
+                    }}
                     className={`bg-gray-900 border border-gray-800 rounded-lg p-4 cursor-pointer hover:bg-gray-800 transition-colors ${
                       selectedTowerId === tower.towerId ? 'ring-2 ring-gray-500' : ''
                     }`}
@@ -313,11 +331,7 @@ export default function NearbyPage() {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            if (!isAuthenticated) {
-                              router.push('/signin');
-                              return;
-                            }
-                            setSelectedTowerId(tower.towerId);
+                            handleOpenChat(tower.towerId);
                           }}
                           className="text-blue-400 hover:text-blue-300 text-sm flex items-center gap-1"
                         >
@@ -370,7 +384,7 @@ export default function NearbyPage() {
           </div>
 
           {/* Chat Panel */}
-          <div className="lg:sticky lg:top-4 lg:h-[calc(100vh-2rem)]">
+          <div ref={chatPanelRef} className="lg:sticky lg:top-4 lg:h-[calc(100vh-2rem)]">
             {selectedTowerId ? (
               <div className="bg-gray-900 rounded-lg h-full flex flex-col">
                   <div className="p-4 border-b border-gray-800">
