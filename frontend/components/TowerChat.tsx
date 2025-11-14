@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { ref, onValue, push, set, off } from 'firebase/database';
-import { Send, AlertTriangle, Flag, Trash2, EyeOff, Loader2, Image as ImageIcon, X, Sparkles, MessageSquare, MessageCircle } from 'lucide-react';
+import { Send, AlertTriangle, Flag, Trash2, EyeOff, Loader2, Image as ImageIcon, X, Sparkles, MessageSquare, MessageCircle, Camera } from 'lucide-react';
 import { chatService, ChatMessage, ContentModerationResponse } from '@/services/chatService';
 import { database } from '@/config/firebase';
 import { API_BASE_URL } from '@/config/api';
@@ -46,6 +46,7 @@ export default function TowerChat({
   const [checkingPermissions, setCheckingPermissions] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   // Get user location on mount
   useEffect(() => {
@@ -933,7 +934,7 @@ export default function TowerChat({
         )}
         
         <div className="flex gap-2">
-          {/* Hidden file input */}
+          {/* Hidden file inputs */}
           <input
             ref={fileInputRef}
             type="file"
@@ -941,6 +942,25 @@ export default function TowerChat({
             onChange={handleImageSelect}
             className="hidden"
           />
+          <input
+            ref={cameraInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={handleImageSelect}
+            className="hidden"
+          />
+          
+          {/* Camera button - Mobile only */}
+          <button
+            onClick={() => cameraInputRef.current?.click()}
+            disabled={sending || checking}
+            className="md:hidden px-3 py-2 bg-gray-700/80 hover:bg-gray-600/80 disabled:bg-gray-600/50 disabled:cursor-not-allowed rounded-xl transition-all backdrop-blur-sm flex items-center gap-2 border border-gray-600/30 hover:border-gray-500/50 shadow-lg"
+            type="button"
+            title="Take photo"
+          >
+            <Camera className="w-5 h-5" />
+          </button>
           
           {/* Image upload button */}
           <button
