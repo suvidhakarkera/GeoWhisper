@@ -3,7 +3,7 @@
 // If `NEXT_PUBLIC_API_BASE_URL` is set that will be used. Otherwise,
 // when running in the browser we derive a host-aware default so mobile
 // devices can reach the backend on the development machine (LAN IP).
-const DEFAULT_LOCALHOST = 'http://localhost:8080';
+const DEFAULT_LOCALHOST = 'https://geowhisper-50cy.onrender.com';
 
 const deriveBaseUrl = (): string => {
   if (process.env.NEXT_PUBLIC_API_BASE_URL) return process.env.NEXT_PUBLIC_API_BASE_URL;
