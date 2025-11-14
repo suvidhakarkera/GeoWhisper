@@ -3,11 +3,11 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import Map, { Marker, Popup } from 'react-map-gl';
 import { MapPin, Loader2, AlertCircle, X } from 'lucide-react';
-import { locationService } from '@/src/services/locationService';
+import { locationService } from '@/services/locationService';
 import { TowerIcon } from './TowerIcon';
 import { motion, AnimatePresence } from 'framer-motion';
 import TowerChat from './TowerChat';
-import { getTowerLabel } from '@/src/utils/towerNumber';
+import { getTowerLabel } from '@/utils/towerNumber';
 import { useUser } from '@/contexts/UserContext';
 import 'mapbox-gl/dist/mapbox-gl.css';
 

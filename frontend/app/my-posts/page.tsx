@@ -5,12 +5,13 @@ import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { User as UserIcon, Calendar, MapPin, Clock, Search, MessageCircle, Trash2, X, ChevronDown } from 'lucide-react';
-import { getTowerLabel } from '@/src/utils/towerNumber';
+import { getTowerLabel } from '@/utils/towerNumber';
 import { useUser } from '@/contexts/UserContext';
-import { postService, Post } from '@/src/services/postService';
-import { locationService } from '@/src/services/locationService';
+import { postService, Post } from '@/services/postService';
+import { locationService } from '@/services/locationService';
 import { ref, query, orderByChild, equalTo, get } from 'firebase/database';
 import { database } from '@/config/firebase';
+import { useToast } from '@/components/ToastContext';
 
 interface ChatMessage {
   id: string;
@@ -25,6 +26,7 @@ interface ChatMessage {
 export default function MyPostsPage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useUser();
+  const { show } = useToast();
   const [userPosts, setUserPosts] = useState<Post[]>([]);
   const [userChats, setUserChats] = useState<ChatMessage[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
@@ -191,7 +193,7 @@ export default function MyPostsPage() {
       // Remove from local state immediately for better UX
       setUserPosts(prev => prev.filter(post => post.id !== postId));
       
-      alert('Post deleted successfully!');
+      show('Post deleted successfully!', 'success');
     } catch (error: any) {
       console.error('Error deleting post:', error);
       alert(error.message || 'Failed to delete post');

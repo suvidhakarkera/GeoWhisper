@@ -4,17 +4,20 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { MapPin, MessageCircle, Users, Loader2, Navigation, AlertCircle, LogIn, Send } from 'lucide-react';
 import { locationService, UserLocation, NearbyTower } from '@/services/locationService';
-import { getTowerLabel } from '@/src/utils/towerNumber';
+import { getTowerLabel } from '@/utils/towerNumber';
 import TowerChat from '@/components/TowerChat';
+import MiniMap from '@/components/MiniMap';
 import { useUser } from '@/contexts/UserContext';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import PostCreationModal, { PostData } from '@/components/PostCreationModal';
-import { postService } from '@/src/services/postService';
+import { postService } from '@/services/postService';
+import { useToast } from '@/components/ToastContext';
 
 export default function NearbyPage() {
   const router = useRouter();
   const { user, isAuthenticated } = useUser();
+  const { show } = useToast();
   const [loading, setLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('Getting your location...');
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
@@ -148,11 +151,11 @@ export default function NearbyPage() {
       }, images);
       
       console.log('Post created successfully:', result);
-      
+
       // Refresh the nearby towers after creating a post
       await initLocation();
-      
-      alert('Post created successfully!');
+
+      show('Post created successfully!', 'success');
     } catch (error: any) {
       console.error('Error creating post:', error);
       console.error('Error details:', {
@@ -160,7 +163,7 @@ export default function NearbyPage() {
         stack: error.stack,
         name: error.name
       });
-      alert(error.message || 'Failed to create post. Please try again.');
+      show(error.message || 'Failed to create post. Please try again.', 'error');
       throw error;
     }
   };
@@ -219,7 +222,7 @@ export default function NearbyPage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto p-4">
+      <div className="max-w-7xl mx-auto p-4 min-h-[calc(100vh-96px)] overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <div className="text-center">
@@ -229,162 +232,53 @@ export default function NearbyPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Tower List */}
-          <div>
-            {/* Current Tower */}
-            {currentTower ? (
-              <div className="mb-6">
-                <h2 className="text-lg font-semibold text-gray-100 mb-3 flex items-center gap-2">
-                  <MapPin className="w-5 h-5" />
-                  You are in a tower!
-                </h2>
-                <div
-                  onClick={() => setSelectedTowerId(currentTower.towerId)}
-                  className={`bg-gradient-to-br from-gray-900 to-gray-800 border-2 border-gray-700 rounded-lg p-4 cursor-pointer hover:border-gray-600 transition-all ${
-                    selectedTowerId === currentTower.towerId ? 'ring-2 ring-gray-500' : ''
-                  }`}
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <h3 className="font-bold text-lg">{getTowerLabel(currentTower.towerId)}</h3>
-                      <p className="text-sm text-gray-400">
-                        <Users className="inline w-4 h-4 mr-1" />
-                        {currentTower.postCount} posts
-                      </p>
-                    </div>
-                    <span className="text-xs bg-gray-700 px-2 py-1 rounded">
-                      {formatDistance(currentTower.distance)}
-                    </span>
-                  </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleOpenChat(currentTower.towerId);
-                    }}
-                    className="w-full mt-3 px-4 py-2 bg-black/20 backdrop-blur-lg border-2 border-gray-600 text-white hover:border-blue-400 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all overflow-hidden group"
-                  >
-                    {isAuthenticated ? (
-                      <>
-                        <MessageCircle className="w-4 h-4" />
-                        Chat in this tower
-                      </>
-                    ) : (
-                      <>
-                        <LogIn className="w-4 h-4" />
-                        Sign in to chat
-                      </>
-                    )}
-                  </button>
+          {/* Compact Local Actions (Nearby Towers list removed to reduce visual clutter) */}
+          <div className="max-h-[calc(100vh-14rem)] overflow-auto">
+            <div className="mb-6 mt-6 bg-gray-900 border border-gray-800 rounded-lg p-4">
+              <h2 className="text-lg font-semibold text-gray-100 mb-2">Local Actions</h2>
+              {userLocation && (
+                <div className="mb-3">
+                  <MiniMap center={{ lat: userLocation.latitude, lng: userLocation.longitude }} />
                 </div>
-              </div>
-            ) : (
-              <div className="mb-6 bg-gray-900 border border-gray-800 rounded-lg p-4">
-                <p className="text-gray-400 text-center">
-                  <MapPin className="inline w-5 h-5 mr-2" />
-                    You're not in any tower (no posts within 500m)
-                </p>
-                <p className="text-sm text-gray-500 text-center mt-2">
-                  Create a post to start a new tower here!
-                </p>
-              </div>
-            )}
+              )}
 
-            {/* Nearby Towers */}
-            <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
-              <MapPin className="w-5 h-5" />
-              Nearby Towers ({nearbyTowers.length})
-            </h2>
+              <p className="text-sm text-gray-400 mb-4">{nearbyTowers.length} towers within 500m</p>
 
-            {nearbyTowers.length === 0 ? (
-              <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 text-center">
-                <p className="text-gray-400">No towers nearby</p>
-                <p className="text-sm text-gray-500 mt-2">
-                  Be the first to post in this area!
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {nearbyTowers.map((tower) => (
-                  <div
-                    key={tower.towerId}
-                    onClick={() => {
-                      if (isAuthenticated) {
-                        handleOpenChat(tower.towerId);
-                      }
-                    }}
-                    className={`bg-gray-900 border border-gray-800 rounded-lg p-4 cursor-pointer hover:bg-gray-800 transition-colors ${
-                      selectedTowerId === tower.towerId ? 'ring-2 ring-gray-500' : ''
-                    }`}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h3 className="font-semibold">{getTowerLabel(tower.towerId)}</h3>
-                        <p className="text-sm text-gray-400 mt-1">
-                          <Users className="inline w-4 h-4 mr-1" />
-                          {tower.postCount} posts
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-xs bg-gray-700 px-2 py-1 rounded block mb-2">
-                          {formatDistance(tower.distance)}
-                        </span>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleOpenChat(tower.towerId);
-                          }}
-                          className="text-blue-400 hover:text-blue-300 text-sm flex items-center gap-1"
-                        >
-                          {isAuthenticated ? (
-                            <>
-                              <MessageCircle className="w-4 h-4" />
-                              Chat
-                            </>
-                          ) : (
-                            <>
-                              <LogIn className="w-4 h-4" />
-                              Sign in
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+              <div className="space-y-4 mt-3">
+                <button
+                  onClick={handleCreateClick}
+                  disabled={!userLocation}
+                  className="w-full px-4 py-3 bg-black/20 backdrop-blur-lg border-2 border-gray-600 text-white hover:border-blue-400 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all overflow-hidden group"
+                >
+                  {isAuthenticated ? (
+                    <>
+                      <Send className="w-5 h-5" />
+                      Create Post at Current Location
+                    </>
+                  ) : (
+                    <>
+                      <LogIn className="w-5 h-5" />
+                      Sign in to Create Post
+                    </>
+                  )}
+                </button>
 
-            {/* Actions */}
-            <div className="mt-6 space-y-3">
-              <button
-                onClick={handleCreateClick}
-                disabled={!userLocation}
-                className="w-full px-4 py-3 bg-black/20 backdrop-blur-lg border-2 border-gray-600 text-white hover:border-blue-400 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all overflow-hidden group"
-              >
-                {isAuthenticated ? (
-                  <>
-                    <Send className="w-5 h-5" />
-                    Create Post at Current Location
-                  </>
-                ) : (
-                  <>
-                    <LogIn className="w-5 h-5" />
-                    Sign in to Create Post
-                  </>
-                )}
-              </button>
-              <button
-                onClick={() => router.push('/maps')}
-                className="w-full px-4 py-3 bg-black/20 backdrop-blur-lg border-2 border-gray-600 text-white hover:border-blue-400 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all overflow-hidden group"
-              >
-                <MapPin className="w-5 h-5" />
-                View Map
-              </button>
+                <button
+                  onClick={() => router.push('/maps')}
+                  aria-label="Open full map"
+                  className="w-full px-4 py-3 bg-black/20 backdrop-blur-lg border-2 border-gray-600 text-white hover:border-blue-400 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all overflow-hidden group"
+                >
+                  <MapPin className="w-5 h-5" />
+                  Open Map
+                </button>
+
+                
+              </div>
             </div>
           </div>
 
           {/* Chat Panel */}
-          <div ref={chatPanelRef} className="lg:sticky lg:top-4 lg:h-[calc(100vh-2rem)]">
+          <div ref={chatPanelRef} className="lg:sticky lg:top-24 lg:h-[calc(100vh-14rem)] overflow-auto">
             {selectedTowerId ? (
               <div className="bg-gray-900 rounded-lg h-full flex flex-col">
                   <div className="p-4 border-b border-gray-800">

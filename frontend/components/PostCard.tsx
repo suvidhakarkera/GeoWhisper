@@ -1,6 +1,6 @@
 'use client';
 
-import { Post } from '@/src/services/postService';
+import { Post } from '@/services/postService';
 import { MapPin, Heart, MessageCircle, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
 

@@ -8,6 +8,7 @@ import Footer from '@/components/Footer';
 import PostCreationModal, { PostData } from '@/components/PostCreationModal';
 import { useUser } from '@/contexts/UserContext';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/components/ToastContext';
 
 // Dynamic import to avoid SSR issues with Mapbox
 const MapView = dynamic(() => import('@/components/MapView'), {
@@ -27,6 +28,7 @@ export default function MapsPage() {
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const { isAuthenticated } = useUser();
   const router = useRouter();
+  const { show } = useToast();
 
   // Handle location update from MapView
   const handleLocationUpdate = useCallback((location: { latitude: number; longitude: number }) => {
@@ -56,7 +58,7 @@ export default function MapsPage() {
       //   body: JSON.stringify(postData)
       // });
       
-      alert('Post created successfully!');
+      show('Post created successfully!', 'success');
     } catch (error) {
       console.error('Error creating post:', error);
       throw error;
