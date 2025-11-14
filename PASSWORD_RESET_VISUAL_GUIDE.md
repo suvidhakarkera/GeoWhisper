@@ -6,7 +6,7 @@
 
 ```
 ┌─────────────────────────────────────────┐
-│          Forgot Password?               │
+│          did you forget password        │
 │                                         │
 │  No worries! Enter your email and       │
 │  we'll send you reset instructions      │
