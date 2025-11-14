@@ -154,15 +154,15 @@ public class ChatController {
                 });
     }
     
-    /**
-     * Send a chat message to a tower (with location validation)
-     * POST /api/chat/{towerId}/messages
-     * 
-     * Requires user to be within 550m of tower center
-     */
+        /**
+         * Send a chat message to a tower (with location validation)
+         * POST /api/chat/{towerId}/messages
+         * 
+         * Requires user to be within 500m of tower center
+         */
     @PostMapping("/{towerId}/messages")
-    @Operation(summary = "Send chat message", 
-               description = "Send a message to tower chat (requires user to be within 550m)")
+        @Operation(summary = "Send chat message", 
+                           description = "Send a message to tower chat (requires user to be within 500m)")
     public CompletableFuture<ResponseEntity<ApiResponse>> sendMessage(
             @PathVariable String towerId,
             @RequestHeader("X-User-Id") String userId,

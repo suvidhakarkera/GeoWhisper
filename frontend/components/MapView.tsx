@@ -63,7 +63,7 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
     return R * c; // Distance in meters
   };
 
-  // Determine if selected tower is the user's current tower (within 550m)
+  // Determine if selected tower is the user's current tower (within 500m)
   const isCurrentTower = useMemo(() => {
     if (!selectedTower || !userLocation) return false;
     const distance = calculateDistance(
@@ -72,7 +72,7 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
       selectedTower.latitude,
       selectedTower.longitude
     );
-    return distance <= 550;
+    return distance <= 500;
   }, [selectedTower, userLocation]);
 
   // Fetch towers on component mount

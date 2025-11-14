@@ -212,7 +212,7 @@ class ChatService {
         } catch (jsonError) {
           // If JSON parsing fails, use a generic error based on status
           if (response.status === 403) {
-            errorMessage = 'You must be within 550m of the tower to send messages';
+            errorMessage = 'You must be within 500m of the tower to send messages';
           } else if (response.status === 500) {
             errorMessage = 'Server error. Please try again.';
           }

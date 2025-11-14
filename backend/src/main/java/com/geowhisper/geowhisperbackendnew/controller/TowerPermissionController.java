@@ -27,13 +27,13 @@ public class TowerPermissionController {
      * 
      * GET /api/towers/{towerId}/can-interact?latitude=X&longitude=Y
      * 
-     * Returns:
-     * {
-     *   "canInteract": true/false,
-     *   "distance": 234.5,
-     *   "interactionRadius": 550.0,
-     *   "message": "You can interact with this tower" or "View-only mode - you are too far"
-     * }
+    * Returns:
+    * {
+    *   "canInteract": true/false,
+    *   "distance": 234.5,
+    *   "interactionRadius": 500.0,
+    *   "message": "You can interact with this tower" or "View-only mode - you are too far"
+    * }
      */
     @GetMapping("/{towerId}/can-interact")
     public ResponseEntity<?> checkInteractionPermission(

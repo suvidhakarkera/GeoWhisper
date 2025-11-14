@@ -13,8 +13,8 @@ import java.util.concurrent.ExecutionException;
  * based on their distance from the tower center.
  * 
  * Rules:
- * - Within 550m: Full access (post, chat, like, delete, comment)
- * - Beyond 550m: View-only (can view chats, use summarizers, but no interactions)
+ * - Within 500m: Full access (post, chat, like, delete, comment)
+ * - Beyond 500m: View-only (can view chats, use summarizers, but no interactions)
  */
 @Service
 @Slf4j
@@ -24,7 +24,7 @@ public class LocationPermissionService {
     private TowerService towerService;
 
     // Distance threshold for full interaction permissions (in meters)
-    private static final double INTERACTION_RADIUS_METERS = 550.0;
+    private static final double INTERACTION_RADIUS_METERS = 500.0;
 
     /**
      * Check if a user can interact with a tower (post, chat, like, delete)
@@ -32,7 +32,7 @@ public class LocationPermissionService {
      * @param towerId       The tower ID
      * @param userLatitude  User's current latitude
      * @param userLongitude User's current longitude
-     * @return true if user is within 550m of tower center, false otherwise
+    * @return true if user is within 500m of tower center, false otherwise
      */
     public boolean canInteractWithTower(String towerId, double userLatitude, double userLongitude) 
             throws ExecutionException, InterruptedException {
@@ -53,8 +53,8 @@ public class LocationPermissionService {
 
         boolean canInteract = distance <= INTERACTION_RADIUS_METERS;
         
-        log.info("User distance from tower {}: {:.2f}m - Can interact: {}", 
-                towerId, distance, canInteract);
+        log.info("User distance from tower {}: {}m - Can interact: {}", 
+            towerId, distance, canInteract);
         
         return canInteract;
     }

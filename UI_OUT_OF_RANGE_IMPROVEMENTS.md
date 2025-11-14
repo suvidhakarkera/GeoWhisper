@@ -1,7 +1,7 @@
 # UI Changes for Out of Range Towers
 
 ## Overview
-Updated the Tower Chat UI to provide a cleaner, less intrusive experience when users are viewing towers outside their interaction range (beyond 550 meters).
+Updated the Tower Chat UI to provide a cleaner, less intrusive experience when users are viewing towers outside their interaction range (beyond 500 meters).
 
 ## Changes Made
 
@@ -31,9 +31,9 @@ Location: Next to "Vibe Check" button in the top action bar
 ### 4. **Smart Popup Information**
 When clicking "Out of Range" indicator:
 
-**Content**:
+- **Content**:
 - Shows exact distance from tower (e.g., "You are 1,234m away")
-- Explains the 550-meter interaction requirement
+- Explains the 500-meter interaction requirement
 - Clear "Got it" button to dismiss
 
 **Features**:
@@ -43,14 +43,14 @@ When clicking "Out of Range" indicator:
 
 ## User Experience Flow
 
-### Within 550 meters:
+### Within 500 meters:
 ```
 [Chat Summary] [Vibe Check]
 [Messages displayed]
 [Chat input box with send button]
 ```
 
-### Beyond 550 meters:
+### Beyond 500 meters:
 ```
 [Chat Summary] [Vibe Check] [Out of Range 🔴]
 [Messages displayed - full screen]
@@ -65,7 +65,7 @@ When user clicks "Out of Range":
 │ You are 1,234m away from       │
 │ this tower.                     │
 │                                 │
-│ You must be within 550 meters  │
+│ You must be within 500 meters  │
 │ to send messages, create posts,│
 │ or interact with content.       │
 │                                 │
@@ -129,8 +129,8 @@ Chat input section now conditionally rendered:
 ## Testing
 
 Test scenarios:
-1. ✅ Open tower within 550m → Input section visible
-2. ✅ Open tower beyond 550m → Input section hidden, indicator shown
+1. ✅ Open tower within 500m → Input section visible
+2. ✅ Open tower beyond 500m → Input section hidden, indicator shown
 3. ✅ Click "Out of Range" → Popup appears with distance
 4. ✅ Click outside popup → Popup closes
 5. ✅ Click "Got it" → Popup closes

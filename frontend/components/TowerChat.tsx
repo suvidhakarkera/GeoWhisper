@@ -13,7 +13,7 @@ interface TowerChatProps {
   currentUsername: string;
   isModerator?: boolean;
   postCount?: number;
-  isCurrentTower?: boolean; // Whether this is the tower the user is currently in (within 550m)
+  isCurrentTower?: boolean; // Whether this is the tower the user is currently in (within 500m)
 }
 
 export default function TowerChat({ 
@@ -353,7 +353,7 @@ export default function TowerChat({
     }
 
     if (!canInteract) {
-      alert('You must be within 550 meters of this tower to send messages.');
+      alert('You must be within 500 meters of this tower to send messages.');
       return;
     }
 
@@ -627,7 +627,7 @@ export default function TowerChat({
                             </p>
                           ) : isOutOfRange ? (
                             <p className="text-xs text-gray-400 leading-relaxed">
-                              You are outside the 550m interaction range. <span className="font-semibold text-white">Only viewing is enabled.</span> Move closer to send messages.
+                              You are outside the 500m interaction range. <span className="font-semibold text-white">Only viewing is enabled.</span> Move closer to send messages.
                             </p>
                           ) : (
                             <p className="text-xs text-gray-400 leading-relaxed">
@@ -912,7 +912,7 @@ export default function TowerChat({
         </div>
       )}
 
-      {/* Input Area - Only show if user can interact (within 550m) and checking is complete */}
+      {/* Input Area - Only show if user can interact (within 500m) and checking is complete */}
       {!checkingPermissions && canInteract === true && (
         <div className="p-4 bg-gradient-to-b from-gray-800/80 to-gray-900/80 backdrop-blur-xl border-t border-gray-700/50">
         {/* Image Preview */}

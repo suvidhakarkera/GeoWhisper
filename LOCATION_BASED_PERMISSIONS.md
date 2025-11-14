@@ -1,7 +1,7 @@
 # Location-Based Tower Interaction System
 
 ## Overview
-Implemented a location-based permission system for tower interactions. Users must be within **550 meters** of a tower to interact with it. Users beyond this radius can only view content but cannot post, chat, like, or delete.
+Implemented a location-based permission system for tower interactions. Users must be within **500 meters** of a tower to interact with it. Users beyond this radius can only view content but cannot post, chat, like, or delete.
 
 ## Features Implemented
 
@@ -9,7 +9,7 @@ Implemented a location-based permission system for tower interactions. Users mus
 
 #### LocationPermissionService
 - **Path**: `backend/src/main/java/.../service/LocationPermissionService.java`
-- **Purpose**: Validates if users are within 550m of tower center
+  - **Purpose**: Validates if users are within 500m of tower center
 - **Key Methods**:
   - `canInteractWithTower()` - Check if user can interact
   - `getDistanceFromTower()` - Calculate distance from tower
@@ -24,7 +24,7 @@ Implemented a location-based permission system for tower interactions. Users mus
 
 #### Updated PostService
 - Added location validation to `deletePost()` method
-- Users must be within 550m to delete their posts
+- Users must be within 500m to delete their posts
 
 ### 2. **Backend Controllers**
 
@@ -62,15 +62,15 @@ Implemented a location-based permission system for tower interactions. Users mus
   - Gets user location on mount
   - Checks if user can interact with tower
   - Shows "View-Only Mode" banner if too far
-  - Disables input fields when user is beyond 550m
+  - Disables input fields when user is beyond 500m
   - Sends messages through backend API with location validation
 
 ## Permission Matrix
 
 | Distance from Tower | Can View | Can Chat | Can Post | Can Like | Can Delete | Can Use Summarizers |
 |---------------------|----------|----------|----------|----------|------------|---------------------|
-| **Within 550m**     | ✅       | ✅       | ✅       | ✅       | ✅         | ✅                  |
-| **Beyond 550m**     | ✅       | ❌       | ❌       | ❌       | ❌         | ✅                  |
+| **Within 500m**     | ✅       | ✅       | ✅       | ✅       | ✅         | ✅                  |
+| **Beyond 500m**     | ✅       | ❌       | ❌       | ❌       | ❌         | ✅                  |
 
 ## API Endpoints
 
@@ -85,7 +85,7 @@ Response:
   "data": {
     "canInteract": true,
     "distance": 234.5,
-    "interactionRadius": 550.0,
+    "interactionRadius": 500.0,
     "message": "You can interact with this tower",
     "permissions": {
       "canChat": true,
@@ -128,7 +128,7 @@ Response (Success):
 Response (Too Far):
 {
   "success": false,
-  "message": "You must be within 550m of the tower to send messages. You are 1200m away (view-only mode)."
+  "message": "You must be within 500m of the tower to send messages. You are 1200m away (view-only mode)."
 }
 ```
 
@@ -141,13 +141,13 @@ Headers:
 Response (Too Far):
 {
   "success": false,
-  "message": "You must be within 550m of the tower to delete posts. You are 800m away (view-only mode)."
+  "message": "You must be within 500m of the tower to delete posts. You are 800m away (view-only mode)."
 }
 ```
 
 ## User Experience
 
-### Within 550m (Full Access)
+### Within 500m (Full Access)
 - Normal chat interface
 - Can send messages and images
 - Can create posts
@@ -155,7 +155,7 @@ Response (Too Far):
 - Can delete own posts
 - All features enabled
 
-### Beyond 550m (View-Only)
+### Beyond 500m (View-Only)
 - Orange "View-Only Mode" banner displayed
 - Input fields disabled
 - Send button disabled
@@ -170,12 +170,12 @@ Response (Too Far):
 
 ### Test Scenarios
 
-1. **User within 550m**:
+1. **User within 500m**:
    - Should be able to send messages
    - Should be able to delete own posts
    - No view-only banner
 
-2. **User beyond 550m**:
+2. **User beyond 500m**:
    - Should see view-only banner
    - Should NOT be able to send messages
    - Should NOT be able to delete posts
@@ -209,7 +209,7 @@ curl -X DELETE "http://localhost:8080/api/posts/POST_ID?latitude=28.6139&longitu
 
 ## Configuration
 
-The interaction radius is set to **550 meters** in:
+The interaction radius is set to **500 meters** in:
 - `LocationPermissionService.INTERACTION_RADIUS_METERS`
 
 To change this value, update the constant in the service class.
