@@ -345,42 +345,47 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
               case 1: // #1 hottest - fastest pulse, brightest glow
                 return {
                   pulseSpeed: '0.8s',
-                  glowColor: 'rgba(255, 0, 0, 0.8)',
-                  ringColor: 'rgba(255, 50, 50, 0.6)',
-                  iconColor: 'text-red-500',
-                  scale: 1.3
+                  glowColor: 'rgba(59, 130, 246, 0.8)', // blue-500
+                  ringColor: 'rgba(59, 130, 246, 0.6)',
+                  iconColor: 'text-blue-400',
+                  scale: 1.3,
+                  badgeColor: '#3b82f6' // blue-500
                 };
               case 2: // #2 - fast pulse, bright glow
                 return {
                   pulseSpeed: '1.1s',
-                  glowColor: 'rgba(255, 100, 0, 0.7)',
-                  ringColor: 'rgba(255, 120, 50, 0.5)',
-                  iconColor: 'text-orange-500',
-                  scale: 1.25
+                  glowColor: 'rgba(96, 165, 250, 0.7)', // blue-400
+                  ringColor: 'rgba(96, 165, 250, 0.5)',
+                  iconColor: 'text-blue-500',
+                  scale: 1.25,
+                  badgeColor: '#60a5fa' // blue-400
                 };
               case 3: // #3 - medium pulse
                 return {
                   pulseSpeed: '1.4s',
-                  glowColor: 'rgba(255, 200, 0, 0.6)',
-                  ringColor: 'rgba(255, 200, 50, 0.4)',
-                  iconColor: 'text-yellow-500',
-                  scale: 1.2
+                  glowColor: 'rgba(56, 189, 248, 0.6)', // cyan-400
+                  ringColor: 'rgba(56, 189, 248, 0.4)',
+                  iconColor: 'text-cyan-400',
+                  scale: 1.2,
+                  badgeColor: '#38bdf8' // cyan-400
                 };
               case 4: // #4 - slower pulse
                 return {
                   pulseSpeed: '1.7s',
-                  glowColor: 'rgba(150, 255, 50, 0.5)',
-                  ringColor: 'rgba(150, 255, 100, 0.3)',
-                  iconColor: 'text-lime-400',
-                  scale: 1.15
+                  glowColor: 'rgba(100, 116, 139, 0.5)', // slate-500
+                  ringColor: 'rgba(100, 116, 139, 0.3)',
+                  iconColor: 'text-slate-400',
+                  scale: 1.15,
+                  badgeColor: '#64748b' // slate-500
                 };
               case 5: // #5 - slowest pulse
                 return {
                   pulseSpeed: '2s',
-                  glowColor: 'rgba(0, 255, 150, 0.4)',
-                  ringColor: 'rgba(50, 255, 150, 0.2)',
-                  iconColor: 'text-green-400',
-                  scale: 1.1
+                  glowColor: 'rgba(148, 163, 184, 0.4)', // slate-400
+                  ringColor: 'rgba(148, 163, 184, 0.2)',
+                  iconColor: 'text-slate-500',
+                  scale: 1.1,
+                  badgeColor: '#94a3b8' // slate-400
                 };
               default:
                 return null;
@@ -397,52 +402,25 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
             anchor="center"
             onClick={(e) => handleMarkerClick(e, tower)}
           >
-            <div className="relative cursor-pointer transform transition-all hover:scale-110" style={{ fontSize: 0 }}>
-              {/* Hot Zone Pulsing Ring Animation */}
-              {isHotZone && hotZoneStyle && (
-                <>
-                  {/* Outer pulsing ring */}
-                  <div 
-                    className="absolute inset-0 rounded-full animate-ping pointer-events-none"
-                    style={{
-                      width: `${40 * hotZoneStyle.scale}px`,
-                      height: `${40 * hotZoneStyle.scale}px`,
-                      backgroundColor: hotZoneStyle.ringColor,
-                      animationDuration: hotZoneStyle.pulseSpeed,
-                      transform: 'translate(-50%, -50%)',
-                      left: '50%',
-                      top: '50%',
-                    }}
-                  />
-                  {/* Inner glowing circle */}
-                  <div 
-                    className="absolute inset-0 rounded-full pointer-events-none"
-                    style={{
-                      width: '44px',
-                      height: '44px',
-                      boxShadow: `0 0 20px ${hotZoneStyle.glowColor}, 0 0 40px ${hotZoneStyle.glowColor}`,
-                      transform: 'translate(-50%, -50%)',
-                      left: '50%',
-                      top: '50%',
-                      animation: `pulse ${hotZoneStyle.pulseSpeed} ease-in-out infinite`,
-                    }}
-                  />
-                </>
-              )}
-              
-              {/* Tower Icon with conditional coloring */}
-              <TowerIcon 
-                className={`w-10 h-10 ${hotZoneStyle ? hotZoneStyle.iconColor : 'text-slate-300'} drop-shadow-2xl transition-colors duration-300`}
-                size={40} 
-              />
+            <div className="relative cursor-pointer transform transition-all hover:scale-110 flex items-center justify-center">
+              {/* Tower Icon with conditional coloring and floating animation */}
+              <div
+                style={isHotZone && hotZoneStyle ? {
+                  animation: `float ${hotZoneStyle.pulseSpeed} ease-in-out infinite`,
+                } : {}}
+              >
+                <TowerIcon 
+                  className={`w-10 h-10 ${hotZoneStyle ? hotZoneStyle.iconColor : 'text-white'} drop-shadow-2xl transition-colors duration-300`}
+                  size={40} 
+                />
+              </div>
               
               {/* Hot Zone Rank Badge - Only show for ranks 1, 2, 3 */}
-              {isHotZone && rank > 0 && rank <= 3 && (
+              {isHotZone && rank > 0 && rank <= 3 && hotZoneStyle && (
                 <div 
-                  className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-bold pointer-events-none"
+                  className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-bold pointer-events-none shadow-lg"
                   style={{
-                    backgroundColor: rank === 1 ? '#dc2626' : rank === 2 ? '#ea580c' : '#eab308',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
+                    backgroundColor: hotZoneStyle.badgeColor,
                   }}
                 >
                   {rank}
@@ -462,8 +440,19 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
           >
             {/* Make the user location marker non-interactive so it doesn't block tower marker clicks underneath */}
             <div className="relative pointer-events-none">
-              <div className="absolute inset-0 bg-cyan-400 rounded-full w-6 h-6 animate-ping opacity-75 pointer-events-none"></div>
-              <div className="relative bg-cyan-500 rounded-full w-6 h-6 border-4 border-white shadow-lg pointer-events-none"></div>
+              {/* Center pulsing effect */}
+              <div 
+                className="absolute rounded-full animate-ping pointer-events-none"
+                style={{
+                  width: '24px',
+                  height: '24px',
+                  backgroundColor: 'rgba(96, 165, 250, 0.6)',
+                  transform: 'translate(-50%, -50%)',
+                  left: '50%',
+                  top: '50%',
+                }}
+              />
+              <div className="relative bg-blue-500 rounded-full w-6 h-6 border-4 border-white shadow-lg pointer-events-none"></div>
             </div>
           </Marker>
         )}
