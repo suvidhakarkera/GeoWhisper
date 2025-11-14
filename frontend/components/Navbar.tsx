@@ -9,6 +9,7 @@ import { useUser } from '@/contexts/UserContext';
 import { useRouter, usePathname } from 'next/navigation';
 
 export default function Navbar() {
+  const MotionLink = motion(Link as any);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const { theme, setTheme } = useTheme();
@@ -64,16 +65,16 @@ export default function Navbar() {
               {isAuthenticated && user ? (
                 <>
                   {/* User Profile Button */}
-                  <Link href="/profile">
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      className="relative px-4 py-2.5 bg-black/20 backdrop-blur-lg border-2 border-gray-600 text-white hover:border-cyan-500 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all overflow-hidden group"
-                    >
-                      <User className="w-4 h-4" />
-                      <span className="max-w-32 truncate">{user.username}</span>
-                    </motion.button>
-                  </Link>
+                  <MotionLink
+                    href="/profile"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="relative px-4 py-2.5 bg-black/20 backdrop-blur-lg border-2 border-gray-600 text-white hover:border-cyan-500 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all overflow-hidden group"
+                    role="button"
+                  >
+                    <User className="w-4 h-4" />
+                    <span className="max-w-32 truncate">{user.username}</span>
+                  </MotionLink>
                   {/* Logout Button */}
                   <motion.button
                     whileHover={{ scale: 1.05 }}
@@ -87,27 +88,27 @@ export default function Navbar() {
                 </>
               ) : (
                 <>
-                  <Link href="/signin">
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      className="relative px-6 py-2.5 bg-black/20 backdrop-blur-lg border-2 border-gray-600 text-white hover:border-cyan-500 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all overflow-hidden group"
-                    >
-                      Sign In
-                    </motion.button>
-                  </Link>
-                  <Link href="/signup">
-                    <motion.button
-                      whileHover={{ scale: 1.05, boxShadow: "0 0 20px rgba(6, 182, 212, 0.3)" }}
-                      whileTap={{ scale: 0.95 }}
-                      className="relative px-6 py-2.5 bg-black/20 backdrop-blur-lg border-2 border-gray-600 hover:border-cyan-500 text-white rounded-lg font-semibold flex items-center justify-center gap-2 transition-all overflow-hidden group"
-                    >
-                      <span className="relative z-10 flex items-center gap-1.5">
-                        Get Started
-                        <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-                      </span>
-                    </motion.button>
-                  </Link>
+                  <MotionLink
+                    href="/signin"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="relative px-6 py-2.5 bg-black/20 backdrop-blur-lg border-2 border-gray-600 text-white hover:border-cyan-500 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all overflow-hidden group"
+                    role="button"
+                  >
+                    Sign In
+                  </MotionLink>
+                  <MotionLink
+                    href="/signup"
+                    whileHover={{ scale: 1.05, boxShadow: "0 0 20px rgba(6, 182, 212, 0.3)" }}
+                    whileTap={{ scale: 0.95 }}
+                    className="relative px-6 py-2.5 bg-black/20 backdrop-blur-lg border-2 border-gray-600 hover:border-cyan-500 text-white rounded-lg font-semibold flex items-center justify-center gap-2 transition-all overflow-hidden group"
+                    role="button"
+                  >
+                    <span className="relative z-10 flex items-center gap-1.5">
+                      Get Started
+                      <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                    </span>
+                  </MotionLink>
                 </>
               )}
             </div>
@@ -175,16 +176,12 @@ export default function Navbar() {
                     </>
                   ) : (
                     <>
-                      <Link href="/signin" onClick={() => setMobileMenuOpen(false)}>
-                        <button className="w-full px-4 py-3 text-sm font-bold text-gray-300 hover:text-white bg-gray-800/50 hover:bg-gray-700/50 rounded-lg transition-all border border-gray-700">
-                          Sign In
-                        </button>
+                      <Link href="/signin" onClick={() => setMobileMenuOpen(false)} className="w-full px-4 py-3 text-sm font-bold text-gray-300 hover:text-white bg-gray-800/50 hover:bg-gray-700/50 rounded-lg transition-all border border-gray-700 text-center">
+                        Sign In
                       </Link>
-                      <Link href="/signup" onClick={() => setMobileMenuOpen(false)}>
-                        <button className="w-full px-4 py-3 bg-black/20 backdrop-blur-lg border-2 border-gray-600 hover:border-cyan-500 text-white rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-1.5">
-                          Get Started
-                          <ChevronRight className="w-4 h-4" />
-                        </button>
+                      <Link href="/signup" onClick={() => setMobileMenuOpen(false)} className="w-full inline-flex items-center justify-center px-4 py-3 bg-black/20 backdrop-blur-lg border-2 border-gray-600 hover:border-cyan-500 text-white rounded-lg text-sm font-bold transition-all gap-1.5">
+                        Get Started
+                        <ChevronRight className="w-4 h-4" />
                       </Link>
                     </>
                   )}

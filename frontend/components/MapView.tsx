@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import Map, { Marker, Popup } from 'react-map-gl';
-import { MapPin, Loader2, AlertCircle, X } from 'lucide-react';
+import { MapPin, Loader2, AlertCircle, X, Navigation } from 'lucide-react';
 import { locationService } from '@/services/locationService';
 import { TowerIcon } from './TowerIcon';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -44,6 +44,7 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
   const [towersLoading, setTowersLoading] = useState(false);
   const [hotZones, setHotZones] = useState<string[]>([]); // Top 5 hot zone tower IDs
   const mapRef = useRef<any>(null);
+  const [userInteracted, setUserInteracted] = useState(false);
 
   const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || '';
 
@@ -164,15 +165,15 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
       onLocationUpdate(newLocation);
     }
 
-    // Fly to user location
-    if (mapRef.current) {
+    // Fly to user location only if user hasn't manually interacted with the map
+    if (mapRef.current && !userInteracted) {
       mapRef.current.flyTo({
         center: [longitude, latitude],
         zoom: 15,
         duration: 2000
       });
     }
-  }, [onLocationUpdate]);
+  }, [onLocationUpdate, userInteracted]);
 
   // Handle marker clicks: prevent opening the side panel for the user's current tower
   const handleMarkerClick = useCallback((e: any, tower: Tower) => {
@@ -333,6 +334,10 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
         mapStyle="mapbox://styles/mapbox/dark-v11"
         mapboxAccessToken={MAPBOX_TOKEN}
         onClick={() => setSelectedTower(null)}
+        onMove={() => {
+          // mark that the user moved the map so we don't auto-recenter
+          setUserInteracted(true);
+        }}
       >
         {/* Tower Markers */}
           {towers.map((tower) => {
@@ -438,22 +443,14 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
             latitude={userLocation.latitude}
             anchor="center"
           >
-            {/* Make the user location marker non-interactive so it doesn't block tower marker clicks underneath */}
-            <div className="relative pointer-events-none">
-              {/* Center pulsing effect */}
-              <div 
-                className="absolute rounded-full animate-ping pointer-events-none"
-                style={{
-                  width: '24px',
-                  height: '24px',
-                  backgroundColor: 'rgba(96, 165, 250, 0.6)',
-                  transform: 'translate(-50%, -50%)',
-                  left: '50%',
-                  top: '50%',
-                }}
-              />
-              <div className="relative bg-blue-500 rounded-full w-6 h-6 border-4 border-white shadow-lg pointer-events-none"></div>
-            </div>
+              {/* Make the user location marker non-interactive so it doesn't block tower marker clicks underneath */}
+              <div className="relative pointer-events-none w-0 h-0">
+                {/* Centered pulsing effect - uses flex centering so pulse grows evenly */}
+                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none flex items-center justify-center">
+                  <span className="absolute inline-flex rounded-full bg-[rgba(96,165,250,0.6)] opacity-80 animate-ping" style={{ width: 24, height: 24 }} />
+                  <span className="relative inline-flex rounded-full bg-blue-500 w-6 h-6 border-4 border-white shadow-lg" />
+                </div>
+              </div>
           </Marker>
         )}
       </Map>
@@ -505,6 +502,25 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Recenter (relocate) icon - bottom-right */}
+      {userLocation && (
+        <div className="fixed right-4 bottom-4 z-50">
+          <button
+            onClick={() => {
+              if (mapRef.current && userLocation) {
+                setUserInteracted(false);
+                mapRef.current.flyTo({ center: [userLocation.longitude, userLocation.latitude], zoom: 15, duration: 800 });
+              }
+            }}
+            title="Center map"
+            aria-label="Center map"
+            className="w-12 h-12 rounded-full bg-black/80 border border-gray-700 flex items-center justify-center text-white hover:bg-gray-800 transition-all shadow-lg"
+          >
+            <Navigation className="w-5 h-5" />
+          </button>
         </div>
       )}
 
