@@ -5,10 +5,10 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { postService } from '@/src/services/postService';
+import { postService } from '@/services/postService';
 import { locationService, UserLocation } from '@/services/locationService';
 import { MapPin, Send, Loader2, AlertCircle, Navigation, CheckCircle } from 'lucide-react';
-import { getTowerLabel } from '@/src/utils/towerNumber';
+import { getTowerLabel } from '@/utils/towerNumber';
 
 export default function CreatePostPage() {
   const router = useRouter();

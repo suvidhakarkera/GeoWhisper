@@ -2,7 +2,7 @@
 
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import { useState, useEffect, useCallback } from 'react';
-import { Post } from '@/src/services/postService';
+import { Post } from '@/services/postService';
 import { MapPin } from 'lucide-react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';

@@ -6,6 +6,7 @@ import { Send, AlertTriangle, Flag, Trash2, EyeOff, Loader2, Image as ImageIcon,
 import { chatService, ChatMessage, ContentModerationResponse } from '@/services/chatService';
 import { database } from '@/config/firebase';
 import { API_BASE_URL } from '@/config/api';
+import { useToast } from '@/components/ToastContext';
 
 interface TowerChatProps {
   towerId: string;
@@ -24,6 +25,7 @@ export default function TowerChat({
   postCount = 0,
   isCurrentTower = false
 }: TowerChatProps) {
+  const { show } = useToast();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
@@ -214,10 +216,10 @@ export default function TowerChat({
         snapshot.forEach((childSnapshot) => {
           const msg = childSnapshot.val();
           
-          // Remove "Created a post:" prefix from post messages
+          // Strip any leading emoji + "Created a post:" prefix from post messages
           let messageText = msg.message;
-          if (messageText && messageText.startsWith('Created a post:')) {
-            messageText = messageText.replace('Created a post:', '').trim();
+          if (messageText) {
+            messageText = messageText.replace(/^\s*(📍\s*)?Created a post:\s*/i, '').trim();
           }
           
           messagesData.push({
@@ -491,7 +493,7 @@ export default function TowerChat({
     try {
       const { postService } = await import('@/services/postService');
       await postService.deletePost(postId, currentUserId);
-      alert('Post deleted successfully!');
+      show('Post deleted successfully!', 'success');
       // The message will be automatically removed from the chat via Firebase listener
     } catch (error: any) {
       console.error('Error deleting post:', error);
@@ -753,7 +755,7 @@ export default function TowerChat({
                   )}
                   
                   <div
-                    className={`relative rounded-2xl p-3 shadow-lg transition-all ${
+                    className={`relative rounded-2xl p-3 pr-12 shadow-lg transition-all ${
                       formatted.isModerated
                         ? 'bg-gradient-to-br from-red-900/40 to-red-800/40 border border-red-500/30 backdrop-blur-sm'
                         : msg.isPost

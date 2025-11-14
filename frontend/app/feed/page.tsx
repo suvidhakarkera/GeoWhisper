@@ -9,7 +9,7 @@ import MapView from '@/components/MapViewWrapper';
 import CreatePostModal from '@/components/CreatePostModal';
 import FloatingActionButton from '@/components/FloatingActionButton';
 import PostCard from '@/components/PostCard';
-import { postService, Post } from '@/src/services/postService';
+import { postService, Post } from '@/services/postService';
 import { Map, List, Loader2, RefreshCw, Plus, MapPin } from 'lucide-react';
 import Link from 'next/link';
 

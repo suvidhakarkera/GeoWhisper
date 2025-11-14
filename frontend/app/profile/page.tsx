@@ -6,9 +6,9 @@ import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { User as UserIcon, CalendarDays, BarChart3, MapPinned, MessageCircle, Loader2 } from 'lucide-react';
-import { getTowerLabel } from '@/src/utils/towerNumber';
+import { getTowerLabel } from '@/utils/towerNumber';
 import { useUser } from '@/contexts/UserContext';
-import { postService, Post } from '@/src/services/postService';
+import { postService, Post } from '@/services/postService';
 import { ref, get } from 'firebase/database';
 import { database } from '@/config/firebase';
 

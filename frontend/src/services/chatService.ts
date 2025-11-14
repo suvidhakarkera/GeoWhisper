@@ -116,10 +116,10 @@ class ChatService {
     isModerated: boolean;
     moderationReason?: string;
   } {
-    // Remove "Created a post:" prefix from message text if present
+    // Strip any leading emoji + "Created a post:" prefix from message text if present
     let messageText = message.message;
-    if (messageText && messageText.startsWith('Created a post:')) {
-      messageText = messageText.replace('Created a post:', '').trim();
+    if (messageText) {
+      messageText = messageText.replace(/^\s*(📍\s*)?Created a post:\s*/i, '').trim();
     }
     
     // Check if message is moderated

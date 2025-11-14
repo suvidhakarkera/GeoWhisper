@@ -153,7 +153,9 @@ class LocationService {
 
   /**
    * Find the tower that the user is currently in
-   * Returns the tower if user is within 50m of any tower center
+   * Returns the tower if user is within `currentTowerRadiusMeters` of any tower center
+   * NOTE: previous implementation used 50m which was inconsistent with UI pages
+   * that expect the "current tower" radius to be 500m. Use 500m for parity.
    */
   async findUserTower(
     userLocation: UserLocation
@@ -178,7 +180,7 @@ class LocationService {
       const result = await response.json();
       const towers = result.data || [];
 
-      // Find towers within 50m
+      // Find towers within 500m (matches Nearby page and other UI expectations)
       const nearbyTowers: NearbyTower[] = towers
         .map((tower: any) => {
           const distance = this.calculateDistance(
@@ -195,7 +197,7 @@ class LocationService {
             distance,
           };
         })
-        .filter((tower: NearbyTower) => tower.distance <= 50)
+        .filter((tower: NearbyTower) => tower.distance <= 500)
         .sort((a: NearbyTower, b: NearbyTower) => a.distance - b.distance);
 
       // Return the closest tower, or null if none within range
