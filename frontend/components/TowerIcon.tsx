@@ -15,36 +15,52 @@ export const TowerIcon: React.FC<TowerIconProps> = ({ className = '', size = 40 
       fill="currentColor"
       xmlns="http://www.w3.org/2000/svg"
     >
-      {/* Water Tower with crossed support beams */}
+      {/* Antenna/Signal Tower Icon */}
       <g>
-        {/* Roof/Top cap (rounded triangle) */}
-        <path d="M 256 40 Q 230 40 210 55 L 140 110 Q 130 118 140 120 L 370 120 Q 380 118 370 110 L 300 55 Q 280 40 256 40 Z" />
+        {/* Top circle (antenna ball) */}
+        <circle cx="256" cy="180" r="45" />
         
-        {/* Main water tank body */}
-        <path d="M 140 120 L 140 135 Q 140 260 165 260 L 345 260 Q 370 260 370 135 L 370 120 Z" />
+        {/* Center vertical pole */}
+        <rect x="230" y="180" width="52" height="240" rx="26" />
         
-        {/* Tank bottom section with pentagon cutout */}
-        <path d="M 165 260 L 140 320 L 195 380 L 195 260 Z" />
-        <path d="M 345 260 L 370 320 L 315 380 L 315 260 Z" />
+        {/* Base platform (rounded rectangle) */}
+        <rect x="192" y="420" width="128" height="50" rx="25" />
         
-        {/* Pentagon window/opening in center */}
-        <path d="M 195 260 L 256 310 L 315 260 L 315 320 L 256 360 L 195 320 Z" fill="#fff" opacity="0.3" />
+        {/* Left outer wave arc */}
+        <path 
+          d="M 90 60 Q 40 180 90 300" 
+          stroke="currentColor" 
+          strokeWidth="40" 
+          fill="none" 
+          strokeLinecap="round" 
+        />
         
-        {/* Left support leg */}
-        <path d="M 140 320 L 120 480 L 150 480 L 195 380 Z" />
+        {/* Left inner wave arc */}
+        <path 
+          d="M 155 110 Q 125 180 155 250" 
+          stroke="currentColor" 
+          strokeWidth="38" 
+          fill="none" 
+          strokeLinecap="round" 
+        />
         
-        {/* Right support leg */}
-        <path d="M 370 320 L 390 480 L 360 480 L 315 380 Z" />
+        {/* Right inner wave arc */}
+        <path 
+          d="M 357 110 Q 387 180 357 250" 
+          stroke="currentColor" 
+          strokeWidth="38" 
+          fill="none" 
+          strokeLinecap="round" 
+        />
         
-        {/* Cross support beams (X pattern) */}
-        {/* Left to right diagonal */}
-        <path d="M 150 380 L 360 480 L 375 470 L 165 370 Z" />
-        
-        {/* Right to left diagonal */}
-        <path d="M 360 380 L 150 480 L 135 470 L 345 370 Z" />
-        
-        {/* Base platform */}
-        <rect x="60" y="475" width="392" height="30" rx="15" />
+        {/* Right outer wave arc */}
+        <path 
+          d="M 422 60 Q 472 180 422 300" 
+          stroke="currentColor" 
+          strokeWidth="40" 
+          fill="none" 
+          strokeLinecap="round" 
+        />
       </g>
     </svg>
   );
