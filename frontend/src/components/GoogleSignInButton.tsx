@@ -15,7 +15,7 @@
 'use client';
 
 import { useState } from 'react';
-import { signInWithPopup, UserCredential } from 'firebase/auth';
+import { signInWithPopup, signInWithRedirect, UserCredential } from 'firebase/auth';
 import { auth, googleProvider, isFirebaseConfigured } from '@/config/firebase';
 import { FcGoogle } from 'react-icons/fc';
 import { Loader2 } from 'lucide-react';
@@ -154,6 +154,22 @@ export default function GoogleSignInButton({
 
       let userFriendlyMessage = '';
 
+      // If popup is not supported (mobile browsers or embedded webviews),
+      // fallback to redirect flow which works better on phones.
+      const ua = typeof navigator !== 'undefined' ? navigator.userAgent || '' : '';
+      const looksLikeMobile = /Mobi|Android|iPhone|iPad|iPod|Mobile/i.test(ua);
+      const popupUnsupported = error && (error.code === 'auth/operation-not-supported-in-this-environment' || error.code === 'auth/operation-not-allowed');
+      if (looksLikeMobile || popupUnsupported) {
+        try {
+          console.log('ℹ️ Falling back to signInWithRedirect for mobile/unsupported environment');
+          await signInWithRedirect(auth, googleProvider);
+          return; // redirecting — stop further handling
+        } catch (redirectError: any) {
+          console.error('❌ Redirect sign-in failed:', redirectError);
+          // continue to set a friendly message below
+        }
+      }
+
       // Firebase error codes
       if (error.code === 'auth/popup-closed-by-user') {
         userFriendlyMessage = 'Sign-in cancelled. Please try again.';
@@ -162,8 +178,9 @@ export default function GoogleSignInButton({
         userFriendlyMessage = 'Popup blocked. Please allow popups for this site.';
         console.error('⚠️ Popup was blocked by browser');
       } else if (error.code === 'auth/unauthorized-domain') {
-        userFriendlyMessage = 'This domain is not authorized. Please contact support.';
-        console.error('⚠️ Domain not authorized in Firebase Console');
+        const origin = typeof window !== 'undefined' ? window.location.origin : 'unknown origin';
+        userFriendlyMessage = `This domain is not authorized: ${origin}. Add it to Firebase Console → Authentication → Authorized domains.`;
+        console.error('⚠️ Domain not authorized in Firebase Console for origin:', origin);
       } else if (error.code === 'auth/operation-not-allowed') {
         userFriendlyMessage = 'Google Sign-In is disabled. Please contact support.';
         console.error('⚠️ Google Sign-In not enabled in Firebase Console');

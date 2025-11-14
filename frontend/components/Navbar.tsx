@@ -112,25 +112,29 @@ export default function Navbar() {
               )}
             </div>
 
-            {/* Mobile Menu Button */}
-            <motion.button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2.5 rounded-lg bg-gray-800/50 hover:bg-gray-700/50 border border-gray-700 transition-colors"
-              whileTap={{ scale: 0.95 }}
-            >
-              {mobileMenuOpen ? (
-                <X className="w-6 h-6 text-cyan-400" />
-              ) : (
-                <Menu className="w-6 h-6 text-cyan-400" />
-              )}
-            </motion.button>
+            {/* Mobile Menu Button (render only after client mount to avoid hydration mismatch) */}
+            {mounted && (
+              <motion.button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="md:hidden p-2.5 rounded-lg bg-gray-800/50 hover:bg-gray-700/50 border border-gray-700 transition-colors"
+                whileTap={{ scale: 0.95 }}
+              >
+                {mobileMenuOpen ? (
+                  <X className="w-6 h-6 text-cyan-400" />
+                ) : (
+                  <Menu className="w-6 h-6 text-cyan-400" />
+                )}
+              </motion.button>
+            )}
           </div>
         </div>
 
         {/* Mobile Menu */}
-        <AnimatePresence>
-          {mobileMenuOpen && (
-            <motion.div
+        {/* Mobile menu rendered only after client mount to prevent SSR/client markup mismatch */}
+        {mounted && (
+          <AnimatePresence>
+            {mobileMenuOpen && (
+              <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
@@ -187,8 +191,9 @@ export default function Navbar() {
                 </div>
               </div>
             </motion.div>
-          )}
-        </AnimatePresence>
+              )}
+          </AnimatePresence>
+        )}
       </div>
     </nav>
   );

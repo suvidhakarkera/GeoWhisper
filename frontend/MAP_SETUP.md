@@ -1,7 +1,9 @@
 # Map Feature Setup Guide
 
 ## Overview
+
 This implementation includes:
+
 - Interactive Mapbox map with user location
 - 500-meter radius visualization
 - Geolocation permission handling
@@ -10,7 +12,9 @@ This implementation includes:
 - Full responsive design (mobile & desktop)
 
 ## Prerequisites
+
 ✅ Packages installed:
+
 - `mapbox-gl`
 - `react-map-gl`
 - `@turf/turf`
@@ -18,6 +22,7 @@ This implementation includes:
 ## Setup Instructions
 
 ### 1. Get Mapbox Access Token
+
 1. Go to https://account.mapbox.com/
 2. Sign up for a free account (or log in)
 3. Navigate to "Access tokens" section
@@ -29,13 +34,17 @@ NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN=pk.your_actual_token_here
 ```
 
 ### 2. Restart Development Server
+
 After adding the Mapbox token, restart your dev server:
+
 ```bash
 npm run dev
 ```
 
 ### 3. Enable Location Permissions
+
 When you visit the `/maps` page:
+
 1. Browser will ask for location permission
 2. Click "Allow" to enable location access
 3. The map will center on your location with a 500m radius
@@ -43,6 +52,7 @@ When you visit the `/maps` page:
 ## Features Implemented
 
 ### MapView Component (`components/MapView.tsx`)
+
 - ✅ Real-time user location tracking
 - ✅ Geolocation permission handling
 - ✅ 500-meter radius circle visualization
@@ -56,6 +66,7 @@ When you visit the `/maps` page:
   - Missing Mapbox token
 
 ### PostCreationModal Component (`components/PostCreationModal.tsx`)
+
 - ✅ Content textarea with character limit (500 chars)
 - ✅ Image upload with preview
 - ✅ Image validation (type & size)
@@ -67,6 +78,7 @@ When you visit the `/maps` page:
 - ✅ Click outside to close
 
 ### FloatingCreateButton Component (`components/FloatingCreateButton.tsx`)
+
 - ✅ Animated floating "+" button
 - ✅ Positioned bottom-right
 - ✅ Pulsing ring animation
@@ -75,6 +87,7 @@ When you visit the `/maps` page:
 - ✅ Smooth entrance animation
 
 ### Maps Page (`app/maps/page.tsx`)
+
 - ✅ Full-screen map layout
 - ✅ Integrates all components
 - ✅ Authentication check (redirects to sign-in if not logged in)
@@ -85,6 +98,7 @@ When you visit the `/maps` page:
 ## Edge Cases Handled
 
 ### Geolocation
+
 - ✅ Browser doesn't support geolocation
 - ✅ User denies permission
 - ✅ Location unavailable
@@ -93,6 +107,7 @@ When you visit the `/maps` page:
 - ✅ Permission revoked after initial grant
 
 ### Modal
+
 - ✅ Empty content validation
 - ✅ Character limit enforcement
 - ✅ Image file type validation
@@ -102,12 +117,14 @@ When you visit the `/maps` page:
 - ✅ Location unavailable handling
 
 ### Map
+
 - ✅ Missing Mapbox token
 - ✅ Map loading errors
 - ✅ SSR compatibility
 - ✅ Responsive layout
 
 ### Authentication
+
 - ✅ Redirect to sign-in if not authenticated
 - ✅ Disable create button if no location
 - ✅ Proper state management
@@ -115,6 +132,7 @@ When you visit the `/maps` page:
 ## Usage
 
 ### Creating a Post
+
 1. Navigate to `/maps` page
 2. Allow location access when prompted
 3. Click the floating "+" button (bottom-right)
@@ -123,10 +141,12 @@ When you visit the `/maps` page:
 6. Click "Post" to submit
 
 ### Navigation
+
 - Click "Maps" in navbar to access map page
 - Click "Get Started Now" on homepage (redirects based on auth status)
 
 ## Mobile Responsiveness
+
 - ✅ Touch-friendly controls
 - ✅ Responsive text sizes
 - ✅ Adaptive padding and margins
@@ -134,17 +154,18 @@ When you visit the `/maps` page:
 - ✅ Floating button positioned for thumb access
 
 ## Backend Integration (TODO)
+
 The `handlePostSubmit` function in `maps/page.tsx` is ready for backend integration:
 
 ```typescript
 const handlePostSubmit = async (postData: PostData) => {
-  const response = await fetch('/api/posts', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(postData)
+  const response = await fetch("/api/posts", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(postData),
   });
-  
-  if (!response.ok) throw new Error('Failed to create post');
+
+  if (!response.ok) throw new Error("Failed to create post");
   return response.json();
 };
 ```
@@ -152,21 +173,25 @@ const handlePostSubmit = async (postData: PostData) => {
 ## Troubleshooting
 
 ### Map not showing
+
 - Check if `NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN` is set in `.env.local`
 - Restart dev server after adding token
 - Check browser console for errors
 
 ### Location not working
+
 - Check browser location permissions
 - Try in HTTPS (required for geolocation in some browsers)
 - Check if location services are enabled on device
 
 ### Modal not opening
+
 - Check if user is authenticated
 - Check if location is available
 - Check browser console for errors
 
 ## File Structure
+
 ```
 frontend/
 ├── app/
@@ -182,6 +207,7 @@ frontend/
 ```
 
 ## Notes
+
 - The map uses Mapbox dark theme for consistency with the app design
 - All animations use Framer Motion for smooth UX
 - Location accuracy is displayed to user
