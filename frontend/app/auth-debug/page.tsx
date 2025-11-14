@@ -86,9 +86,12 @@ export default function AuthDebugPage() {
                   <span className="font-mono text-sm text-gray-400">{key}:</span>
                   <pre className="mt-1 text-xs text-gray-300 overflow-x-auto">
                     {value ? (
-                      typeof value === 'string' && value.length > 100 
-                        ? value.substring(0, 100) + '...' 
-                        : value
+                      typeof value === 'string' ? (
+                        value.length > 100 ? value.substring(0, 100) + '...' : value
+                      ) : (
+                        // Safely stringify non-string values for display
+                        JSON.stringify(value, null, 2)
+                      )
                     ) : (
                       <span className="text-gray-600">null</span>
                     )}
@@ -114,9 +117,11 @@ export default function AuthDebugPage() {
                   <span className="font-mono text-sm text-gray-400">{key}:</span>
                   <pre className="mt-1 text-xs text-gray-300 overflow-x-auto">
                     {value ? (
-                      typeof value === 'string' && value.length > 100 
-                        ? value.substring(0, 100) + '...' 
-                        : value
+                      typeof value === 'string' ? (
+                        value.length > 100 ? value.substring(0, 100) + '...' : value
+                      ) : (
+                        JSON.stringify(value, null, 2)
+                      )
                     ) : (
                       <span className="text-gray-600">null</span>
                     )}

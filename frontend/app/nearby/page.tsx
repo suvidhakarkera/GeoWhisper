@@ -6,7 +6,8 @@ import { MapPin, MessageCircle, Users, Loader2, Navigation, AlertCircle, LogIn, 
 import { locationService, UserLocation, NearbyTower } from '@/services/locationService';
 import { getTowerLabel } from '@/utils/towerNumber';
 import TowerChat from '@/components/TowerChat';
-import MiniMap from '@/components/MiniMap';
+import dynamic from 'next/dynamic';
+const MiniMap = dynamic(() => import('@/components/MiniMap'), { ssr: false, loading: () => <div className="w-full h-24 bg-gray-900 flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-cyan-400"/></div> });
 import { useUser } from '@/contexts/UserContext';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';

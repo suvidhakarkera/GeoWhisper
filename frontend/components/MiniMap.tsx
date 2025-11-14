@@ -40,21 +40,23 @@ export default function MiniMap({ center, className }: MiniMapProps) {
   return (
     <div className={`${className || ''} rounded-lg overflow-hidden border border-gray-800 cursor-pointer`} onClick={clickHandler}>
       <MapContainer
-        center={centerCoords || [0, 0]}
-        zoom={center ? 15 : 2}
-        style={{ height: 160, width: '100%' }}
-        whenCreated={(mapInstance) => { mapRef.current = mapInstance; }}
-        attributionControl={false}
-        zoomControl={false}
-        dragging={!!center}
-        doubleClickZoom={false}
-        scrollWheelZoom={false}
+        {...({
+          center: centerCoords || [0, 0],
+          zoom: center ? 15 : 2,
+          style: { height: 160, width: '100%' },
+          whenCreated: (mapInstance: any) => { mapRef.current = mapInstance; },
+          attributionControl: false,
+          zoomControl: false,
+          dragging: !!center,
+          doubleClickZoom: false,
+          scrollWheelZoom: false,
+        } as any)}
       >
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
         {centerCoords && (
           <>
             <CenterUpdater center={centerCoords} />
-            <Marker position={centerCoords} icon={markerIcon} />
+            <Marker {...({ position: centerCoords, icon: markerIcon } as any)} />
           </>
         )}
       </MapContainer>

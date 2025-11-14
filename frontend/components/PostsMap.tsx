@@ -95,23 +95,22 @@ export default function PostsMap({ posts, onMarkerClick, center }: PostsMapProps
   return (
     <div className="w-full h-[600px] rounded-xl overflow-hidden border border-gray-700 shadow-xl">
       <MapContainer
-        center={mapCenter}
-        zoom={14}
-        className="w-full h-full"
-        zoomControl={true}
+        {...({
+          center: mapCenter,
+          zoom: 14,
+          className: 'w-full h-full',
+          zoomControl: true,
+        } as any)}
       >
         {/* OpenStreetMap Tiles */}
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+        <TileLayer {...({ attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors', url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" } as any)} />
 
         {/* Update map center when it changes */}
         <MapCenterUpdater center={mapCenter} />
 
         {/* User location marker - Blue */}
         {currentLocation && (
-          <Marker position={currentLocation} icon={userIcon}>
+          <Marker {...({ position: currentLocation, icon: userIcon } as any)}>
             <Popup>
               <div className="text-sm">
                 <strong>Your Location</strong>
@@ -124,13 +123,9 @@ export default function PostsMap({ posts, onMarkerClick, center }: PostsMapProps
         {posts.map((post) => (
           <Marker
             key={post.id}
-            position={[post.latitude, post.longitude]}
-            icon={postIcon}
-            eventHandlers={{
-              click: () => handleMarkerClick(post),
-            }}
+            {...({ position: [post.latitude, post.longitude], icon: postIcon, eventHandlers: { click: () => handleMarkerClick(post) } } as any)}
           >
-            <Popup maxWidth={300}>
+            <Popup {...({ maxWidth: 300 } as any)}>
               <div className="p-2">
                 <div className="flex justify-between items-start mb-2">
                   <h3 className="font-bold text-gray-900 text-sm">{post.username}</h3>

@@ -5,13 +5,27 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import MapView from '@/components/MapViewWrapper';
-import CreatePostModal from '@/components/CreatePostModal';
-import FloatingActionButton from '@/components/FloatingActionButton';
 import PostCard from '@/components/PostCard';
 import { postService, Post } from '@/services/postService';
 import { Map, List, Loader2, RefreshCw, Plus, MapPin } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
+import FloatingCreateButton from '@/components/FloatingCreateButton';
+import PostCreationModal, { PostData } from '@/components/PostCreationModal';
+
+// Dynamic import for PostsMap (Leaflet) to avoid SSR issues
+const PostsMap = dynamic(() => import('@/components/PostsMap'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-64 flex items-center justify-center bg-gray-900">
+      <Loader2 className="w-8 h-8 animate-spin text-cyan-400" />
+    </div>
+  )
+});
+
+function PostsMapWrapper({ posts, center }: { posts: Post[]; center?: { lat: number; lng: number } | undefined }) {
+  return <PostsMap posts={posts} center={center} />;
+}
 
 export default function FeedPage() {
   const router = useRouter();
@@ -181,11 +195,7 @@ export default function FeedPage() {
             </div>
           ) : viewMode === 'map' ? (
             <div className="mb-8 rounded-2xl overflow-hidden shadow-2xl border-2 border-gray-700">
-              <MapView
-                posts={posts}
-                userLocation={location}
-                refreshTrigger={refreshTrigger}
-              />
+              <PostsMapWrapper posts={posts} center={location ? { lat: location.latitude, lng: location.longitude } : undefined} />
             </div>
           ) : (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
@@ -203,18 +213,19 @@ export default function FeedPage() {
       </div>
 
       {/* Floating Action Button */}
-      <FloatingActionButton onClick={() => setIsPostModalOpen(true)} />
+      <FloatingCreateButton onClick={() => setIsPostModalOpen(true)} />
 
       {/* Create Post Modal */}
-      <CreatePostModal
+      <PostCreationModal
         isOpen={isPostModalOpen}
         onClose={() => setIsPostModalOpen(false)}
-        onPostCreated={() => {
+        userLocation={location}
+        onSubmit={async (post: PostData) => {
+          // After successful submission, refresh feed
           setRefreshTrigger(prev => prev + 1);
           setIsPostModalOpen(false);
-          loadPosts();
+          await loadPosts();
         }}
-        initialLocation={location}
       />
 
       <Footer />
