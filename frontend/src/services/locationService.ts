@@ -268,7 +268,7 @@ class LocationService {
     try {
       // Use a short-lived session cache to avoid fetching the full towers list repeatedly
       const cacheKey = 'gw_allTowers_cache_v1';
-      const cacheTTLms = 2 * 60 * 1000; // 2 minutes
+      const cacheTTLms = 10 * 60 * 1000; // 10 minutes
 
       try {
         const raw = sessionStorage.getItem(cacheKey);
