@@ -359,4 +359,28 @@ public class PostController {
                     .body(ApiResponse.error("Failed to cluster posts into towers: " + e.getMessage()));
         }
     }
+
+    /**
+     * Get all posts with images for a specific tower
+     * 
+     * GET /api/posts/tower/{towerId}/images
+     * 
+     * Returns all posts that have images for the specified tower
+     */
+    @GetMapping("/tower/{towerId}/images")
+    public ResponseEntity<?> getTowerImages(@PathVariable String towerId) {
+        try {
+            List<Map<String, Object>> postsWithImages = postService.getPostsWithImagesByTower(towerId);
+            
+            return ResponseEntity.ok(ApiResponse.success(
+                    "Found " + postsWithImages.size() + " posts with images in tower " + towerId,
+                    postsWithImages));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Invalid tower: " + e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Failed to fetch tower images: " + e.getMessage()));
+        }
+    }
 }

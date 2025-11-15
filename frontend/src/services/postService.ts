@@ -264,6 +264,51 @@ class PostService {
 
     console.log('✅ Post deleted successfully');
   }
+
+  /**
+   * Get all posts with images for a specific tower
+   */
+  async getTowerImages(towerId: string): Promise<TowerPost[]> {
+    console.log('🖼️ Fetching tower images for tower:', towerId);
+    console.log('API URL:', `${API_BASE_URL}/api/posts/tower/${towerId}/images`);
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/posts/tower/${towerId}/images`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      console.log('Response status:', response.status, response.statusText);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        
+        let errorMessage = 'Failed to fetch tower images';
+        try {
+          const error = JSON.parse(errorText);
+          errorMessage = error.message || errorMessage;
+        } catch (e) {
+          errorMessage = `Failed to fetch tower images: ${response.status} ${response.statusText}`;
+        }
+        
+        throw new Error(errorMessage);
+      }
+
+      const result = await response.json();
+      console.log('✅ Successfully fetched', result.data?.length || 0, 'posts with images');
+      return result.data || [];
+    } catch (error: any) {
+      console.error('❌ Error fetching tower images:', error);
+      // Handle network errors
+      if (error.message.includes('Failed to fetch') || error.name === 'TypeError') {
+        throw new Error('Cannot connect to server. Please check if the backend is running.');
+      }
+      throw error;
+    }
+  }
 }
 
 export const postService = new PostService();

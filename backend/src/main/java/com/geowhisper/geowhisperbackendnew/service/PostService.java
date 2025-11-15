@@ -514,4 +514,67 @@ public class PostService {
         }
     }
 
+    /**
+     * Get all posts with images for a specific tower
+     * 
+     * @param towerId The ID of the tower
+     * @return List of posts that have images
+     */
+    public List<Map<String, Object>> getPostsWithImagesByTower(String towerId) 
+            throws ExecutionException, InterruptedException {
+        
+        // Get tower to retrieve post IDs
+        Optional<Tower> towerOpt = towerService.getTowerById(towerId);
+        if (!towerOpt.isPresent()) {
+            throw new IllegalArgumentException("Tower not found with ID: " + towerId);
+        }
+        
+        Tower tower = towerOpt.get();
+        List<String> postIds = tower.getPostIds();
+        
+        if (postIds == null || postIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+        
+        List<Map<String, Object>> postsWithImages = new ArrayList<>();
+        
+        // Firestore 'in' query has a limit of 10 items, so we need to batch
+        int batchSize = 10;
+        for (int i = 0; i < postIds.size(); i += batchSize) {
+            List<String> batch = postIds.subList(i, Math.min(i + batchSize, postIds.size()));
+            
+            QuerySnapshot postSnapshot = firestore.collection("posts")
+                    .whereIn(FieldPath.documentId(), batch)
+                    .get()
+                    .get();
+            
+            for (DocumentSnapshot doc : postSnapshot.getDocuments()) {
+                Map<String, Object> post = doc.getData();
+                if (post != null) {
+                    // Only include posts that have images
+                    Object imagesObj = post.get("images");
+                    if (imagesObj instanceof List<?>) {
+                        List<?> imagesList = (List<?>) imagesObj;
+                        if (!imagesList.isEmpty()) {
+                            post.put("id", doc.getId());
+                            postsWithImages.add(post);
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Sort by creation date (newest first)
+        postsWithImages.sort((a, b) -> {
+            Object aTime = a.get("createdAt");
+            Object bTime = b.get("createdAt");
+            if (aTime instanceof com.google.cloud.Timestamp && bTime instanceof com.google.cloud.Timestamp) {
+                return ((com.google.cloud.Timestamp) bTime).compareTo((com.google.cloud.Timestamp) aTime);
+            }
+            return 0;
+        });
+        
+        return postsWithImages;
+    }
+
 }
