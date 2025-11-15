@@ -33,7 +33,7 @@ export default function MyPostsPage() {
   const [loadingChats, setLoadingChats] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest'>('newest');
-  const [activeTab, setActiveTab] = useState<'posts' | 'chats' | 'all'>('all');
+  const [activeTab, setActiveTab] = useState<'posts' | 'chats'>('posts');
   const [sortOpen, setSortOpen] = useState(false);
   const sortRef = useRef<HTMLDivElement | null>(null);
 
@@ -347,14 +347,7 @@ export default function MyPostsPage() {
   const getDisplayItems = () => {
     if (activeTab === 'posts') return filteredPosts.map(p => ({ ...p, type: 'post' as const }));
     if (activeTab === 'chats') return filteredChats.map(c => ({ ...c, type: 'chat' as const }));
-    
-    // All - combine and sort
-    const combined = [
-      ...filteredPosts.map(p => ({ ...p, type: 'post' as const, sortTime: toMillis(p.createdAt) })),
-      ...filteredChats.map(c => ({ ...c, type: 'chat' as const, sortTime: c.timestamp }))
-    ];
-    
-    return combined.sort((a, b) => sortBy === 'newest' ? b.sortTime - a.sortTime : a.sortTime - b.sortTime);
+    return [];
   };
 
   const displayItems = getDisplayItems();
@@ -382,21 +375,11 @@ export default function MyPostsPage() {
           {/* Tabs */}
           <div className="flex flex-wrap gap-2 mb-6">
             <button
-              onClick={() => setActiveTab('all')}
-              className={`px-4 sm:px-6 py-2 rounded-lg font-semibold transition-colors text-sm sm:text-base ${
-                activeTab === 'all'
-                  ? 'bg-cyan-600 text-white'
-                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-              }`}
-            >
-              All ({userPosts.length + userChats.length})
-            </button>
-            <button
               onClick={() => setActiveTab('posts')}
-              className={`px-4 sm:px-6 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2 text-sm sm:text-base ${
+              className={`px-4 sm:px-6 py-2 rounded-xl font-semibold transition-all flex items-center gap-2 text-sm sm:text-base bg-black/20 backdrop-blur-lg border-2 text-white ${
                 activeTab === 'posts'
-                  ? 'bg-cyan-600 text-white'
-                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                  ? 'border-blue-400 shadow-lg shadow-blue-500/30'
+                  : 'border-gray-600 hover:border-blue-400'
               }`}
             >
               <MapPin className="w-4 h-4" />
@@ -404,10 +387,10 @@ export default function MyPostsPage() {
             </button>
             <button
               onClick={() => setActiveTab('chats')}
-              className={`px-4 sm:px-6 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2 text-sm sm:text-base ${
+              className={`px-4 sm:px-6 py-2 rounded-xl font-semibold transition-all flex items-center gap-2 text-sm sm:text-base bg-black/20 backdrop-blur-lg border-2 text-white ${
                 activeTab === 'chats'
-                  ? 'bg-cyan-600 text-white'
-                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                  ? 'border-blue-400 shadow-lg shadow-blue-500/30'
+                  : 'border-gray-600 hover:border-blue-400'
               }`}
             >
               <MessageCircle className="w-4 h-4" />
@@ -482,14 +465,14 @@ export default function MyPostsPage() {
           {/* Content Header with Search Results */}
           <div className="mb-4 sm:mb-6">
             <h2 className="text-xl sm:text-2xl font-bold text-gray-100 mb-1 sm:mb-2">
-              {activeTab === 'all' ? 'All Activity' : activeTab === 'posts' ? 'Post History' : 'Chat History'}
+              {activeTab === 'posts' ? 'Post History' : 'Chat History'}
             </h2>
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-xs sm:text-sm">
               <p className="text-gray-400">
                 Showing {displayItems.length} 
                 {searchQuery && (
                   <>
-                    {' '}of {activeTab === 'all' ? userPosts.length + userChats.length : activeTab === 'posts' ? userPosts.length : userChats.length}
+                    {' '}of {activeTab === 'posts' ? userPosts.length : userChats.length}
                   </>
                 )} items
                 {loadingPosts && loadingChats ? ' (loading posts and chats...)' : 
