@@ -287,11 +287,21 @@ class PostService {
         console.error('Error response:', errorText);
         
         let errorMessage = 'Failed to fetch tower images';
-        try {
-          const error = JSON.parse(errorText);
-          errorMessage = error.message || errorMessage;
-        } catch (e) {
-          errorMessage = `Failed to fetch tower images: ${response.status} ${response.statusText}`;
+        
+        // Handle different error scenarios
+        if (response.status === 404) {
+          errorMessage = 'This feature is being deployed to the server. Please try again in a few minutes.';
+        } else if (response.status === 500) {
+          errorMessage = 'Server error occurred. The backend may still be deploying.';
+        } else if (!errorText || errorText.trim() === '') {
+          errorMessage = `Server returned ${response.status}. The feature may still be deploying to production.`;
+        } else {
+          try {
+            const error = JSON.parse(errorText);
+            errorMessage = error.message || errorMessage;
+          } catch (e) {
+            errorMessage = `Failed to fetch tower images: ${response.status} ${response.statusText}`;
+          }
         }
         
         throw new Error(errorMessage);
@@ -304,7 +314,7 @@ class PostService {
       console.error('❌ Error fetching tower images:', error);
       // Handle network errors
       if (error.message.includes('Failed to fetch') || error.name === 'TypeError') {
-        throw new Error('Cannot connect to server. Please check if the backend is running.');
+        throw new Error('Cannot connect to server. The backend may be restarting due to deployment.');
       }
       throw error;
     }

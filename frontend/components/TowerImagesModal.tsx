@@ -83,14 +83,23 @@ export default function TowerImagesModal({ towerId, isOpen, onClose }: TowerImag
               <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
             </div>
           ) : error ? (
-            <div className="text-center py-12">
-              <p className="text-red-500 dark:text-red-400">{error}</p>
+            <div className="text-center py-12 px-6">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full mb-4">
+                <ImageIcon className="w-8 h-8 text-red-500 dark:text-red-400" />
+              </div>
+              <p className="text-red-600 dark:text-red-400 font-medium mb-2">Unable to load images</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">{error}</p>
               <button
                 onClick={fetchTowerImages}
-                className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                className="px-6 py-2.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors shadow-md hover:shadow-lg"
               >
                 Try Again
               </button>
+              {error.includes('deploying') && (
+                <p className="text-xs text-gray-500 dark:text-gray-500 mt-4">
+                  💡 Tip: Render deployments typically take 5-10 minutes
+                </p>
+              )}
             </div>
           ) : posts.length === 0 ? (
             <div className="text-center py-12">
