@@ -71,14 +71,16 @@ export default function ProfilePage() {
       
       // Map to track zone activity
       const zoneActivity = new Map<string, RecentZone>();
+      let totalChatMessages = 0;
       
-      // Only check first 10 towers for better performance
-      const towersToCheck = towers.slice(0, 10);
+      // Only check first 20 towers for better performance
+      const towersToCheck = towers.slice(0, 20);
       
-      // Check each tower for user's posts only (skip chats for performance)
+      // Check each tower for user's posts and chats
       for (const tower of towersToCheck) {
         const towerId = tower.towerId;
         let postCount = 0;
+        let chatCount = 0;
         let lastActivity = 0;
         
         // Count user's posts in this tower
@@ -95,12 +97,38 @@ export default function ProfilePage() {
           }
         }
         
-        // If user has activity in this zone, add it
-        if (postCount > 0) {
+        // Count user's chat messages in this tower from Firebase Realtime Database
+        try {
+          const chatRef = ref(database, `chats/${towerId}/messages`);
+          const chatSnapshot = await get(chatRef);
+          
+          if (chatSnapshot.exists()) {
+            const messages = chatSnapshot.val();
+            const userMessages = Object.values(messages).filter(
+              (msg: any) => msg.userId === user.firebaseUid && !msg.isPost // Exclude post messages
+            );
+            chatCount = userMessages.length;
+            totalChatMessages += chatCount;
+            
+            // Update last activity with latest chat message
+            if (userMessages.length > 0) {
+              const latestChat = userMessages.reduce((latest: number, msg: any) => {
+                const msgTime = msg.timestamp || 0;
+                return msgTime > latest ? msgTime : latest;
+              }, 0);
+              lastActivity = Math.max(lastActivity, latestChat);
+            }
+          }
+        } catch (chatError) {
+          console.error(`Failed to load chats for tower ${towerId}:`, chatError);
+        }
+        
+        // If user has any activity in this zone, add it
+        if (postCount > 0 || chatCount > 0) {
           zoneActivity.set(towerId, {
             towerId,
             postCount,
-            chatCount: 0,
+            chatCount,
             lastActivity,
           });
         }
@@ -112,7 +140,7 @@ export default function ProfilePage() {
         .slice(0, 4);
       
       setRecentZones(sortedZones);
-      setTotalChats(0);
+      setTotalChats(totalChatMessages);
       
     } catch (error) {
       console.error('Failed to load recent zones:', error);
