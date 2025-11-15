@@ -2,12 +2,11 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { ref, onValue, push, set, off } from 'firebase/database';
-import { Send, AlertTriangle, Flag, Trash2, EyeOff, Loader2, Image as ImageIcon, X, Sparkles, MessageSquare, MessageCircle, Camera, Reply, Images } from 'lucide-react';
+import { Send, AlertTriangle, Flag, Trash2, EyeOff, Loader2, Image as ImageIcon, X, Sparkles, MessageSquare, MessageCircle, Camera, Reply } from 'lucide-react';
 import { chatService, ChatMessage, ContentModerationResponse } from '@/services/chatService';
 import { database } from '@/config/firebase';
 import { API_BASE_URL } from '@/config/api';
 import { useToast } from '@/components/ToastContext';
-import TowerImagesModal from '@/components/TowerImagesModal';
 
 interface TowerChatProps {
   towerId: string;
@@ -49,7 +48,6 @@ export default function TowerChat({
   const [checkingPermissions, setCheckingPermissions] = useState(true);
   const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
   const [touchStart, setTouchStart] = useState<{ x: number; y: number; messageId: string } | null>(null);
-  const [showImagesModal, setShowImagesModal] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -624,15 +622,6 @@ export default function TowerChat({
               <span>{loadingVibe ? 'Loading...' : 'Vibe Check'}</span>
             </button>
 
-            <button
-              onClick={() => setShowImagesModal(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-medium transition-all border-2 border-gray-700 hover:border-blue-400 text-white whitespace-nowrap"
-              title="View all images posted in this tower"
-            >
-              <Images className="w-3.5 h-3.5" />
-              <span>Gallery</span>
-            </button>
-
             {/* View Only Mode Indicator - Show when checking or when out of range */}
             {(checkingPermissions || canInteract === false) && (
               <div className="relative z-[100]">
@@ -848,7 +837,7 @@ export default function TowerChat({
                   )}
                   
                   <div
-                    className={`relative rounded-2xl p-3 pr-12 shadow-lg transition-all ${
+                    className={`relative rounded-2xl p-3 pr-20 shadow-lg transition-all ${
                       formatted.isModerated
                         ? 'bg-gradient-to-br from-red-900/40 to-red-800/40 border border-red-500/30 backdrop-blur-sm'
                         : msg.isPost
@@ -920,7 +909,7 @@ export default function TowerChat({
                   {!formatted.isModerated && canInteract && (
                     <button
                       onClick={() => setReplyingTo(msg)}
-                      className={`absolute top-2 ${isOwnMessage ? 'right-12' : 'right-2'} p-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 hover:text-blue-300 rounded-lg transition-all duration-300 border border-blue-500/20 hover:border-blue-500/40 opacity-0 group-hover:opacity-100`}
+                      className={`absolute top-2 ${isOwnMessage ? 'right-12' : 'right-2'} p-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 hover:text-blue-300 rounded-lg transition-all duration-300 border border-blue-500/20 hover:border-blue-500/40 opacity-0 group-hover:opacity-100 z-10`}
                       title="Reply to this message"
                     >
                       <Reply className="w-3.5 h-3.5" />
@@ -933,7 +922,7 @@ export default function TowerChat({
                       {msg.isPost && msg.postId ? (
                         <button
                           onClick={() => handleDeletePost(msg.postId!)}
-                          className="absolute top-2 right-2 p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 rounded-lg transition-all duration-300 border border-red-500/20 hover:border-red-500/40 opacity-0 group-hover:opacity-100"
+                          className="absolute top-2 right-2 p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 rounded-lg transition-all duration-300 border border-red-500/20 hover:border-red-500/40 opacity-0 group-hover:opacity-100 z-10"
                           title="Delete this post"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -941,7 +930,7 @@ export default function TowerChat({
                       ) : (
                         <button
                           onClick={() => handleDeleteChatMessage(msg.messageId || msg.id)}
-                          className="absolute top-2 right-2 p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 rounded-lg transition-all duration-300 border border-red-500/20 hover:border-red-500/40 opacity-0 group-hover:opacity-100"
+                          className="absolute top-2 right-2 p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 rounded-lg transition-all duration-300 border border-red-500/20 hover:border-red-500/40 opacity-0 group-hover:opacity-100 z-10"
                           title="Delete this message"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -1152,13 +1141,6 @@ export default function TowerChat({
         </div>
         </div>
       )}
-
-      {/* Tower Images Gallery Modal */}
-      <TowerImagesModal
-        towerId={towerId}
-        isOpen={showImagesModal}
-        onClose={() => setShowImagesModal(false)}
-      />
     </div>
   );
 }
