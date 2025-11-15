@@ -372,7 +372,7 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
       >
         {/* Heatmap circles for top 5 towers */}
         <Source id="heatmap-source" type="geojson" data={heatmapGeoJSON}>
-          {/* Rank 1 - Darkest red glow (highest engagement) */}
+          {/* Rank 1 - Brightest blue glow */}
           <Layer
             id="heatmap-1"
             type="circle"
@@ -386,12 +386,12 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
                 15, 80,
                 18, 150
               ],
-              'circle-color': '#7f1d1d', // red-950 (darkest)
+              'circle-color': '#3b82f6', // blue-500
               'circle-opacity': 0.4,
               'circle-blur': 1.5
             }}
           />
-          {/* Rank 2 - Dark red glow */}
+          {/* Rank 2 - Cyan glow */}
           <Layer
             id="heatmap-2"
             type="circle"
@@ -405,12 +405,12 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
                 15, 70,
                 18, 130
               ],
-              'circle-color': '#991b1b', // red-800
+              'circle-color': '#06b6d4', // cyan-500
               'circle-opacity': 0.35,
               'circle-blur': 1.5
             }}
           />
-          {/* Rank 3 - Medium red glow */}
+          {/* Rank 3 - Teal glow */}
           <Layer
             id="heatmap-3"
             type="circle"
@@ -424,12 +424,12 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
                 15, 60,
                 18, 110
               ],
-              'circle-color': '#dc2626', // red-600
+              'circle-color': '#14b8a6', // teal-500
               'circle-opacity': 0.3,
               'circle-blur': 1.5
             }}
           />
-          {/* Rank 4 - Light red glow */}
+          {/* Rank 4 - Slate glow */}
           <Layer
             id="heatmap-4"
             type="circle"
@@ -443,12 +443,12 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
                 15, 55,
                 18, 100
               ],
-              'circle-color': '#ef4444', // red-500
+              'circle-color': '#64748b', // slate-500
               'circle-opacity': 0.28,
               'circle-blur': 1.5
             }}
           />
-          {/* Rank 5 - Lightest red glow */}
+          {/* Rank 5 - Light slate glow */}
           <Layer
             id="heatmap-5"
             type="circle"
@@ -462,7 +462,7 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
                 15, 50,
                 18, 90
               ],
-              'circle-color': '#f87171', // red-400
+              'circle-color': '#94a3b8', // slate-400
               'circle-opacity': 0.25,
               'circle-blur': 1.5
             }}
@@ -489,53 +489,53 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
           const isHotZone = tower.hotZoneRank && tower.hotZoneRank > 0;
           const rank = tower.hotZoneRank || 0;
           
-          // Different animation speeds and glow colors based on rank (red shades)
+          // Different animation speeds and glow colors based on rank
           const getHotZoneStyle = (rank: number) => {
             switch(rank) {
-              case 1: // #1 hottest - fastest pulse, darkest red
+              case 1: // #1 hottest - fastest pulse, brightest glow
                 return {
                   pulseSpeed: '0.8s',
-                  glowColor: 'rgba(127, 29, 29, 0.8)', // red-950 (darkest)
-                  ringColor: 'rgba(127, 29, 29, 0.6)',
-                  iconColor: 'text-red-950',
+                  glowColor: 'rgba(59, 130, 246, 0.8)', // blue-500
+                  ringColor: 'rgba(59, 130, 246, 0.6)',
+                  iconColor: 'text-blue-400',
                   scale: 1.3,
-                  badgeColor: '#7f1d1d' // red-950
+                  badgeColor: '#3b82f6' // blue-500
                 };
-              case 2: // #2 - fast pulse, dark red
+              case 2: // #2 - fast pulse, bright glow
                 return {
                   pulseSpeed: '1.1s',
-                  glowColor: 'rgba(153, 27, 27, 0.7)', // red-800
-                  ringColor: 'rgba(153, 27, 27, 0.5)',
-                  iconColor: 'text-red-800',
+                  glowColor: 'rgba(6, 182, 212, 0.7)', // cyan-500
+                  ringColor: 'rgba(6, 182, 212, 0.5)',
+                  iconColor: 'text-cyan-500',
                   scale: 1.25,
-                  badgeColor: '#991b1b' // red-800
+                  badgeColor: '#06b6d4' // cyan-500
                 };
-              case 3: // #3 - medium pulse, medium red
+              case 3: // #3 - medium pulse
                 return {
                   pulseSpeed: '1.4s',
-                  glowColor: 'rgba(220, 38, 38, 0.6)', // red-600
-                  ringColor: 'rgba(220, 38, 38, 0.4)',
-                  iconColor: 'text-red-600',
+                  glowColor: 'rgba(20, 184, 166, 0.6)', // teal-500
+                  ringColor: 'rgba(20, 184, 166, 0.4)',
+                  iconColor: 'text-teal-400',
                   scale: 1.2,
-                  badgeColor: '#dc2626' // red-600
+                  badgeColor: '#14b8a6' // teal-500
                 };
-              case 4: // #4 - slower pulse, light red
+              case 4: // #4 - slower pulse
                 return {
                   pulseSpeed: '1.7s',
-                  glowColor: 'rgba(239, 68, 68, 0.5)', // red-500
-                  ringColor: 'rgba(239, 68, 68, 0.3)',
-                  iconColor: 'text-red-500',
+                  glowColor: 'rgba(100, 116, 139, 0.5)', // slate-500
+                  ringColor: 'rgba(100, 116, 139, 0.3)',
+                  iconColor: 'text-slate-400',
                   scale: 1.15,
-                  badgeColor: '#ef4444' // red-500
+                  badgeColor: '#64748b' // slate-500
                 };
-              case 5: // #5 - slowest pulse, lightest red
+              case 5: // #5 - slowest pulse
                 return {
                   pulseSpeed: '2s',
-                  glowColor: 'rgba(248, 113, 113, 0.4)', // red-400
-                  ringColor: 'rgba(248, 113, 113, 0.2)',
-                  iconColor: 'text-red-400',
+                  glowColor: 'rgba(148, 163, 184, 0.4)', // slate-400
+                  ringColor: 'rgba(148, 163, 184, 0.2)',
+                  iconColor: 'text-slate-500',
                   scale: 1.1,
-                  badgeColor: '#f87171' // red-400
+                  badgeColor: '#94a3b8' // slate-400
                 };
               default:
                 return null;
