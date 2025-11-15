@@ -369,16 +369,21 @@ public class PostController {
      */
     @GetMapping("/tower/{towerId}/images")
     public ResponseEntity<?> getTowerImages(@PathVariable String towerId) {
+        System.out.println("🖼️ Received request for tower images: " + towerId);
         try {
             List<Map<String, Object>> postsWithImages = postService.getPostsWithImagesByTower(towerId);
+            System.out.println("✅ Found " + postsWithImages.size() + " posts with images");
             
             return ResponseEntity.ok(ApiResponse.success(
                     "Found " + postsWithImages.size() + " posts with images in tower " + towerId,
                     postsWithImages));
         } catch (IllegalArgumentException e) {
+            System.err.println("❌ Invalid tower error: " + e.getMessage());
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error("Invalid tower: " + e.getMessage()));
         } catch (Exception e) {
+            System.err.println("❌ Error fetching tower images: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error("Failed to fetch tower images: " + e.getMessage()));
         }

@@ -523,16 +523,22 @@ public class PostService {
     public List<Map<String, Object>> getPostsWithImagesByTower(String towerId) 
             throws ExecutionException, InterruptedException {
         
+        System.out.println("🔍 Fetching posts with images for tower: " + towerId);
+        
         // Get tower to retrieve post IDs
         Optional<Tower> towerOpt = towerService.getTowerById(towerId);
         if (!towerOpt.isPresent()) {
+            System.err.println("❌ Tower not found: " + towerId);
             throw new IllegalArgumentException("Tower not found with ID: " + towerId);
         }
         
         Tower tower = towerOpt.get();
         List<String> postIds = tower.getPostIds();
         
+        System.out.println("📝 Tower has " + (postIds != null ? postIds.size() : 0) + " posts");
+        
         if (postIds == null || postIds.isEmpty()) {
+            System.out.println("⚠️ No posts in tower");
             return new ArrayList<>();
         }
         
@@ -563,6 +569,8 @@ public class PostService {
                 }
             }
         }
+        
+        System.out.println("🖼️ Found " + postsWithImages.size() + " posts with images");
         
         // Sort by creation date (newest first)
         postsWithImages.sort((a, b) -> {
