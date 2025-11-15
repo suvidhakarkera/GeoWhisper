@@ -410,7 +410,7 @@ export default function MyPostsPage() {
                   placeholder={`Search by content, username, or tower ID...`}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-24 py-2.5 bg-black/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all"
+                  className="w-full pl-10 pr-24 py-2.5 bg-black/20 backdrop-blur-lg border-2 border-gray-600 text-white placeholder-gray-500 rounded-xl focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all"
                 />
                 {searchQuery && (
                   <button
@@ -433,7 +433,7 @@ export default function MyPostsPage() {
                     onClick={() => setSortOpen(open => !open)}
                     aria-haspopup="true"
                     aria-expanded={sortOpen}
-                    className="flex items-center gap-2 appearance-none px-4 py-2.5 bg-black/80 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-cyan-500 transition-colors cursor-pointer pr-3"
+                    className="flex items-center gap-2 appearance-none px-4 py-2.5 bg-black/20 backdrop-blur-lg border-2 border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:border-blue-400 hover:border-blue-400 transition-all cursor-pointer pr-3 w-full sm:w-auto justify-between"
                   >
                     <span className="truncate">{sortBy === 'newest' ? 'Newest First' : 'Oldest First'}</span>
                     <ChevronDown className="w-4 h-4 text-gray-400 ml-2" />
@@ -444,13 +444,13 @@ export default function MyPostsPage() {
                       <div className="py-1">
                         <button
                           onClick={() => { setSortBy('newest'); setSortOpen(false); }}
-                          className={`w-full text-left px-4 py-2 text-sm ${sortBy === 'newest' ? 'text-cyan-400' : 'text-white'} hover:bg-gray-900/80`}
+                          className={`w-full text-left px-4 py-2 text-sm ${sortBy === 'newest' ? 'text-blue-400' : 'text-white'} hover:bg-gray-900/80`}
                         >
                           Newest First
                         </button>
                         <button
                           onClick={() => { setSortBy('oldest'); setSortOpen(false); }}
-                          className={`w-full text-left px-4 py-2 text-sm ${sortBy === 'oldest' ? 'text-cyan-400' : 'text-white'} hover:bg-gray-900/80`}
+                          className={`w-full text-left px-4 py-2 text-sm ${sortBy === 'oldest' ? 'text-blue-400' : 'text-white'} hover:bg-gray-900/80`}
                         >
                           Oldest First
                         </button>
