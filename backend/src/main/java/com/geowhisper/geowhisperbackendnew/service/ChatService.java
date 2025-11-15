@@ -74,6 +74,13 @@ public class ChatService {
                 messageData.put("hasImage", true);
             }
             
+            // Add reply fields if present
+            if (request.getReplyTo() != null && !request.getReplyTo().isEmpty()) {
+                messageData.put("replyTo", request.getReplyTo());
+                messageData.put("repliedMessage", request.getRepliedMessage());
+                messageData.put("repliedUsername", request.getRepliedUsername());
+            }
+            
             newMessageRef.setValueAsync(messageData);
             
             Map<String, Object> response = new HashMap<>();

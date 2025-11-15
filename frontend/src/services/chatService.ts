@@ -14,6 +14,11 @@ export interface ChatMessage {
   postId?: string;
   image?: string;
   
+  // Reply-related fields
+  replyTo?: string; // ID of the message being replied to
+  repliedMessage?: string; // Content of the replied message
+  repliedUsername?: string; // Username of the person being replied to
+  
   // Moderation fields
   moderated?: boolean;
   moderationAction?: 'DELETED' | 'HIDDEN' | 'FLAGGED';
@@ -176,7 +181,10 @@ class ChatService {
     message: string,
     userLatitude: number,
     userLongitude: number,
-    image?: string
+    image?: string,
+    replyTo?: string,
+    repliedMessage?: string,
+    repliedUsername?: string
   ): Promise<{ success: boolean; messageId?: string; error?: string }> {
     try {
       const authToken = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
@@ -200,6 +208,9 @@ class ChatService {
           userLongitude,
           image,
           hasImage: !!image,
+          replyTo,
+          repliedMessage,
+          repliedUsername,
         }),
       });
 

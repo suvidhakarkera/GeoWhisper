@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { ref, onValue, push, set, off } from 'firebase/database';
-import { Send, AlertTriangle, Flag, Trash2, EyeOff, Loader2, Image as ImageIcon, X, Sparkles, MessageSquare, MessageCircle, Camera } from 'lucide-react';
+import { Send, AlertTriangle, Flag, Trash2, EyeOff, Loader2, Image as ImageIcon, X, Sparkles, MessageSquare, MessageCircle, Camera, Reply } from 'lucide-react';
 import { chatService, ChatMessage, ContentModerationResponse } from '@/services/chatService';
 import { database } from '@/config/firebase';
 import { API_BASE_URL } from '@/config/api';
@@ -46,6 +46,8 @@ export default function TowerChat({
   const [distanceFromTower, setDistanceFromTower] = useState<number | null>(null);
   const [showRangePopup, setShowRangePopup] = useState(false);
   const [checkingPermissions, setCheckingPermissions] = useState(true);
+  const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
+  const [touchStart, setTouchStart] = useState<{ x: number; y: number; messageId: string } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -246,6 +248,16 @@ export default function TowerChat({
             messageText = messageText.replace(/^\s*(📍\s*)?Created a post:\s*/i, '').trim();
           }
           
+          // Debug log for reply fields
+          if (msg.replyTo) {
+            console.log('Message with reply found:', {
+              messageId: childSnapshot.key,
+              replyTo: msg.replyTo,
+              repliedMessage: msg.repliedMessage,
+              repliedUsername: msg.repliedUsername
+            });
+          }
+          
           messagesData.push({
             id: childSnapshot.key!,
             messageId: childSnapshot.key!,
@@ -258,6 +270,10 @@ export default function TowerChat({
             isPost: msg.isPost,
             postId: msg.postId,
             image: msg.image,
+            // Reply-related fields
+            replyTo: msg.replyTo,
+            repliedMessage: msg.repliedMessage,
+            repliedUsername: msg.repliedUsername,
             // Moderation fields
             moderated: msg.moderated,
             moderationAction: msg.moderationAction,
@@ -411,13 +427,21 @@ export default function TowerChat({
       console.log('Is current tower:', isCurrentTower);
       console.log('Can interact:', canInteract);
       console.log('Distance from tower:', distanceFromTower, 'm');
+      console.log('Reply data:', {
+        replyingTo: replyingTo?.id,
+        repliedMessage: replyingTo?.message,
+        repliedUsername: replyingTo?.username
+      });
       
       const result = await chatService.sendMessage(
         towerId,
         newMessage.trim() || '📷 Photo',
         currentLocation.latitude,
         currentLocation.longitude,
-        imageData
+        imageData,
+        replyingTo?.id,
+        replyingTo?.message,
+        replyingTo?.username
       );
 
       console.log('Send message result:', result);
@@ -433,6 +457,7 @@ export default function TowerChat({
       setSelectedImage(null);
       setImagePreview(null);
       setModerationWarning(null);
+      setReplyingTo(null);
       setDbError(null);
     } catch (error: any) {
       console.error('Error sending message:', error);
@@ -760,12 +785,45 @@ export default function TowerChat({
               return username.substring(0, 2).toUpperCase();
             };
 
+            // Swipe gesture handlers
+            const handleTouchStart = (e: React.TouchEvent) => {
+              if (!canInteract || formatted.isModerated) return;
+              setTouchStart({
+                x: e.touches[0].clientX,
+                y: e.touches[0].clientY,
+                messageId: msg.id
+              });
+            };
+
+            const handleTouchEnd = (e: React.TouchEvent) => {
+              if (!touchStart || touchStart.messageId !== msg.id || !canInteract) return;
+              
+              const touchEnd = {
+                x: e.changedTouches[0].clientX,
+                y: e.changedTouches[0].clientY
+              };
+
+              const deltaX = touchEnd.x - touchStart.x;
+              const deltaY = Math.abs(touchEnd.y - touchStart.y);
+
+              // Check if it's a horizontal swipe (not vertical scroll)
+              if (Math.abs(deltaX) > 50 && deltaY < 30) {
+                setReplyingTo(msg);
+              }
+
+              setTouchStart(null);
+            };
+
             return (
               <div
                 key={msg.id}
                 className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} group`}
               >
-                <div className="flex flex-col gap-1 max-w-[75%]">
+                <div 
+                  className="flex flex-col gap-1 max-w-[75%]"
+                  onTouchStart={handleTouchStart}
+                  onTouchEnd={handleTouchEnd}
+                >
                   {/* Avatar and username above the message for other users */}
                   {!isOwnMessage && (
                     <div className="flex items-center gap-2 px-2">
@@ -811,6 +869,21 @@ export default function TowerChat({
                       </div>
                     )}
                   
+                  {/* Display replied message if this is a reply */}
+                  {msg.replyTo && msg.repliedMessage && (
+                    <div className="mb-2 pl-3 border-l-2 border-blue-400/50 bg-black/20 rounded-r-lg p-2">
+                      <div className="flex items-center gap-1 mb-1">
+                        <Reply className="w-3 h-3 text-blue-400" />
+                        <span className="text-xs font-semibold text-blue-400">
+                          {msg.repliedUsername || 'User'}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-400 line-clamp-2">
+                        {msg.repliedMessage}
+                      </p>
+                    </div>
+                  )}
+                  
                   {/* Display image if present (for both posts and regular messages) */}
                   {((msg as any).hasImage || msg.image) && (msg as any).image && !formatted.isModerated && (
                     <div className="mb-2">
@@ -832,6 +905,17 @@ export default function TowerChat({
                     </div>
                   )}
 
+                  {/* Reply Button - Top Right (for all users except moderated messages) */}
+                  {!formatted.isModerated && canInteract && (
+                    <button
+                      onClick={() => setReplyingTo(msg)}
+                      className={`absolute top-2 ${isOwnMessage ? 'right-12' : 'right-2'} p-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 hover:text-blue-300 rounded-lg transition-all duration-300 border border-blue-500/20 hover:border-blue-500/40 opacity-0 group-hover:opacity-100`}
+                      title="Reply to this message"
+                    >
+                      <Reply className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                  
                   {/* Delete Button (for own messages) - Top Right */}
                   {isOwnMessage && !formatted.isModerated && (
                     <div>
@@ -941,6 +1025,31 @@ export default function TowerChat({
       {/* Input Area - Only show if user can interact (within 500m) and checking is complete */}
       {!checkingPermissions && canInteract === true && (
         <div className="sticky bottom-0 z-50 p-4 bg-gradient-to-b from-gray-800/80 to-gray-900/80 backdrop-blur-xl border-t border-gray-700/50">
+        {/* Reply Preview */}
+        {replyingTo && (
+          <div className="mb-3 bg-gray-700/60 border border-blue-500/30 rounded-xl p-3 backdrop-blur-sm">
+            <div className="flex items-start gap-2">
+              <Reply className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-semibold text-blue-400 mb-1">
+                  Replying to {replyingTo.username}
+                </div>
+                <p className="text-xs text-gray-300 line-clamp-2">
+                  {replyingTo.message}
+                </p>
+              </div>
+              <button
+                onClick={() => setReplyingTo(null)}
+                className="p-1 bg-gray-600/50 hover:bg-gray-500/50 rounded-lg transition-all flex-shrink-0"
+                type="button"
+                title="Cancel reply"
+              >
+                <X className="w-3.5 h-3.5 text-gray-300" />
+              </button>
+            </div>
+          </div>
+        )}
+        
         {/* Image Preview */}
         {imagePreview && (
           <div className="mb-3 relative inline-block">
