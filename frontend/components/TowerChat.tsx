@@ -338,6 +338,8 @@ export default function TowerChat({
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+    // Clear moderation warning when user removes the image
+    setModerationWarning(null);
   };
 
   // Check message before sending
@@ -1111,7 +1113,14 @@ export default function TowerChat({
           <input
             type="text"
             value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
+            onChange={(e) => {
+              const v = e.target.value;
+              setNewMessage(v);
+              // If user cleared the input (no meaningful text), remove moderation warning
+              if (!v.trim()) {
+                setModerationWarning(null);
+              }
+            }}
             onKeyPress={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
