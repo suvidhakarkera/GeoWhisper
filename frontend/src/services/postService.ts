@@ -280,11 +280,14 @@ class PostService {
         },
       });
 
-      console.log('Response status:', response.status, response.statusText);
+      console.log('📡 Response status:', response.status, response.statusText);
+      console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Error response:', errorText);
+        console.error('❌ Error response body:', errorText);
+        console.error('❌ Response status:', response.status);
+        console.error('❌ Response URL:', response.url);
         
         let errorMessage = 'Failed to fetch tower images';
         
@@ -293,6 +296,8 @@ class PostService {
           errorMessage = 'This feature is being deployed to the server. Please try again in a few minutes.';
         } else if (response.status === 500) {
           errorMessage = 'Server error occurred. The backend may still be deploying.';
+        } else if (response.status === 0) {
+          errorMessage = 'Cannot reach the server. The backend may be restarting.';
         } else if (!errorText || errorText.trim() === '') {
           errorMessage = `Server returned ${response.status}. The feature may still be deploying to production.`;
         } else {
