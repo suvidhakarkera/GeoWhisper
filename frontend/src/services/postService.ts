@@ -313,7 +313,9 @@ class PostService {
       }
 
       const result = await response.json();
+      console.log('✅ API Response:', result);
       console.log('✅ Successfully fetched', result.data?.length || 0, 'posts with images');
+      console.log('✅ Data array:', result.data);
       return result.data || [];
     } catch (error: any) {
       console.error('❌ Error fetching tower images:', error);

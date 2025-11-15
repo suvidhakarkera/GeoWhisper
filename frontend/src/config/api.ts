@@ -14,7 +14,7 @@ const deriveBaseUrl = (): string => {
   const protocol = window.location.protocol || 'http:';
 
   // If served from localhost, assume backend is on localhost:8080
-  if (host === 'localhost' || host === '127.0.0.1') return DEFAULT_LOCALHOST;
+  if (host === 'localhost' || host === '127.0.0.1') return 'http://localhost:8080';
 
   // For LAN testing (phone accessing dev machine), try same host with backend port 8080
   // e.g., if frontend is at http://192.168.1.12:3000, backend will be http://192.168.1.12:8080

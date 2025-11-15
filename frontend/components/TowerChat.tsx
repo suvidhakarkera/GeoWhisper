@@ -2,11 +2,12 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { ref, onValue, push, set, off } from 'firebase/database';
-import { Send, AlertTriangle, Flag, Trash2, EyeOff, Loader2, Image as ImageIcon, X, Sparkles, MessageSquare, MessageCircle, Camera, Reply } from 'lucide-react';
+import { Send, AlertTriangle, Flag, Trash2, EyeOff, Loader2, Image as ImageIcon, X, Sparkles, MessageSquare, MessageCircle, Camera, Reply, Images } from 'lucide-react';
 import { chatService, ChatMessage, ContentModerationResponse } from '@/services/chatService';
 import { database } from '@/config/firebase';
 import { API_BASE_URL } from '@/config/api';
 import { useToast } from '@/components/ToastContext';
+import TowerImagesModal from '@/components/TowerImagesModal';
 
 interface TowerChatProps {
   towerId: string;
@@ -48,6 +49,7 @@ export default function TowerChat({
   const [checkingPermissions, setCheckingPermissions] = useState(true);
   const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
   const [touchStart, setTouchStart] = useState<{ x: number; y: number; messageId: string } | null>(null);
+  const [showImagesModal, setShowImagesModal] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -623,6 +625,15 @@ export default function TowerChat({
               <Sparkles className="w-3.5 h-3.5" />
               <span>{loadingVibe ? 'Loading...' : 'Vibe Check'}</span>
             </button>
+            
+            <button
+              onClick={() => setShowImagesModal(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-medium transition-all border-2 border-gray-700 hover:border-blue-400 text-white whitespace-nowrap"
+              title="View all images posted in this tower"
+            >
+              <Images className="w-3.5 h-3.5" />
+              <span>Gallery</span>
+            </button>
 
             {/* View Only Mode Indicator - Show when checking or when out of range */}
             {(checkingPermissions || canInteract === false) && (
@@ -1150,6 +1161,13 @@ export default function TowerChat({
         </div>
         </div>
       )}
+
+      {/* Tower Images Modal */}
+      <TowerImagesModal 
+        towerId={towerId}
+        isOpen={showImagesModal}
+        onClose={() => setShowImagesModal(false)}
+      />
     </div>
   );
 }
