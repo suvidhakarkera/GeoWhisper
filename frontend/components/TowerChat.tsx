@@ -84,10 +84,15 @@ export default function TowerChat({
           longitude: position.coords.longitude,
         };
         setUserLocation(location);
+        
+        console.log('=== LOCATION CHECK DEBUG ===');
+        console.log('User location:', location);
+        console.log('Tower ID:', towerId);
+        console.log('isCurrentTower prop:', isCurrentTower);
 
         // If this is the user's current tower, automatically grant access
         if (isCurrentTower) {
-          console.log('This is the current tower - automatically granting interaction access');
+          console.log('✅ This is the current tower - automatically granting interaction access');
           setCanInteract(true);
           setDistanceFromTower(0); // User is within the tower
           setCheckingPermissions(false);
@@ -95,16 +100,19 @@ export default function TowerChat({
         }
 
         // Check if user can interact with this tower and get distance
-        console.log('Checking interaction permission for tower:', towerId, 'at location:', location);
+        console.log('🔍 Checking interaction permission for tower:', towerId);
+        console.log('Making API request to:', `${API_BASE_URL}/api/towers/${towerId}/can-interact?latitude=${location.latitude}&longitude=${location.longitude}`);
         try {
           const response = await fetch(
             `${API_BASE_URL}/api/towers/${towerId}/can-interact?latitude=${location.latitude}&longitude=${location.longitude}`
           );
           
+          console.log('API response status:', response.status);
+          
           if (response.ok) {
             const result = await response.json();
             const data = result.data;
-            console.log('Permission check result:', data);
+            console.log('✅ Permission check result:', data);
             console.log('Can interact:', data.canInteract, 'Distance:', data.distance, 'm');
             
             setCanInteract(data.canInteract);
@@ -113,41 +121,50 @@ export default function TowerChat({
             if (!data.canInteract) {
               setIsOutOfRange(true);
               setLocationError(null); // Clear any location errors
-              console.log('User is out of range:', data.message);
+              console.log('❌ User is out of range:', data.message);
             } else {
               setIsOutOfRange(false);
-              console.log('User can interact with this tower!');
+              console.log('✅ User can interact with this tower!');
             }
           } else if (response.status === 403 || response.status === 401) {
             // Permission denied at API level - treat as out of range for now
-            console.warn('Permission check failed with status:', response.status);
+            console.warn('⚠️ Permission check failed with status:', response.status);
+            const errorText = await response.text();
+            console.warn('Response body:', errorText);
             setCanInteract(false);
             setIsOutOfRange(true);
             setLocationError(null);
             setDistanceFromTower(null);
           } else {
-            console.error('Failed to check permissions:', response.status);
+            console.error('❌ Failed to check permissions. Status:', response.status);
+            const errorText = await response.text();
+            console.error('Response body:', errorText);
             setCanInteract(false);
             setIsOutOfRange(true);
             setLocationError(null);
           }
         } catch (fetchError) {
-          console.error('Error checking tower permissions:', fetchError);
+          console.error('❌ Error checking tower permissions:', fetchError);
           // If the API call fails, treat it as out of range rather than an error
           setCanInteract(false);
           setIsOutOfRange(true);
           setLocationError(null);
         }
       } catch (error: any) {
-        console.error('Error getting location:', error);
-        
         // Provide more specific error messages
         let errorMessage = 'Unable to get your location. Interaction may be restricted.';
         let isTimeout = false;
         
         // Check if it's a GeolocationPositionError
         if (error && typeof error === 'object' && 'code' in error) {
-          switch (error.code) {
+          const errorCode = error.code;
+          const errorMsg = error.message || 'Unknown error';
+          
+          console.error('Geolocation error code:', errorCode);
+          console.error('Geolocation error message:', errorMsg);
+          console.error('Error type:', error.constructor?.name || 'Unknown');
+          
+          switch (errorCode) {
             case 1: // PERMISSION_DENIED
               errorMessage = 'Location permission denied. Please enable location access in your browser settings to interact with this tower.';
               console.log('Location permission denied by user');
@@ -163,13 +180,20 @@ export default function TowerChat({
               break;
             default:
               errorMessage = 'Failed to get location. Please ensure location services are enabled.';
+              console.error('Unknown error code:', errorCode);
           }
         } else if (!navigator.geolocation) {
           errorMessage = 'Geolocation is not supported by your browser.';
-          console.log('Geolocation not supported');
+          console.error('Geolocation not supported by browser');
         } else {
-          // Generic error
-          console.log('Unknown geolocation error:', error);
+          // Generic error - log what we can
+          console.error('Unknown geolocation error type:', typeof error);
+          if (error instanceof Error) {
+            console.error('Error message:', error.message);
+            console.error('Error name:', error.name);
+          } else {
+            console.error('Error value:', String(error));
+          }
         }
         
         if (isTimeout) {

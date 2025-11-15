@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import Map, { Marker, Popup } from 'react-map-gl';
+import Map, { Marker, Popup, Layer, Source } from 'react-map-gl';
 import { MapPin, Loader2, AlertCircle, X, Navigation } from 'lucide-react';
 import { locationService } from '@/services/locationService';
 import { TowerIcon } from './TowerIcon';
@@ -150,6 +150,34 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
 
     calculateHotZones();
   }, [towers.length, userLocation]); // Recalculate when tower count or user location changes
+
+  // Create GeoJSON for heatmap circles (top 5 towers only)
+  const heatmapGeoJSON = useMemo(() => {
+    const features = towers
+      .filter(tower => tower.hotZoneRank && tower.hotZoneRank <= 5)
+      .map(tower => {
+        const rank = tower.hotZoneRank || 0;
+        // Different radius based on rank (in meters)
+        const radius = rank === 1 ? 600 : rank === 2 ? 500 : rank === 3 ? 400 : rank === 4 ? 350 : 300;
+        
+        return {
+          type: 'Feature' as const,
+          properties: {
+            rank,
+            radius,
+          },
+          geometry: {
+            type: 'Point' as const,
+            coordinates: [tower.longitude, tower.latitude]
+          }
+        };
+      });
+
+    return {
+      type: 'FeatureCollection' as const,
+      features
+    };
+  }, [towers]);
 
   // Handle geolocation success
   const handleLocationSuccess = useCallback((position: GeolocationPosition) => {
@@ -339,6 +367,105 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
           setUserInteracted(true);
         }}
       >
+        {/* Heatmap circles for top 5 towers */}
+        <Source id="heatmap-source" type="geojson" data={heatmapGeoJSON}>
+          {/* Rank 1 - Brightest blue glow */}
+          <Layer
+            id="heatmap-1"
+            type="circle"
+            filter={['==', ['get', 'rank'], 1]}
+            paint={{
+              'circle-radius': [
+                'interpolate',
+                ['linear'],
+                ['zoom'],
+                10, 30,
+                15, 80,
+                18, 150
+              ],
+              'circle-color': '#3b82f6', // blue-500
+              'circle-opacity': 0.4,
+              'circle-blur': 1.5
+            }}
+          />
+          {/* Rank 2 - Cyan glow */}
+          <Layer
+            id="heatmap-2"
+            type="circle"
+            filter={['==', ['get', 'rank'], 2]}
+            paint={{
+              'circle-radius': [
+                'interpolate',
+                ['linear'],
+                ['zoom'],
+                10, 25,
+                15, 70,
+                18, 130
+              ],
+              'circle-color': '#06b6d4', // cyan-500
+              'circle-opacity': 0.35,
+              'circle-blur': 1.5
+            }}
+          />
+          {/* Rank 3 - Teal glow */}
+          <Layer
+            id="heatmap-3"
+            type="circle"
+            filter={['==', ['get', 'rank'], 3]}
+            paint={{
+              'circle-radius': [
+                'interpolate',
+                ['linear'],
+                ['zoom'],
+                10, 20,
+                15, 60,
+                18, 110
+              ],
+              'circle-color': '#14b8a6', // teal-500
+              'circle-opacity': 0.3,
+              'circle-blur': 1.5
+            }}
+          />
+          {/* Rank 4 - Slate glow */}
+          <Layer
+            id="heatmap-4"
+            type="circle"
+            filter={['==', ['get', 'rank'], 4]}
+            paint={{
+              'circle-radius': [
+                'interpolate',
+                ['linear'],
+                ['zoom'],
+                10, 18,
+                15, 55,
+                18, 100
+              ],
+              'circle-color': '#64748b', // slate-500
+              'circle-opacity': 0.28,
+              'circle-blur': 1.5
+            }}
+          />
+          {/* Rank 5 - Light slate glow */}
+          <Layer
+            id="heatmap-5"
+            type="circle"
+            filter={['==', ['get', 'rank'], 5]}
+            paint={{
+              'circle-radius': [
+                'interpolate',
+                ['linear'],
+                ['zoom'],
+                10, 15,
+                15, 50,
+                18, 90
+              ],
+              'circle-color': '#94a3b8', // slate-400
+              'circle-opacity': 0.25,
+              'circle-blur': 1.5
+            }}
+          />
+        </Source>
+
         {/* Tower Markers */}
           {towers.map((tower) => {
           const isHotZone = tower.hotZoneRank && tower.hotZoneRank > 0;
@@ -359,20 +486,20 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
               case 2: // #2 - fast pulse, bright glow
                 return {
                   pulseSpeed: '1.1s',
-                  glowColor: 'rgba(96, 165, 250, 0.7)', // blue-400
-                  ringColor: 'rgba(96, 165, 250, 0.5)',
-                  iconColor: 'text-blue-500',
+                  glowColor: 'rgba(6, 182, 212, 0.7)', // cyan-500
+                  ringColor: 'rgba(6, 182, 212, 0.5)',
+                  iconColor: 'text-cyan-500',
                   scale: 1.25,
-                  badgeColor: '#60a5fa' // blue-400
+                  badgeColor: '#06b6d4' // cyan-500
                 };
               case 3: // #3 - medium pulse
                 return {
                   pulseSpeed: '1.4s',
-                  glowColor: 'rgba(56, 189, 248, 0.6)', // cyan-400
-                  ringColor: 'rgba(56, 189, 248, 0.4)',
-                  iconColor: 'text-cyan-400',
+                  glowColor: 'rgba(20, 184, 166, 0.6)', // teal-500
+                  ringColor: 'rgba(20, 184, 166, 0.4)',
+                  iconColor: 'text-teal-400',
                   scale: 1.2,
-                  badgeColor: '#38bdf8' // cyan-400
+                  badgeColor: '#14b8a6' // teal-500
                 };
               case 4: // #4 - slower pulse
                 return {
@@ -408,6 +535,20 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
             onClick={(e) => handleMarkerClick(e, tower)}
           >
             <div className="relative cursor-pointer transform transition-all hover:scale-110 flex items-center justify-center">
+              {/* Pulsing ring effect for hot zones - similar to user location */}
+              {isHotZone && hotZoneStyle && (
+                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none flex items-center justify-center">
+                  <span 
+                    className="absolute inline-flex rounded-full opacity-75 animate-ping" 
+                    style={{ 
+                      width: 40, 
+                      height: 40,
+                      backgroundColor: hotZoneStyle.glowColor
+                    }} 
+                  />
+                </div>
+              )}
+              
               {/* Tower Icon with conditional coloring and floating animation */}
               <div
                 style={isHotZone && hotZoneStyle ? {
@@ -423,9 +564,10 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
               {/* Hot Zone Rank Badge - Only show for ranks 1, 2, 3 */}
               {isHotZone && rank > 0 && rank <= 3 && hotZoneStyle && (
                 <div 
-                  className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-bold pointer-events-none shadow-lg"
+                  className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-bold pointer-events-none shadow-lg bg-gray-700 border-2"
                   style={{
-                    backgroundColor: hotZoneStyle.badgeColor,
+                    borderColor: hotZoneStyle.badgeColor,
+                    boxShadow: `0 0 12px ${hotZoneStyle.badgeColor}80, 0 2px 8px rgba(0,0,0,0.5)`
                   }}
                 >
                   {rank}
