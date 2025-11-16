@@ -12,7 +12,7 @@
 
 ---
 
-## 📋 Table of Content
+## 📋 Table of Contents
 
 - [Overview](#-overview)
 - [Tech Stack](#-tech-stack)
