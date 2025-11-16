@@ -13,7 +13,9 @@ public class CorsConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        if ("*".equals(allowedOrigins)) {
+        String trimmedOrigins = allowedOrigins != null ? allowedOrigins.trim() : "*";
+        
+        if ("*".equals(trimmedOrigins) || trimmedOrigins.isEmpty()) {
             registry.addMapping("/api/**")
                     .allowedOriginPatterns("*")
                     .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
@@ -22,14 +24,32 @@ public class CorsConfig implements WebMvcConfigurer {
                     .allowCredentials(false)
                     .maxAge(3600);
         } else {
-            String[] origins = allowedOrigins.split(",");
-            registry.addMapping("/api/**")
-                    .allowedOrigins(origins)
-                    .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
-                    .allowedHeaders("*")
-                    .exposedHeaders("*")
-                    .allowCredentials(true)
-                    .maxAge(3600);
+            String[] origins = trimmedOrigins.split(",");
+            boolean hasWildcard = false;
+            for (String origin : origins) {
+                if ("*".equals(origin.trim())) {
+                    hasWildcard = true;
+                    break;
+                }
+            }
+            
+            if (hasWildcard) {
+                registry.addMapping("/api/**")
+                        .allowedOriginPatterns("*")
+                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
+                        .allowedHeaders("*")
+                        .exposedHeaders("*")
+                        .allowCredentials(false)
+                        .maxAge(3600);
+            } else {
+                registry.addMapping("/api/**")
+                        .allowedOrigins(origins)
+                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
+                        .allowedHeaders("*")
+                        .exposedHeaders("*")
+                        .allowCredentials(true)
+                        .maxAge(3600);
+            }
         }
     }
 }
