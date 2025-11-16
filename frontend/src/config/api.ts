@@ -1,28 +1,39 @@
 // API Configuration
-// Determine a sensible API base URL at runtime when possible.
-// If `NEXT_PUBLIC_API_BASE_URL` is set that will be used. Otherwise,
-// when running in the browser we derive a host-aware default so mobile
-// devices can reach the backend on the development machine (LAN IP).
-const DEFAULT_LOCALHOST = 'https://geowhisper-50cy.onrender.com';
+// Determine the API base URL with priority:
+// 1. NEXT_PUBLIC_API_BASE_URL env var (production)
+// 2. Localhost for local development
+// 3. Derive from hostname for LAN testing
 
 const deriveBaseUrl = (): string => {
-  if (process.env.NEXT_PUBLIC_API_BASE_URL) return process.env.NEXT_PUBLIC_API_BASE_URL;
-  // During SSR or build-time fallback to localhost
-  if (typeof window === 'undefined') return DEFAULT_LOCALHOST;
+  // Priority 1: Use environment variable if set (production/staging)
+  if (process.env.NEXT_PUBLIC_API_BASE_URL) {
+    return process.env.NEXT_PUBLIC_API_BASE_URL;
+  }
+  
+  // During SSR or build-time, fallback to production backend
+  if (typeof window === 'undefined') {
+    return 'https://geowhisper-50cy.onrender.com';
+  }
 
   const host = window.location.hostname;
-  const protocol = window.location.protocol || 'http:';
+  const protocol = window.location.protocol;
 
-  // If served from localhost, assume backend is on localhost:8080
-  if (host === 'localhost' || host === '127.0.0.1') return 'http://localhost:8080';
+  // Priority 2: Local development
+  if (host === 'localhost' || host === '127.0.0.1') {
+    return 'http://localhost:8080';
+  }
 
-  // For LAN testing (phone accessing dev machine), try same host with backend port 8080
+  // Priority 3: LAN testing (phone accessing dev machine on same network)
   // e.g., if frontend is at http://192.168.1.12:3000, backend will be http://192.168.1.12:8080
   return `${protocol}//${host}:8080`;
 };
 
+const baseUrl = deriveBaseUrl();
+console.log('[API_CONFIG] Using BASE_URL:', baseUrl);
+console.log('[API_CONFIG] Environment NEXT_PUBLIC_API_BASE_URL:', process.env.NEXT_PUBLIC_API_BASE_URL);
+
 export const API_CONFIG = {
-  BASE_URL: deriveBaseUrl(),
+  BASE_URL: baseUrl,
   ENDPOINTS: {
     AUTH: {
       HEALTH: '/api/auth/health',

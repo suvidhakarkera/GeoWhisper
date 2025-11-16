@@ -14,8 +14,11 @@ class AuthService {
    * Sign up with email and password
    */
   async signUp(data: SignUpRequest): Promise<AuthResponse> {
+    const url = buildUrl(API_CONFIG.ENDPOINTS.AUTH.SIGNUP);
+    console.log('[AuthService] Sign up URL:', url);
+    
     try {
-      const response = await fetch(buildUrl(API_CONFIG.ENDPOINTS.AUTH.SIGNUP), {
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -26,11 +29,16 @@ class AuthService {
       const result = await response.json();
 
       if (!response.ok) {
+        console.error('[AuthService] Sign up failed:', response.status, result);
         throw new Error(result.message || 'Sign up failed');
       }
 
       return result as AuthResponse;
     } catch (error) {
+      console.error('[AuthService] Sign up error:', error);
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new Error(`Network error: Cannot reach server at ${url}. Please check your internet connection.`);
+      }
       if (error instanceof Error) {
         throw error;
       }
@@ -42,8 +50,11 @@ class AuthService {
    * Sign in with Firebase ID token
    */
   async signIn(idToken: string): Promise<AuthResponse> {
+    const url = buildUrl(API_CONFIG.ENDPOINTS.AUTH.SIGNIN);
+    console.log('[AuthService] Sign in URL:', url);
+    
     try {
-      const response = await fetch(buildUrl(API_CONFIG.ENDPOINTS.AUTH.SIGNIN), {
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -54,11 +65,16 @@ class AuthService {
       const result = await response.json();
 
       if (!response.ok) {
+        console.error('[AuthService] Sign in failed:', response.status, result);
         throw new Error(result.message || 'Sign in failed');
       }
 
       return result as AuthResponse;
     } catch (error) {
+      console.error('[AuthService] Sign in error:', error);
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new Error(`Network error: Cannot reach server at ${url}. Please check your internet connection.`);
+      }
       if (error instanceof Error) {
         throw error;
       }
@@ -70,8 +86,11 @@ class AuthService {
    * Sign in/up with Google
    */
   async googleAuth(data: GoogleAuthRequest): Promise<AuthResponse> {
+    const url = buildUrl(API_CONFIG.ENDPOINTS.AUTH.GOOGLE);
+    console.log('[AuthService] Google auth URL:', url);
+    
     try {
-      const response = await fetch(buildUrl(API_CONFIG.ENDPOINTS.AUTH.GOOGLE), {
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -82,11 +101,16 @@ class AuthService {
       const result = await response.json();
 
       if (!response.ok) {
+        console.error('[AuthService] Google auth failed:', response.status, result);
         throw new Error(result.message || 'Google authentication failed');
       }
 
       return result as AuthResponse;
     } catch (error) {
+      console.error('[AuthService] Google auth error:', error);
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new Error(`Network error: Cannot reach server at ${url}. Please check your internet connection.`);
+      }
       if (error instanceof Error) {
         throw error;
       }
