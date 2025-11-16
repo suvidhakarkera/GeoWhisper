@@ -1,6 +1,7 @@
-# Firebase
-# firebase-key.json
-# *-firebase-*.json
+# Firebase - NEVER COMMIT THESE!
+firebase-key.json
+*-firebase-*.json
+*.json
 
 # Compiled files
 target/

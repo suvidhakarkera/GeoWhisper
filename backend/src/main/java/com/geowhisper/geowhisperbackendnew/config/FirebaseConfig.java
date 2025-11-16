@@ -14,9 +14,16 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.cloud.FirestoreClient;
+import org.springframework.beans.factory.annotation.Value;
 
 @Configuration
 public class FirebaseConfig {
+
+    @Value("${firebase.database.url}")
+    private String firebaseDatabaseUrl;
+
+    @Value("${firebase.storage.bucket}")
+    private String firebaseStorageBucket;
 
     // Static instance to keep Firestore alive throughout the application lifecycle
     private static volatile FirebaseApp firebaseAppInstance = null;
@@ -52,26 +59,16 @@ public class FirebaseConfig {
                                 .setConnectTimeout(10000) // 10 seconds
                                 .setReadTimeout(10000); // 10 seconds
 
-                        // Set Firebase Realtime Database URL
-                        String databaseUrl = System.getenv("FIREBASE_DATABASE_URL");
-                        if (databaseUrl != null && !databaseUrl.isEmpty()) {
-                            optionsBuilder.setDatabaseUrl(databaseUrl);
-                            System.out.println("✅ Firebase Realtime Database URL configured: " + databaseUrl);
-                        } else {
-                            // Default to geowhisper-1 project
-                            String defaultUrl = "https://geowhisper-1-default-rtdb.firebaseio.com";
-                            optionsBuilder.setDatabaseUrl(defaultUrl);
-                            System.out.println("✅ Firebase Realtime Database URL configured (default): " + defaultUrl);
+                        // Set Firebase Realtime Database URL from application.properties
+                        if (firebaseDatabaseUrl != null && !firebaseDatabaseUrl.isEmpty()) {
+                            optionsBuilder.setDatabaseUrl(firebaseDatabaseUrl);
+                            System.out.println("✅ Firebase Realtime Database URL configured: " + firebaseDatabaseUrl);
                         }
 
-                        // Only set storage bucket if environment variable is provided
-                        String storageBucket = System.getenv("FIREBASE_STORAGE_BUCKET");
-                        if (storageBucket != null && !storageBucket.isEmpty()) {
-                            optionsBuilder.setStorageBucket(storageBucket);
-                            System.out.println("✅ Firebase Storage bucket configured: " + storageBucket);
-                        } else {
-                            System.out.println(
-                                    "⚠️ Firebase Storage bucket not configured (optional for Firestore-only operations)");
+                        // Set storage bucket from application.properties
+                        if (firebaseStorageBucket != null && !firebaseStorageBucket.isEmpty()) {
+                            optionsBuilder.setStorageBucket(firebaseStorageBucket);
+                            System.out.println("✅ Firebase Storage bucket configured: " + firebaseStorageBucket);
                         }
 
                         FirebaseOptions options = optionsBuilder.build();

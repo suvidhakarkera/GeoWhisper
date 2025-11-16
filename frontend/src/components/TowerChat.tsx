@@ -230,15 +230,25 @@ export default function TowerChat({
   useEffect(() => {
     if (!database) {
       console.error('Firebase Database not initialized');
-      setDbError('Chat service not available. Firebase not configured.');
+      console.error('Database value:', database);
+      console.error('Firebase config check:', {
+        apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY?.substring(0, 10) + '...',
+        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+        databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL
+      });
+      setDbError('⚠️ Firebase Realtime Database not initialized. Please enable it in Firebase Console.');
       return;
     }
 
+    console.log('✅ Firebase database initialized, listening to:', `chats/${towerId}/messages`);
     const messagesRef = ref(database, `chats/${towerId}/messages`);
 
+    console.log('📡 Setting up Firebase listener for tower:', towerId);
+    
     const unsubscribe = onValue(
       messagesRef, 
       (snapshot) => {
+        console.log('📨 Firebase snapshot received. Has data:', snapshot.exists());
         const messagesData: ChatMessage[] = [];
         
         snapshot.forEach((childSnapshot) => {
@@ -292,12 +302,22 @@ export default function TowerChat({
 
         // Sort by timestamp
         messagesData.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+        console.log('✅ Loaded', messagesData.length, 'messages from Firebase');
         setMessages(messagesData);
         setDbError(null);
       },
       (error) => {
-        console.error('Firebase onValue error:', error);
-        setDbError('Failed to load messages. Check Firebase permissions.');
+        console.error('❌ Firebase onValue error:', error);
+        console.error('Error code:', error.code);
+        console.error('Error message:', error.message);
+        
+        if (error.code === 'PERMISSION_DENIED') {
+          setDbError('🔒 Firebase Realtime Database: Permission denied. Please check Firebase security rules.');
+        } else if (error.message?.includes('404') || error.message?.includes('not found')) {
+          setDbError('🔥 Firebase Realtime Database not created yet. Enable it in Firebase Console → Realtime Database → Create Database.');
+        } else {
+          setDbError(`Failed to load messages: ${error.message}`);
+        }
       }
     );
 
@@ -606,6 +626,12 @@ export default function TowerChat({
       <div className="bg-gradient-to-r from-gray-800/80 to-gray-900/80 backdrop-blur-xl border-b border-gray-700/50 px-2 py-3 shadow-lg relative z-[50]">
         <div className="flex gap-2 items-center justify-between flex-wrap">
           <div className="flex gap-2 items-center flex-wrap">
+            {/* Moderator Badge */}
+            {isModerator && (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-600/20 to-pink-600/20 border-2 border-purple-500/50 rounded-lg">
+                <span className="text-xs font-bold text-purple-300">🛡️ MODERATOR</span>
+              </div>
+            )}
             <button
               onClick={fetchChatSummary}
               disabled={loadingSummary || messages.length === 0}
@@ -746,14 +772,29 @@ export default function TowerChat({
 
       {/* Database Error Banner */}
       {dbError && (
-        <div className="bg-gradient-to-r from-red-900/60 to-orange-900/60 border-b border-red-500/30 px-4 py-3 backdrop-blur-sm">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-red-500/20 rounded-lg">
+        <div className="bg-gradient-to-r from-red-900/60 to-orange-900/60 border-b border-red-500/30 px-4 py-4 backdrop-blur-sm">
+          <div className="flex items-start gap-3">
+            <div className="p-2 bg-red-500/20 rounded-lg flex-shrink-0">
               <AlertTriangle className="w-5 h-5 text-red-400" />
             </div>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-red-200">{dbError}</p>
-              <p className="text-xs text-red-300/80 mt-1">Check browser console for details</p>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-red-200 mb-2">{dbError}</p>
+              {dbError.includes('not created') || dbError.includes('not initialized') ? (
+                <div className="text-xs text-red-300/90 space-y-2 bg-black/20 rounded-lg p-3 border border-red-500/20">
+                  <p className="font-semibold">🔥 Quick Fix:</p>
+                  <ol className="list-decimal list-inside space-y-1 pl-2">
+                    <li>Open <a href="https://console.firebase.google.com/" target="_blank" rel="noopener noreferrer" className="underline hover:text-red-100">Firebase Console</a></li>
+                    <li>Select project: <span className="font-mono bg-black/30 px-1 rounded">geowhisper-final</span></li>
+                    <li>Go to <span className="font-semibold">Build → Realtime Database</span></li>
+                    <li>Click <span className="font-semibold">"Create Database"</span></li>
+                    <li>Choose <span className="font-semibold">Test Mode</span> (us-central1)</li>
+                    <li>Restart both servers</li>
+                  </ol>
+                  <p className="text-[10px] text-red-400/70 mt-2">See FIREBASE_REALTIME_DATABASE_SETUP.md for details</p>
+                </div>
+              ) : (
+                <p className="text-xs text-red-300/80">Check browser console (F12) for details</p>
+              )}
             </div>
           </div>
         </div>

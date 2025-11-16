@@ -98,8 +98,14 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
 
   // Calculate engagement and identify hot zones - optimized with useMemo
   const rankedTowersData = useMemo(() => {
-    if (towers.length === 0 || !userLocation) {
-      return { rankedTowers: towers, hotZoneIds: [] };
+    // If no towers, return empty
+    if (towers.length === 0) {
+      return { rankedTowers: [], hotZoneIds: [] };
+    }
+    
+    // If no user location yet, still return all towers but without ranking
+    if (!userLocation) {
+      return { rankedTowers: towers.map(t => ({ ...t, hotZoneRank: 0 })), hotZoneIds: [] };
     }
 
     // Filter towers within 5km of user location
@@ -346,9 +352,10 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
       <Map
         ref={mapRef}
         initialViewState={{
-          longitude: userLocation?.longitude || 0,
-          latitude: userLocation?.latitude || 0,
-          zoom: 15
+          // Use first tower location as fallback if user location not available
+          longitude: userLocation?.longitude || (towers.length > 0 ? towers[0].longitude : 0),
+          latitude: userLocation?.latitude || (towers.length > 0 ? towers[0].latitude : 0),
+          zoom: userLocation ? 15 : (towers.length > 0 ? 13 : 2)
         }}
         style={{ width: '100%', height: '100%' }}
         mapStyle="mapbox://styles/mapbox/dark-v11"
@@ -641,6 +648,23 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
               animate={{ width: "100%" }}
               transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
             />
+          </div>
+        </motion.div>
+      )}
+
+      {/* No Towers Message */}
+      {!towersLoading && towers.length === 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="absolute top-4 right-4 bg-gradient-to-r from-gray-900/95 to-gray-800/95 backdrop-blur-xl border border-yellow-500/30 rounded-xl p-4 text-white shadow-2xl"
+        >
+          <div className="flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 text-yellow-400" />
+            <div>
+              <div className="text-sm font-semibold text-yellow-400">No Towers Found</div>
+              <div className="text-xs text-gray-400 mt-0.5">Create posts to generate towers</div>
+            </div>
           </div>
         </motion.div>
       )}

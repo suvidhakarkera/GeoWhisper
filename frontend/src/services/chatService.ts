@@ -189,16 +189,20 @@ class ChatService {
     try {
       const authToken = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       if (!authToken) {
-        throw new Error('Not authenticated');
+        console.error('❌ No auth token found. User must sign in first.');
+        throw new Error('Not authenticated. Please sign in to send messages.');
       }
 
       const userId = localStorage.getItem('userId') || sessionStorage.getItem('userId');
       const username = localStorage.getItem('username') || sessionStorage.getItem('username') || 'Anonymous';
+      
+      console.log('🔐 Sending message with auth:', { userId: userId?.substring(0, 8) + '...', username });
 
       const response = await fetch(`${API_BASE_URL}/api/chat/${towerId}/messages`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`,
           'X-User-Id': userId || '',
           'X-Username': username,
         },
@@ -216,13 +220,18 @@ class ChatService {
 
       // Handle empty responses
       if (!response.ok) {
+        console.error('❌ Message send failed. Status:', response.status);
         let errorMessage = 'Failed to send message';
         try {
           const result = await response.json();
+          console.error('Error response:', result);
           errorMessage = result.message || errorMessage;
         } catch (jsonError) {
+          console.error('Failed to parse error response');
           // If JSON parsing fails, use a generic error based on status
-          if (response.status === 403) {
+          if (response.status === 401) {
+            errorMessage = 'Authentication failed. Please sign in again.';
+          } else if (response.status === 403) {
             errorMessage = 'You must be within 500m of the tower to send messages';
           } else if (response.status === 500) {
             errorMessage = 'Server error. Please try again.';
