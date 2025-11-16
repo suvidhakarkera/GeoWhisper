@@ -1,2 +1,0 @@
-# Add this to .gitignore to avoid committing sensitive base64 file
-firebase-config-base64.txt
