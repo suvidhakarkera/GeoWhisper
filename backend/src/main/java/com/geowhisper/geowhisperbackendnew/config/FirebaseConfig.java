@@ -39,20 +39,9 @@ public class FirebaseConfig {
             synchronized (FirebaseConfig.class) {
                 if (firebaseAppInstance == null) {
                     try {
-                        InputStream serviceAccount;
-
-                        // Try to load from environment variable first (for cloud deployment)
-                        String firebaseConfig = System.getenv("FIREBASE_CONFIG");
-                        if (firebaseConfig != null && !firebaseConfig.isEmpty()) {
-                            byte[] decodedKey = Base64.getDecoder().decode(firebaseConfig);
-                            serviceAccount = new ByteArrayInputStream(decodedKey);
-                            System.out.println("✅ Loading Firebase config from environment variable");
-                        } else {
-                            // Fallback to classpath resource (for local development)
-                            ClassPathResource resource = new ClassPathResource("firebase-key.json");
-                            serviceAccount = resource.getInputStream();
-                            System.out.println("✅ Loading Firebase config from classpath");
-                        }
+                        // Load Firebase credentials from classpath
+                        InputStream serviceAccount = new ClassPathResource("firebase-key.json").getInputStream();
+                        System.out.println("✅ Loading Firebase config from firebase-key.json");
 
                         FirebaseOptions.Builder optionsBuilder = FirebaseOptions.builder()
                                 .setCredentials(GoogleCredentials.fromStream(serviceAccount))
