@@ -161,7 +161,7 @@ export default function TowerChat({
         
         // Check if it's a GeolocationPositionError
         if (error && typeof error === 'object' && 'code' in error) {
-          const errorCode = error.code;
+          const errorCode = (error as GeolocationPositionError).code;
           const errorMsg = error.message || 'Unknown error';
           
           console.error('Geolocation error code:', errorCode);
@@ -308,10 +308,10 @@ export default function TowerChat({
       },
       (error) => {
         console.error('❌ Firebase onValue error:', error);
-        console.error('Error code:', error.code);
+      
         console.error('Error message:', error.message);
         
-        if (error.code === 'PERMISSION_DENIED') {
+        if ((error as any).code === 'PERMISSION_DENIED') {
           setDbError('🔒 Firebase Realtime Database: Permission denied. Please check Firebase security rules.');
         } else if (error.message?.includes('404') || error.message?.includes('not found')) {
           setDbError('🔥 Firebase Realtime Database not created yet. Enable it in Firebase Console → Realtime Database → Create Database.');
