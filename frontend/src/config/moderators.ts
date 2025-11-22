@@ -4,7 +4,9 @@
  */
 
 export const MODERATOR_LIST = [
-  'suvidha_karkera'
+  'ashton_mathias',
+  'suvidha_karkera',
+  'nikki'
   // Add more moderator usernames here
 ];
 

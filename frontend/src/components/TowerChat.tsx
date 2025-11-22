@@ -926,11 +926,6 @@ export default function TowerChat({
                         <span className="px-2 py-0.5 bg-cyan-500/20 text-cyan-300 text-xs rounded-full font-medium">
                           📍 Post
                         </span>
-                        {msg.flagged && isModerator && (
-                          <span className="px-2 py-0.5 bg-yellow-500/20 text-yellow-400 text-xs rounded-full font-medium">
-                            <Flag className="inline w-3 h-3" /> Flagged
-                          </span>
-                        )}
                       </div>
                     )}
                   
@@ -1026,13 +1021,6 @@ export default function TowerChat({
                         title="Hide"
                       >
                         <EyeOff className="w-3 h-3" />
-                      </button>
-                      <button
-                        onClick={() => handleModerateMessage(msg.messageId || msg.id, 'FLAG')}
-                        className="px-2.5 py-1 bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 hover:text-orange-300 text-xs font-medium rounded-lg transition-all border border-orange-500/20 hover:border-orange-500/30"
-                        title="Flag"
-                      >
-                        <Flag className="w-3 h-3" />
                       </button>
                     </div>
                   )}
