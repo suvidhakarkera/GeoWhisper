@@ -38,8 +38,9 @@ export default function MiniMap({ center, className }: MiniMapProps) {
   const centerCoords: [number, number] | undefined = center ? [center.lat, center.lng] : undefined;
 
   return (
-    <div className={`${className || ''} rounded-lg overflow-hidden border border-gray-800 cursor-pointer`} onClick={clickHandler}>
-      <MapContainer
+    <div className={`${className || ''} rounded-lg overflow-hidden border border-gray-800 cursor-pointer z-0`} onClick={clickHandler}>
+      <MapContainer className='z-0'
+      
         {...({
           center: centerCoords || [0, 0],
           zoom: center ? 15 : 2,

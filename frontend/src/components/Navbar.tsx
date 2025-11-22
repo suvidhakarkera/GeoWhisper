@@ -140,7 +140,7 @@ export default function Navbar() {
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.2 }}
-              className="md:hidden overflow-hidden"
+              className="md:hidden overflow-hidden z-50"
             >
               <div className="flex flex-col gap-2 pt-6 pb-4 border-t border-gray-800 mt-4">
                 <MobileNavLink href="/" onClick={() => setMobileMenuOpen(false)} isActive={pathname === '/'}>

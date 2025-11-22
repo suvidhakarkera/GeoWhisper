@@ -85,8 +85,8 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
         // Wait for user location first
         if (!userLocation) return;
         
-        // Fetch only towers within 2km for faster loading
-        const nearbyTowers = await locationService.getTowersNearUser(userLocation, 2000);
+        // Fetch towers within 500km for wider area coverage
+        const nearbyTowers = await locationService.getTowersNearUser(userLocation, 500000);
         if (Array.isArray(nearbyTowers)) {
           setTowers(nearbyTowers);
         }
@@ -114,7 +114,7 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
       return { rankedTowers: towers.map(t => ({ ...t, hotZoneRank: 0 })), hotZoneIds: [] };
     }
 
-    // Filter towers within 2km of user location for better performance
+    // Filter towers within 500km of user location for wider coverage
     const towersWithinRange = towers.map((tower) => {
       const distance = calculateDistance(
         userLocation.latitude,
@@ -128,7 +128,7 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
         distanceFromUser: distance,
         engagementScore: tower.postCount, // Use postCount as engagement metric
       };
-    }).filter(tower => tower.distanceFromUser <= 2000); // 2km = 2000 meters
+    }).filter(tower => tower.distanceFromUser <= 500000); // 500km = 500000 meters
 
     // Sort by engagement score (descending) and get top 5 from within range
     const sortedTowers = [...towersWithinRange].sort(
