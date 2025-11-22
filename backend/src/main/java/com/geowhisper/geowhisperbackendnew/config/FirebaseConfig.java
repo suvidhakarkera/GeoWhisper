@@ -1,6 +1,7 @@
 package com.geowhisper.geowhisperbackendnew.config;
 
 import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.Base64;
 
@@ -25,6 +26,9 @@ public class FirebaseConfig {
     @Value("${firebase.storage.bucket}")
     private String firebaseStorageBucket;
 
+    @Value("${server.deployment}")
+    private String serverDeployment;
+
     // Static instance to keep Firestore alive throughout the application lifecycle
     private static volatile FirebaseApp firebaseAppInstance = null;
     private static volatile Firestore firestoreInstance = null;
@@ -39,9 +43,19 @@ public class FirebaseConfig {
             synchronized (FirebaseConfig.class) {
                 if (firebaseAppInstance == null) {
                     try {
-                        // Load Firebase credentials from classpath
-                        InputStream serviceAccount = new ClassPathResource("firebase-key.json").getInputStream();
-                        System.out.println("✅ Loading Firebase config from firebase-key.json");
+                        InputStream serviceAccount = null;
+                        if ("DEV".equalsIgnoreCase(serverDeployment)) {
+                            serviceAccount = new ClassPathResource("firebase-key.json").getInputStream();
+                            System.out.println("✅ Loading Firebase config from firebase-key.json");
+                        } else if ("PROD".equalsIgnoreCase(serverDeployment)) {
+                            serviceAccount = new java.io.FileInputStream("/etc/secrets/firebase-key.json");
+                            System.out.println("✅ Loading Firebase config from /etc/secrets/firebase-key.json");
+                        } else {
+                            // Fallback to classpath key when deployment is not set or unknown
+                            serviceAccount = new ClassPathResource("firebase-key.json").getInputStream();
+                            System.out.println(
+                                    "ℹ️ server.deployment not set or unknown, defaulting to classpath firebase-key.json");
+                        }
 
                         FirebaseOptions.Builder optionsBuilder = FirebaseOptions.builder()
                                 .setCredentials(GoogleCredentials.fromStream(serviceAccount))

@@ -28,6 +28,9 @@ import Footer from '@/components/Footer';
 import { postService } from '@/services/postService';
 import { useToast } from '@/components/ToastContext';
 
+// Import PostData type
+import type { PostData } from '@/components/PostCreationModal';
+
 export default function NearbyPage() {
   const router = useRouter();
   const { user, isAuthenticated } = useUser();

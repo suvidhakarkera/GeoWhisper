@@ -37,6 +37,9 @@ const PostsMap = dynamic(() => import('@/components/PostsMap'), {
   )
 });
 
+// Import PostData type
+import type { PostData } from '@/components/PostCreationModal';
+
 function PostsMapWrapper({ posts, center }: { posts: Post[]; center?: { lat: number; lng: number } | undefined }) {
   return <PostsMap posts={posts} center={center} />;
 }
