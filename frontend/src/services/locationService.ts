@@ -169,7 +169,7 @@ class LocationService {
         },
         body: JSON.stringify({
           clusterRadiusMeters: 50,
-          maxPosts: 1000,
+          maxPosts: 200, // Reduced for faster loading
         }),
       });
 
@@ -223,7 +223,7 @@ class LocationService {
         },
         body: JSON.stringify({
           clusterRadiusMeters: 50,
-          maxPosts: 1000,
+          maxPosts: 200, // Reduced for faster loading
         }),
       });
 
@@ -268,7 +268,7 @@ class LocationService {
     try {
       // Use a short-lived session cache to avoid fetching the full towers list repeatedly
       const cacheKey = 'gw_allTowers_cache_v1';
-      const cacheTTLms = 10 * 60 * 1000; // 10 minutes
+      const cacheTTLms = 2 * 60 * 1000; // 2 minutes for faster updates
 
       try {
         const raw = sessionStorage.getItem(cacheKey);
@@ -290,7 +290,7 @@ class LocationService {
         },
         body: JSON.stringify({
           clusterRadiusMeters: 50,
-          maxPosts: 1000,
+          maxPosts: 200, // Reduced for faster loading
         }),
       });
 

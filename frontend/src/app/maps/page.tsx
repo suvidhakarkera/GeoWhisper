@@ -10,14 +10,15 @@ import { useUser } from '@/contexts/UserContext';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/ToastContext';
 
-// Dynamic import to avoid SSR issues with Mapbox
+// Dynamic import to avoid SSR issues with Mapbox - lazy load for better performance
 const MapView = dynamic(() => import('@/components/MapView'), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-full flex items-center justify-center bg-gray-900">
+    <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 via-black to-gray-900">
       <div className="text-center">
-        <div className="w-12 h-12 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-        <p className="text-gray-400">Loading map...</p>
+        <div className="w-16 h-16 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
+        <p className="text-gray-300 text-lg font-semibold mb-2">Loading GeoWhisper Map</p>
+        <p className="text-gray-500 text-sm">Preparing your location-based experience...</p>
       </div>
     </div>
   )

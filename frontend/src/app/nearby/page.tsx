@@ -5,13 +5,26 @@ import { useRouter } from 'next/navigation';
 import { MapPin, MessageCircle, Users, Loader2, Navigation, AlertCircle, LogIn, Send } from 'lucide-react';
 import { locationService, UserLocation, NearbyTower } from '@/services/locationService';
 import { getTowerLabel } from '@/utils/towerNumber';
-import TowerChat from '@/components/TowerChat';
 import dynamic from 'next/dynamic';
-const MiniMap = dynamic(() => import('@/components/MiniMap'), { ssr: false, loading: () => <div className="w-full h-24 bg-gray-900 flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-cyan-400"/></div> });
+
+// Lazy load heavy components
+const TowerChat = dynamic(() => import('@/components/TowerChat'), {
+  ssr: false,
+  loading: () => <div className="flex items-center justify-center h-full"><Loader2 className="w-8 h-8 animate-spin text-cyan-400"/></div>
+});
+
+const MiniMap = dynamic(() => import('@/components/MiniMap'), { 
+  ssr: false, 
+  loading: () => <div className="w-full h-24 bg-gray-900 flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-cyan-400"/></div> 
+});
+
+const PostCreationModal = dynamic(() => import('@/components/PostCreationModal'), {
+  ssr: false
+});
+
 import { useUser } from '@/contexts/UserContext';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import PostCreationModal, { PostData } from '@/components/PostCreationModal';
 import { postService } from '@/services/postService';
 import { useToast } from '@/components/ToastContext';
 

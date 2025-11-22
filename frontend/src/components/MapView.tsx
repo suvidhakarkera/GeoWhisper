@@ -77,14 +77,18 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
     return distance <= 500;
   }, [selectedTower, userLocation]);
 
-  // Fetch towers on component mount
+  // Fetch towers on component mount - only load nearby towers for performance
   useEffect(() => {
     const fetchTowers = async () => {
       setTowersLoading(true);
       try {
-        const data = await locationService.getAllTowers();
-        if (Array.isArray(data)) {
-          setTowers(data);
+        // Wait for user location first
+        if (!userLocation) return;
+        
+        // Fetch only towers within 2km for faster loading
+        const nearbyTowers = await locationService.getTowersNearUser(userLocation, 2000);
+        if (Array.isArray(nearbyTowers)) {
+          setTowers(nearbyTowers);
         }
       } catch (error) {
         console.error('Error fetching towers:', error);
@@ -93,8 +97,10 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
       }
     };
 
-    fetchTowers();
-  }, []);
+    if (userLocation) {
+      fetchTowers();
+    }
+  }, [userLocation]);
 
   // Calculate engagement and identify hot zones - optimized with useMemo
   const rankedTowersData = useMemo(() => {
@@ -108,7 +114,7 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
       return { rankedTowers: towers.map(t => ({ ...t, hotZoneRank: 0 })), hotZoneIds: [] };
     }
 
-    // Filter towers within 5km of user location
+    // Filter towers within 2km of user location for better performance
     const towersWithinRange = towers.map((tower) => {
       const distance = calculateDistance(
         userLocation.latitude,
@@ -122,7 +128,7 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
         distanceFromUser: distance,
         engagementScore: tower.postCount, // Use postCount as engagement metric
       };
-    }).filter(tower => tower.distanceFromUser <= 5000); // 5km = 5000 meters
+    }).filter(tower => tower.distanceFromUser <= 2000); // 2km = 2000 meters
 
     // Sort by engagement score (descending) and get top 5 from within range
     const sortedTowers = [...towersWithinRange].sort(
@@ -195,8 +201,8 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
     if (mapRef.current && !userInteracted) {
       mapRef.current.flyTo({
         center: [longitude, latitude],
-        zoom: 15,
-        duration: 2000
+        zoom: 14, // Reduced from 15 for faster initial render
+        duration: 1500 // Reduced from 2000 for snappier feel
       });
     }
   }, [onLocationUpdate, userInteracted]);

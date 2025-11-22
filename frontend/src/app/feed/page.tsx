@@ -5,13 +5,27 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import PostCard from '@/components/PostCard';
 import { postService, Post } from '@/services/postService';
 import { Map, List, Loader2, RefreshCw, Plus, MapPin } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import FloatingCreateButton from '@/components/FloatingCreateButton';
-import PostCreationModal, { PostData } from '@/components/PostCreationModal';
+
+// Lazy load heavy components for better performance
+const PostCard = dynamic(() => import('@/components/PostCard'), {
+  loading: () => (
+    <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 animate-pulse">
+      <div className="h-20 bg-gray-800 rounded"></div>
+    </div>
+  )
+});
+
+const FloatingCreateButton = dynamic(() => import('@/components/FloatingCreateButton'), {
+  ssr: false
+});
+
+const PostCreationModal = dynamic(() => import('@/components/PostCreationModal'), {
+  ssr: false
+});
 
 // Dynamic import for PostsMap (Leaflet) to avoid SSR issues
 const PostsMap = dynamic(() => import('@/components/PostsMap'), {
@@ -58,8 +72,8 @@ export default function FeedPage() {
       const nearbyPosts = await postService.getNearbyPosts({
         latitude: loc.latitude,
         longitude: loc.longitude,
-        radiusMeters: 5000, // 5km radius
-        limit: 50,
+        radiusMeters: 500, // 500m radius for faster loading
+        limit: 20,
       });
 
       setPosts(nearbyPosts);
@@ -118,7 +132,7 @@ export default function FeedPage() {
                 Nearby Posts
               </h1>
               <p className="text-gray-400">
-                {posts.length} {posts.length === 1 ? 'post' : 'posts'} within 5km
+                {posts.length} {posts.length === 1 ? 'post' : 'posts'} within 500m
               </p>
             </div>
 

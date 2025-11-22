@@ -2,8 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
+import dynamic from 'next/dynamic';
 import { User as UserIcon, Calendar, MapPin, Clock, Search, MessageCircle, Trash2, X, ChevronDown } from 'lucide-react';
 import { getTowerLabel } from '@/utils/towerNumber';
 import { useUser } from '@/contexts/UserContext';
@@ -12,6 +11,10 @@ import { locationService } from '@/services/locationService';
 import { ref, query, orderByChild, equalTo, get } from 'firebase/database';
 import { database } from '@/config/firebase';
 import { useToast } from '@/components/ToastContext';
+
+// Lazy load non-critical components
+const Navbar = dynamic(() => import('@/components/Navbar'));
+const Footer = dynamic(() => import('@/components/Footer'));
 
 interface ChatMessage {
   id: string;

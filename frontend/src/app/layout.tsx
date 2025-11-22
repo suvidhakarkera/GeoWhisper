@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import ToastProvider from '@/components/ToastContext';
 import { UserProvider } from "@/contexts/UserContext";
+import LocationPreloader from "@/components/LocationPreloader";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,6 +34,7 @@ export default function RootLayout({
         <ThemeProvider>
           <UserProvider>
             <ToastProvider>
+              <LocationPreloader />
               {children}
             </ToastProvider>
           </UserProvider>

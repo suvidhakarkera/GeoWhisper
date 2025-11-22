@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { Post } from '@/services/postService';
 import { MapPin, Heart, MessageCircle, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -10,7 +11,7 @@ interface PostCardProps {
   onComment?: (postId: string) => void;
 }
 
-export default function PostCard({ post, onLike, onComment }: PostCardProps) {
+function PostCard({ post, onLike, onComment }: PostCardProps) {
   const formatDistance = (meters: number | undefined) => {
     if (!meters) return '';
     if (meters < 1000) {
@@ -85,3 +86,12 @@ export default function PostCard({ post, onLike, onComment }: PostCardProps) {
     </motion.div>
   );
 }
+
+// Memoize to prevent unnecessary re-renders
+export default memo(PostCard, (prevProps, nextProps) => {
+  return (
+    prevProps.post.id === nextProps.post.id &&
+    prevProps.post.likes === nextProps.post.likes &&
+    prevProps.post.commentCount === nextProps.post.commentCount
+  );
+});
