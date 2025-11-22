@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { authService } from '@/services/authService';
+import { isModerator as checkIsModerator } from '@/config/moderators';
 
 export interface UserData {
   firebaseUid: string;
@@ -11,6 +12,7 @@ export interface UserData {
   totalPosts: number;
   totalReactions: number;
   zonesVisited: number;
+  isModerator?: boolean;
 }
 
 interface UserContextType {
@@ -18,6 +20,7 @@ interface UserContextType {
   authToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isModerator: boolean;
   login: (authToken: string, userData: UserData) => void;
   logout: () => void;
   updateUserData: (updates: Partial<UserData>) => void;
@@ -125,6 +128,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         authToken,
         isAuthenticated: !!authToken && !!user,
         isLoading,
+        isModerator: user ? checkIsModerator(user.username, user.email) : false,
         login,
         logout,
         updateUserData,

@@ -33,7 +33,7 @@ import type { PostData } from '@/components/PostCreationModal';
 
 export default function NearbyPage() {
   const router = useRouter();
-  const { user, isAuthenticated } = useUser();
+  const { user, isAuthenticated, isModerator } = useUser();
   const { show } = useToast();
   const [loading, setLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('Getting your location...');
@@ -308,7 +308,7 @@ export default function NearbyPage() {
                       towerId={selectedTowerId}
                       currentUserId={user.firebaseUid}
                       currentUsername={user.username}
-                      isModerator={false}
+                      isModerator={isModerator}
                       isCurrentTower={currentTower?.towerId === selectedTowerId}
                       postCount={
                         currentTower?.towerId === selectedTowerId

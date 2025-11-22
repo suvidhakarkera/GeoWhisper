@@ -34,7 +34,7 @@ interface Tower {
   hotZoneRank?: number; // 1-5 for top 5, 0 for others
 }
 export default function MapView({ onLocationUpdate, onPostClick, onChatAccessChange }: MapViewProps) {
-  const { user, isAuthenticated } = useUser();
+  const { user, isAuthenticated, isModerator } = useUser();
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -745,7 +745,7 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
                   towerId={selectedTower.towerId}
                   currentUserId={user.firebaseUid}
                   currentUsername={user.username}
-                  isModerator={false}
+                  isModerator={isModerator}
                   isCurrentTower={isCurrentTower}
                   postCount={selectedTower.postCount || 0}
                 />

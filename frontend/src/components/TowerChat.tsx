@@ -93,6 +93,16 @@ export default function TowerChat({
         console.log('User location:', location);
         console.log('Tower ID:', towerId);
         console.log('isCurrentTower prop:', isCurrentTower);
+        console.log('isModerator:', isModerator);
+
+        // Moderators can interact with any tower, anywhere
+        if (isModerator) {
+          console.log('✅ User is a MODERATOR - granting access to all towers');
+          setCanInteract(true);
+          setDistanceFromTower(0);
+          setCheckingPermissions(false);
+          return;
+        }
 
         // If this is the user's current tower, automatically grant access
         if (isCurrentTower) {
@@ -418,7 +428,8 @@ export default function TowerChat({
       return;
     }
 
-    if (!canInteract) {
+    // Moderators can always send messages
+    if (!canInteract && !isModerator) {
       alert('You must be within 500 meters of this tower to send messages.');
       return;
     }
@@ -661,8 +672,8 @@ export default function TowerChat({
               <span>Gallery</span>
             </button>
 
-            {/* View Only Mode Indicator - Show when checking or when out of range */}
-            {(checkingPermissions || canInteract === false) && (
+            {/* View Only Mode Indicator - Show when checking or when out of range (but not for moderators) */}
+            {!isModerator && (checkingPermissions || canInteract === false) && (
               <div className="relative z-[100]">
                 <button
                   onClick={() => setShowRangePopup(!showRangePopup)}
@@ -841,7 +852,7 @@ export default function TowerChat({
 
             // Swipe gesture handlers
             const handleTouchStart = (e: React.TouchEvent) => {
-              if (!canInteract || formatted.isModerated) return;
+              if ((!canInteract && !isModerator) || formatted.isModerated) return;
               setTouchStart({
                 x: e.touches[0].clientX,
                 y: e.touches[0].clientY,
@@ -850,7 +861,7 @@ export default function TowerChat({
             };
 
             const handleTouchEnd = (e: React.TouchEvent) => {
-              if (!touchStart || touchStart.messageId !== msg.id || !canInteract) return;
+              if (!touchStart || touchStart.messageId !== msg.id || (!canInteract && !isModerator)) return;
               
               const touchEnd = {
                 x: e.changedTouches[0].clientX,
@@ -960,7 +971,7 @@ export default function TowerChat({
                   )}
 
                   {/* Reply Button - Top Right (for all users except moderated messages) */}
-                  {!formatted.isModerated && canInteract && (
+                  {!formatted.isModerated && (canInteract || isModerator) && (
                     <button
                       onClick={() => setReplyingTo(msg)}
                       className={`absolute top-2 ${isOwnMessage ? 'right-12' : 'right-2'} p-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 hover:text-blue-300 rounded-lg transition-all duration-300 border border-blue-500/20 hover:border-blue-500/40 opacity-0 group-hover:opacity-100 z-10`}
@@ -1076,8 +1087,8 @@ export default function TowerChat({
         </div>
       )}
 
-      {/* Input Area - Only show if user can interact (within 500m) and checking is complete */}
-      {!checkingPermissions && canInteract === true && (
+      {/* Input Area - Only show if user can interact (within 500m) or is moderator, and checking is complete */}
+      {!checkingPermissions && (canInteract === true || isModerator) && (
         <div className="sticky bottom-0 z-50 p-4 bg-gradient-to-b from-gray-800/80 to-gray-900/80 backdrop-blur-xl border-t border-gray-700/50">
         {/* Reply Preview */}
         {replyingTo && (

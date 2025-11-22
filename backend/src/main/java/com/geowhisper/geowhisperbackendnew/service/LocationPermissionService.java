@@ -1,5 +1,6 @@
 package com.geowhisper.geowhisperbackendnew.service;
 
+import com.geowhisper.geowhisperbackendnew.config.ModeratorConfig;
 import com.geowhisper.geowhisperbackendnew.model.Tower;
 import com.geowhisper.geowhisperbackendnew.util.GeoUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -24,11 +25,37 @@ public class LocationPermissionService {
     @Autowired
     private TowerService towerService;
 
+    @Autowired
+    private ModeratorConfig moderatorConfig;
+
     // Distance threshold for full interaction permissions (in meters)
     private static final double INTERACTION_RADIUS_METERS = 500.0;
 
     /**
      * Check if a user can interact with a tower (post, chat, like, delete)
+     * 
+     * @param towerId       The tower ID
+     * @param userLatitude  User's current latitude
+     * @param userLongitude User's current longitude
+     * @param username      Username (optional, for moderator check)
+     * @return true if user is within 500m of tower center or is a moderator, false
+     *         otherwise
+     */
+    public boolean canInteractWithTower(String towerId, double userLatitude, double userLongitude, String username)
+            throws ExecutionException, InterruptedException {
+
+        // Moderators can interact with any tower from anywhere
+        if (username != null && moderatorConfig.isModerator(username)) {
+            log.info("✅ User {} is a MODERATOR - granting access to all towers", username);
+            return true;
+        }
+
+        return canInteractWithTower(towerId, userLatitude, userLongitude);
+    }
+
+    /**
+     * Check if a user can interact with a tower (post, chat, like, delete)
+     * Overloaded method without username parameter for backward compatibility
      * 
      * @param towerId       The tower ID
      * @param userLatitude  User's current latitude
@@ -90,6 +117,31 @@ public class LocationPermissionService {
 
     /**
      * Validate if user can perform an action on a tower.
+     * Throws exception if user doesn't have permission.
+     * 
+     * @param towerId       The tower ID
+     * @param userLatitude  User's current latitude
+     * @param userLongitude User's current longitude
+     * @param username      Username (optional, for moderator check)
+     * @param actionName    Name of the action being performed (for error message)
+     * @throws IllegalStateException if user is too far from tower
+     */
+    public void validateInteractionPermission(String towerId, double userLatitude,
+            double userLongitude, String username, String actionName)
+            throws ExecutionException, InterruptedException {
+
+        // Moderators can interact with any tower from anywhere
+        if (username != null && moderatorConfig.isModerator(username)) {
+            log.info("✅ MODERATOR {} granted permission to {} at tower {}", username, actionName, towerId);
+            return;
+        }
+
+        validateInteractionPermission(towerId, userLatitude, userLongitude, actionName);
+    }
+
+    /**
+     * Validate if user can perform an action on a tower.
+     * Overloaded method without username parameter for backward compatibility
      * Throws exception if user doesn't have permission.
      * 
      * @param towerId       The tower ID
