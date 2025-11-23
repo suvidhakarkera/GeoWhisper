@@ -2,7 +2,6 @@ package com.geowhisper.geowhisperbackendnew.service;
 
 import com.geowhisper.geowhisperbackendnew.dto.AuthResponse;
 import com.geowhisper.geowhisperbackendnew.dto.GoogleAuthRequest;
-import com.geowhisper.geowhisperbackendnew.dto.SignInRequest;
 import com.geowhisper.geowhisperbackendnew.dto.SignUpRequest;
 import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.FieldValue;
@@ -101,48 +100,48 @@ public class AuthService {
          * This method verifies the user exists and returns user data.
          */
 
-       
-
-        /*public AuthResponse signInWithEmail(SignInRequest request)
-                        throws FirebaseAuthException, ExecutionException, InterruptedException {
-                // Get user by email);
-                UserRecord userRecord = firebaseAuth.getUserByEmail(request.());
-                // Check if user profile exists in Firestore
-                DocumentSnapshot userDoc = firestore.collection("users")
-                                .document(userRecord.getUid())
-                                .get()
-                                .get();
-
-                if (!userDoc.exists()) {
-                        // Create profile if it doesn't exist
-                        Map<String, Object> userData = createUserProfile(
-                                        userRecord.getUid(),
-                                        userRecord.getDisplayName() != null ? userRecord.getDisplayName() : "User",
-                                        userRecord.getEmail());
-
-                        return AuthResponse.builder()
-                                        .firebaseUid(userRecord.getUid())
-                                        .email(userRecord.getEmail())
-                                        .username(userRecord.getDisplayName())
-                                        .isNewUser(false)
-                                        .userData(userData)
-                                        .message("Sign in successful!")
-                                        .build();
-                }
-
-                // Return existing user data
-                Map<String, Object> userData = new HashMap<>(userDoc.getData());
-                userData.put("firebaseUid", userRecord.getUid());
-
-                return AuthResponse.builder()
-                                .firebaseUid(userRecord.getUid())
-                                .email(userRecord.getEmail())
-                                .username((String) userData.get("username"))
-                                .isNewUser(false)
-                                .userData(userData)
-                                .message("Sign in successful!")
-                                .build();
-        }*/
+        /*
+         * public AuthResponse signInWithEmail(SignInRequest request)
+         * throws FirebaseAuthException, ExecutionException, InterruptedException {
+         * // Get user by email);
+         * UserRecord userRecord = firebaseAuth.getUserByEmail(request.());
+         * // Check if user profile exists in Firestore
+         * DocumentSnapshot userDoc = firestore.collection("users")
+         * .document(userRecord.getUid())
+         * .get()
+         * .get();
+         * 
+         * if (!userDoc.exists()) {
+         * // Create profile if it doesn't exist
+         * Map<String, Object> userData = createUserProfile(
+         * userRecord.getUid(),
+         * userRecord.getDisplayName() != null ? userRecord.getDisplayName() : "User",
+         * userRecord.getEmail());
+         * 
+         * return AuthResponse.builder()
+         * .firebaseUid(userRecord.getUid())
+         * .email(userRecord.getEmail())
+         * .username(userRecord.getDisplayName())
+         * .isNewUser(false)
+         * .userData(userData)
+         * .message("Sign in successful!")
+         * .build();
+         * }
+         * 
+         * // Return existing user data
+         * Map<String, Object> userData = new HashMap<>(userDoc.getData());
+         * userData.put("firebaseUid", userRecord.getUid());
+         * 
+         * return AuthResponse.builder()
+         * .firebaseUid(userRecord.getUid())
+         * .email(userRecord.getEmail())
+         * .username((String) userData.get("username"))
+         * .isNewUser(false)
+         * .userData(userData)
+         * .message("Sign in successful!")
+         * .build();
+         * }
+         */
 
         /**
          * Authenticate user with Google Sign-In using Firebase ID token
@@ -212,22 +211,23 @@ public class AuthService {
                 if (!userDoc.exists()) {
                         // User exists in Firebase Auth but not in Firestore
                         // Create the profile automatically
-                        System.out.println("⚠️ User profile not found in Firestore for UID: " + uid + ". Creating profile...");
-                        
+                        System.out.println("⚠️ User profile not found in Firestore for UID: " + uid
+                                        + ". Creating profile...");
+
                         // Try to get username from Firebase Auth or generate one
                         String username;
                         try {
                                 UserRecord userRecord = firebaseAuth.getUser(uid);
                                 username = userRecord.getDisplayName() != null && !userRecord.getDisplayName().isEmpty()
-                                        ? userRecord.getDisplayName()
-                                        : (name != null ? name.replaceAll("\\s+", "_").toLowerCase()
-                                                : "user_" + uid.substring(0, 8));
+                                                ? userRecord.getDisplayName()
+                                                : (name != null ? name.replaceAll("\\s+", "_").toLowerCase()
+                                                                : "user_" + uid.substring(0, 8));
                         } catch (FirebaseAuthException e) {
                                 // Fallback username
                                 username = name != null ? name.replaceAll("\\s+", "_").toLowerCase()
-                                        : "user_" + uid.substring(0, 8);
+                                                : "user_" + uid.substring(0, 8);
                         }
-                        
+
                         userData = createUserProfile(uid, username, email);
                         isNewUser = true;
                         System.out.println("✅ User profile created in Firestore for UID: " + uid);
@@ -242,7 +242,8 @@ public class AuthService {
                                 .username((String) userData.get("username"))
                                 .isNewUser(isNewUser)
                                 .userData(userData)
-                                .message(isNewUser ? "Profile created and signed in successfully" : "Token verified successfully")
+                                .message(isNewUser ? "Profile created and signed in successfully"
+                                                : "Token verified successfully")
                                 .build();
         }
 
@@ -261,18 +262,17 @@ public class AuthService {
 
                 Map<String, Object> userData = new HashMap<>(doc.getData());
                 userData.put("firebaseUid", doc.getId());
-                
+
                 // Convert createdAt Timestamp to ISO 8601 string for frontend
                 Object createdAtObj = userData.get("createdAt");
                 if (createdAtObj instanceof Timestamp) {
                         Timestamp timestamp = (Timestamp) createdAtObj;
                         Instant instant = Instant.ofEpochSecond(
-                                timestamp.getSeconds(),
-                                timestamp.getNanos()
-                        );
+                                        timestamp.getSeconds(),
+                                        timestamp.getNanos());
                         userData.put("createdAt", DateTimeFormatter.ISO_INSTANT.format(instant));
                 }
-                
+
                 return userData;
         }
 
@@ -315,10 +315,10 @@ public class AuthService {
                                                 Timestamp timestamp = (Timestamp) createdAtObj;
                                                 // Convert to ISO 8601 format (e.g., "2024-11-10T12:30:45.123Z")
                                                 Instant instant = Instant.ofEpochSecond(
-                                                        timestamp.getSeconds(),
-                                                        timestamp.getNanos()
-                                                );
-                                                userData.put("createdAt", DateTimeFormatter.ISO_INSTANT.format(instant));
+                                                                timestamp.getSeconds(),
+                                                                timestamp.getNanos());
+                                                userData.put("createdAt",
+                                                                DateTimeFormatter.ISO_INSTANT.format(instant));
                                         } else {
                                                 // Fallback for other formats
                                                 userData.put("createdAt", createdAtObj.toString());

@@ -156,11 +156,17 @@ export default function NearbyPage() {
         content: postData.content,
         latitude: postData.location.latitude,
         longitude: postData.location.longitude,
-        hasImage: !!postData.image
+        hasImage: !!postData.image,
+        imageDetails: postData.image ? {
+          name: postData.image.name,
+          type: postData.image.type,
+          size: postData.image.size
+        } : null
       });
       
       const images = postData.image ? [postData.image] : undefined;
       
+      console.log('Calling postService.createPost');
       const result = await postService.createPost({
         content: postData.content,
         latitude: postData.location.latitude,

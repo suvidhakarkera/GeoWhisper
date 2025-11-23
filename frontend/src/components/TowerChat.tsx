@@ -634,7 +634,7 @@ export default function TowerChat({
   return (
     <div className="flex flex-col h-full bg-gradient-to-br from-gray-900 via-gray-900 to-black text-white relative">
       {/* Modern Header with Action Buttons */}
-      <div className="bg-gradient-to-r from-gray-800/80 to-gray-900/80 backdrop-blur-xl border-b border-gray-700/50 px-2 py-3 shadow-lg relative z-[50]">
+      <div className="bg-gradient-to-r from-gray-800/80 to-gray-900/80 backdrop-blur-xl border-b border-gray-700/50 px-2 py-3 shadow-lg relative z-0">
         <div className="flex gap-2 items-center justify-between flex-wrap">
           <div className="flex gap-2 items-center flex-wrap">
             {/* Moderator Badge */}
@@ -674,7 +674,7 @@ export default function TowerChat({
 
             {/* View Only Mode Indicator - Show when checking or when out of range (but not for moderators) */}
             {!isModerator && (checkingPermissions || canInteract === false) && (
-              <div className="relative z-[100]">
+              <div className="relative z-0">
                 <button
                   onClick={() => setShowRangePopup(!showRangePopup)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 backdrop-blur-sm rounded-lg text-xs font-medium transition-all border-2 text-white whitespace-nowrap ${
@@ -695,10 +695,10 @@ export default function TowerChat({
                   <>
                     {/* Backdrop to close popup */}
                     <div 
-                      className="fixed inset-0 bg-black/50 z-[99998]"
+                      className="fixed inset-0 bg-black/50 z-10"
                       onClick={() => setShowRangePopup(false)}
                     />
-                    <div className="fixed top-20 left-1/2 -translate-x-1/2 w-80 max-w-[90vw] bg-black border-2 border-blue-400/50 rounded-xl z-[99999] p-5 shadow-2xl">
+                    <div className="fixed top-20 left-1/2 -translate-x-1/2 w-80 max-w-[90vw] bg-black border-2 border-blue-400/50 rounded-xl z-20 p-5 shadow-2xl">
                       <div className="flex items-start gap-3">
                         <div className="p-2 bg-gray-800 rounded-lg border border-gray-700">
                           <AlertTriangle className="w-5 h-5 text-gray-300" />

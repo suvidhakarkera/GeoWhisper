@@ -50,27 +50,66 @@ export default function PostCreationModal({
   // Handle image selection
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      setError('Please select a valid image file');
+    
+    console.log('Image selected:', {
+      hasFile: !!file,
+      fileName: file?.name,
+      fileType: file?.type,
+      fileSize: file?.size,
+      inputType: e.target.accept,
+      isCamera: e.target === cameraInputRef.current
+    });
+    
+    if (!file) {
+      console.warn('No file selected');
       return;
+    }
+
+    // Validate file type - be more lenient with camera captures
+    // Some mobile cameras may not set the correct MIME type immediately
+    if (file.type && !file.type.startsWith('image/')) {
+      const error = `Invalid file type: ${file.type}. Please select an image.`;
+      console.error(error);
+      setError(error);
+      return;
+    }
+
+    // If type is empty (some cameras), check file extension
+    if (!file.type || file.type === '') {
+      const validExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic'];
+      const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+      
+      if (!validExtensions.includes(fileExtension)) {
+        const error = `Unsupported file format: ${fileExtension}`;
+        console.error(error);
+        setError(error);
+        return;
+      }
+      
+      console.log('File type empty, but extension valid:', fileExtension);
     }
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      setError('Image size must be less than 5MB');
+      const error = `Image too large: ${(file.size / 1024 / 1024).toFixed(2)}MB. Max size is 5MB.`;
+      console.error(error);
+      setError(error);
       return;
     }
 
+    console.log('Image validation passed, setting image');
     setImage(file);
     setError(null);
 
     // Create preview
     const reader = new FileReader();
     reader.onloadend = () => {
+      console.log('Image preview created');
       setImagePreview(reader.result as string);
+    };
+    reader.onerror = () => {
+      console.error('Failed to read image file');
+      setError('Failed to read image file');
     };
     reader.readAsDataURL(file);
   };
@@ -84,6 +123,17 @@ export default function PostCreationModal({
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    console.log('Form submitted:', {
+      hasContent: !!content.trim(),
+      hasLocation: !!userLocation,
+      hasImage: !!image,
+      imageDetails: image ? {
+        name: image.name,
+        type: image.type,
+        size: image.size
+      } : null
+    });
     
     if (!content.trim()) {
       setError('Please enter some content');
@@ -106,14 +156,26 @@ export default function PostCreationModal({
       };
 
       if (image) {
+        console.log('Attaching image to post:', {
+          name: image.name,
+          type: image.type,
+          size: image.size
+        });
         postData.image = image;
       }
 
+      console.log('Calling onSubmit with postData');
       await onSubmit(postData);
+      console.log('Post submitted successfully');
       onClose();
-    } catch (err) {
-      setError('Failed to create post. Please try again.');
-      console.error('Post creation error:', err);
+    } catch (err: any) {
+      const errorMessage = err?.message || 'Failed to create post. Please try again.';
+      console.error('Post creation error:', {
+        error: err,
+        message: errorMessage,
+        stack: err?.stack
+      });
+      setError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -236,7 +298,7 @@ export default function PostCreationModal({
                   ref={cameraInputRef}
                   type="file"
                   accept="image/*"
-                  capture="user"
+                  capture="environment"
                   onChange={handleImageChange}
                   disabled={isSubmitting || !!image}
                   className="hidden"
