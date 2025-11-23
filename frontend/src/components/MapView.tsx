@@ -385,7 +385,7 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
       >
         {/* Heatmap circles for top 5 towers */}
         <Source id="heatmap-source" type="geojson" data={heatmapGeoJSON}>
-          {/* Rank 1 - Brightest blue glow */}
+          {/* Rank 1 - Red glow */}
           <Layer
             id="heatmap-1"
             type="circle"
@@ -399,12 +399,12 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
                 15, 80,
                 18, 150
               ],
-              'circle-color': '#3b82f6', // blue-500
+              'circle-color': '#ef4444', // red-500
               'circle-opacity': 0.4,
               'circle-blur': 1.5
             }}
           />
-          {/* Rank 2 - Cyan glow */}
+          {/* Rank 2 - Orange glow */}
           <Layer
             id="heatmap-2"
             type="circle"
@@ -418,12 +418,12 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
                 15, 70,
                 18, 130
               ],
-              'circle-color': '#06b6d4', // cyan-500
+              'circle-color': '#f97316', // orange-500
               'circle-opacity': 0.35,
               'circle-blur': 1.5
             }}
           />
-          {/* Rank 3 - Teal glow */}
+          {/* Rank 3 - Yellow glow */}
           <Layer
             id="heatmap-3"
             type="circle"
@@ -437,7 +437,7 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
                 15, 60,
                 18, 110
               ],
-              'circle-color': '#14b8a6', // teal-500
+              'circle-color': '#eab308', // yellow-500
               'circle-opacity': 0.3,
               'circle-blur': 1.5
             }}
@@ -508,29 +508,29 @@ export default function MapView({ onLocationUpdate, onPostClick, onChatAccessCha
               case 1: // #1 hottest - fastest pulse, brightest glow
                 return {
                   pulseSpeed: '0.8s',
-                  glowColor: 'rgba(59, 130, 246, 0.8)', // blue-500
-                  ringColor: 'rgba(59, 130, 246, 0.6)',
-                  iconColor: 'text-blue-400',
+                  glowColor: 'rgba(239, 68, 68, 0.8)', // red-500
+                  ringColor: 'rgba(239, 68, 68, 0.6)',
+                  iconColor: 'text-red-400',
                   scale: 1.3,
-                  badgeColor: '#3b82f6' // blue-500
+                  badgeColor: '#ef4444' // red-500
                 };
               case 2: // #2 - fast pulse, bright glow
                 return {
                   pulseSpeed: '1.1s',
-                  glowColor: 'rgba(6, 182, 212, 0.7)', // cyan-500
-                  ringColor: 'rgba(6, 182, 212, 0.5)',
-                  iconColor: 'text-cyan-500',
+                  glowColor: 'rgba(249, 115, 22, 0.7)', // orange-500
+                  ringColor: 'rgba(249, 115, 22, 0.5)',
+                  iconColor: 'text-orange-500',
                   scale: 1.25,
-                  badgeColor: '#06b6d4' // cyan-500
+                  badgeColor: '#f97316' // orange-500
                 };
               case 3: // #3 - medium pulse
                 return {
                   pulseSpeed: '1.4s',
-                  glowColor: 'rgba(20, 184, 166, 0.6)', // teal-500
-                  ringColor: 'rgba(20, 184, 166, 0.4)',
-                  iconColor: 'text-teal-400',
+                  glowColor: 'rgba(234, 179, 8, 0.6)', // yellow-500
+                  ringColor: 'rgba(234, 179, 8, 0.4)',
+                  iconColor: 'text-yellow-400',
                   scale: 1.2,
-                  badgeColor: '#14b8a6' // teal-500
+                  badgeColor: '#eab308' // yellow-500
                 };
               case 4: // #4 - slower pulse
                 return {
