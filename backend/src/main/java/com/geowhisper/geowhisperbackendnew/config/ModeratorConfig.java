@@ -14,12 +14,12 @@ public class ModeratorConfig {
 
     // List of moderator usernames (case-insensitive)
     private static final Set<String> MODERATOR_USERNAMES = new HashSet<>(Arrays.asList(
-            "sushan_shetty",
+            
             "ashton_mathias",
             "suvidha_karkera",
             "nikki",
-            "sankirthan_rao",
-            "nishitha_shetty"
+            "sankirthan_rao"
+            
     // Add more moderator usernames here
     ));
 
