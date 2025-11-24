@@ -10,7 +10,7 @@ export const API_CONFIG = {
       PROFILE: (firebaseUid: string) => `/api/auth/profile/${firebaseUid}`,
     },
   },
-  TIMEOUT: 30000, // 30 seconds
+  TIMEOUT: 10000, // 10 seconds - faster timeout for demos
 };
 
 // Helper function to build full URL

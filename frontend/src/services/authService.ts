@@ -54,14 +54,19 @@ class AuthService {
     console.log('[AuthService] Sign in URL:', url);
     
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.TIMEOUT);
+
       const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ idToken }),
+        signal: controller.signal,
       });
 
+      clearTimeout(timeoutId);
       const result = await response.json();
 
       if (!response.ok) {
@@ -90,14 +95,19 @@ class AuthService {
     console.log('[AuthService] Google auth URL:', url);
     
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.TIMEOUT);
+
       const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(data),
+        signal: controller.signal,
       });
 
+      clearTimeout(timeoutId);
       const result = await response.json();
 
       if (!response.ok) {
