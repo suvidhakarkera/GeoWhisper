@@ -98,11 +98,17 @@ export default function MyPostsPage() {
         return;
       }
 
-      // Fetch user's posts directly using the dedicated endpoint
-      const myPosts = await postService.getUserPosts(user.firebaseUid);
+      // Add timeout to prevent hanging
+      const postsPromise = postService.getUserPosts(user.firebaseUid);
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Request timeout - server may be slow')), 10000)
+      );
+      
+      const myPosts = await Promise.race([postsPromise, timeoutPromise]) as Post[];
       setUserPosts(myPosts);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to load user posts:', error);
+      show(error.message || 'Failed to load posts. Please try again.', 'error');
       setUserPosts([]);
     } finally {
       setLoadingPosts(false);
@@ -122,24 +128,31 @@ export default function MyPostsPage() {
       console.log('Loading user chats...');
       const allMessages: ChatMessage[] = [];
       
-  // Get all towers first (use cached list to avoid repeated heavy requests)
-  const towers = await locationService.getAllTowers();
-  console.log(`Found ${towers.length} towers to check`);
+      // Get all towers first (use cached list to avoid repeated heavy requests)
+      const towers = await locationService.getAllTowers();
+      console.log(`Found ${towers.length} towers to check`);
       
       // Limit to checking the most recent towers to avoid timeout
-      const maxTowersToCheck = 50; // Only check first 50 towers
+      const maxTowersToCheck = 20; // Reduced from 50 to 20 for faster load
       const towersToCheck = towers.slice(0, maxTowersToCheck);
       
-      // Use Promise.all to fetch messages in parallel (much faster)
+      // Use Promise.all with timeout to fetch messages in parallel (much faster)
       const messagePromises = towersToCheck.map(async (tower) => {
         try {
           if (!database) return [];
+          
+          // Add timeout to prevent slow towers from blocking everything
           const messagesRef = ref(database, `chats/${tower.towerId}/messages`);
-          const snapshot = await get(messagesRef);
+          const snapshotPromise = get(messagesRef);
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Timeout')), 2000)
+          );
+          
+          const snapshot = await Promise.race([snapshotPromise, timeoutPromise]) as any;
           
           const towerMessages: ChatMessage[] = [];
           if (snapshot.exists()) {
-            snapshot.forEach((childSnapshot) => {
+            snapshot.forEach((childSnapshot: any) => {
               const msg = childSnapshot.val();
               if (msg.userId === user.firebaseUid) {
                 towerMessages.push({

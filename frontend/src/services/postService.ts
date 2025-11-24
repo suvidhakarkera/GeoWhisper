@@ -175,9 +175,26 @@ class PostService {
   }
 
   /**
-   * Get posts by a specific user
+   * Get posts by a specific user (with caching)
    */
   async getUserPosts(userId: string): Promise<Post[]> {
+    // Check cache first (1 minute TTL)
+    const cacheKey = `gw_user_posts_${userId}`;
+    const cacheTTL = 60 * 1000; // 1 minute
+    
+    try {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        const { data, timestamp } = JSON.parse(cached);
+        if (Date.now() - timestamp < cacheTTL) {
+          console.log('Using cached user posts');
+          return data;
+        }
+      }
+    } catch (e) {
+      // Ignore cache errors
+    }
+
     const response = await fetch(`${API_BASE_URL}/api/posts/user/${userId}`, {
       method: 'GET',
       headers: {
@@ -186,12 +203,24 @@ class PostService {
     });
 
     if (!response.ok) {
-      const error = await response.json();
+      const error = await response.json().catch(() => ({ message: 'Failed to fetch user posts' }));
       throw new Error(error.message || 'Failed to fetch user posts');
     }
 
     const result = await response.json();
-    return result.data || [];
+    const posts = result.data || [];
+    
+    // Cache the result
+    try {
+      sessionStorage.setItem(cacheKey, JSON.stringify({
+        data: posts,
+        timestamp: Date.now()
+      }));
+    } catch (e) {
+      // Ignore storage errors
+    }
+    
+    return posts;
   }
 
   /**
