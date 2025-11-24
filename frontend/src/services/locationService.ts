@@ -152,34 +152,6 @@ class LocationService {
   }
 
   /**
-   * Get all towers (optimized with reduced maxPosts)
-   */
-  async getAllTowers(): Promise<any[]> {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/posts/towers`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          clusterRadiusMeters: 50,
-          maxPosts: 200, // Reduced for performance
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch towers');
-      }
-
-      const result = await response.json();
-      return result.data || [];
-    } catch (error) {
-      console.error('Error fetching all towers:', error);
-      return [];
-    }
-  }
-
-  /**
    * Find the tower that the user is currently in
    * Returns the tower if user is within `currentTowerRadiusMeters` of any tower center
    * NOTE: previous implementation used 50m which was inconsistent with UI pages

@@ -98,35 +98,37 @@ export default function ProfilePage() {
         }
         
         // Count user's chat messages in this tower from Firebase Realtime Database
-        try {
-          // Add timeout to prevent hanging
-          const chatRef = ref(database, `chats/${towerId}/messages`);
-          const chatPromise = get(chatRef);
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Chat fetch timeout')), 3000)
-          );
-          
-          const chatSnapshot = await Promise.race([chatPromise, timeoutPromise]) as any;
-          
-          if (chatSnapshot?.exists()) {
-            const messages = chatSnapshot.val();
-            const userMessages = Object.values(messages).filter(
-              (msg: any) => msg.userId === user.firebaseUid && !msg.isPost // Exclude post messages
+        if (database) {
+          try {
+            // Add timeout to prevent hanging
+            const chatRef = ref(database, `chats/${towerId}/messages`);
+            const chatPromise = get(chatRef);
+            const timeoutPromise = new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Chat fetch timeout')), 3000)
             );
-            chatCount = userMessages.length;
             
-            // Update last activity with latest chat message
-            if (userMessages.length > 0) {
-              const latestChat = userMessages.reduce((latest: number, msg: any) => {
-                const msgTime = msg.timestamp || 0;
-                return msgTime > latest ? msgTime : latest;
-              }, 0);
-              lastActivity = Math.max(lastActivity, latestChat);
+            const chatSnapshot = await Promise.race([chatPromise, timeoutPromise]) as any;
+            
+            if (chatSnapshot?.exists()) {
+              const messages = chatSnapshot.val();
+              const userMessages = Object.values(messages).filter(
+                (msg: any) => msg.userId === user.firebaseUid && !msg.isPost // Exclude post messages
+              );
+              chatCount = userMessages.length;
+              
+              // Update last activity with latest chat message
+              if (userMessages.length > 0) {
+                const latestChat = userMessages.reduce((latest: number, msg: any) => {
+                  const msgTime = msg.timestamp || 0;
+                  return msgTime > latest ? msgTime : latest;
+                }, 0);
+                lastActivity = Math.max(lastActivity, latestChat);
+              }
             }
+          } catch (chatError) {
+            // Silently ignore chat errors to not block page load
+            console.warn(`Failed to load chats for tower ${towerId}:`, chatError);
           }
-        } catch (chatError) {
-          // Silently ignore chat errors to not block page load
-          console.warn(`Failed to load chats for tower ${towerId}:`, chatError);
         }
         
         return { towerId, postCount, chatCount, lastActivity };
