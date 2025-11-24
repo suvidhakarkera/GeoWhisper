@@ -221,9 +221,9 @@ class PostService {
   /**
    * Get all towers with their posts
    * @param clusterRadiusMeters - Clustering radius in meters (default: 50)
-   * @param maxPosts - Maximum number of posts to fetch (default: 1000)
+   * @param maxPosts - Maximum number of posts to fetch (default: 200 for performance)
    */
-  async getTowers(clusterRadiusMeters: number = 50, maxPosts: number = 1000): Promise<TowersResponse> {
+  async getTowers(clusterRadiusMeters: number = 50, maxPosts: number = 200): Promise<TowersResponse> {
     const response = await fetch(`${API_BASE_URL}/api/posts/towers`, {
       method: 'POST',
       headers: {

@@ -255,8 +255,9 @@ export default function NearbyPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Compact Local Actions (Nearby Towers list removed to reduce visual clutter) */}
+          {/* Left Panel - Towers List & Actions */}
           <div className="max-h-[calc(100vh-14rem)] overflow-auto">
+            {/* Local Actions */}
             <div className="mb-6 mt-6 bg-gray-900 border border-gray-800 rounded-lg p-4">
               <h2 className="text-lg font-semibold text-gray-100 mb-2">Local Actions</h2>
               {userLocation && (
@@ -264,8 +265,6 @@ export default function NearbyPage() {
                   <MiniMap center={{ lat: userLocation.latitude, lng: userLocation.longitude }} />
                 </div>
               )}
-
-              <p className="text-sm text-gray-400 mb-4">{nearbyTowers.length} towers within 500m</p>
 
               <div className="space-y-4 mt-3">
                 <button
@@ -294,9 +293,91 @@ export default function NearbyPage() {
                   <MapPin className="w-5 h-5" />
                   Open Map
                 </button>
-
-                
               </div>
+            </div>
+
+            {/* Current Tower */}
+            {currentTower && (
+              <div className="mb-6 bg-gradient-to-br from-cyan-900/30 to-blue-900/30 border-2 border-cyan-500/50 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-lg font-bold text-cyan-300">📍 Current Tower</h3>
+                  <span className="px-2 py-1 bg-cyan-500/20 text-cyan-300 text-xs font-semibold rounded-full">
+                    You're here
+                  </span>
+                </div>
+                <p className="text-xl font-bold text-white mb-1">{getTowerLabel(currentTower.towerId)}</p>
+                <p className="text-sm text-gray-400 mb-3">
+                  <MapPin className="inline w-4 h-4 mr-1" />
+                  {formatDistance(currentTower.distance)}
+                </p>
+                <div className="flex items-center gap-4 text-sm text-gray-400 mb-3">
+                  <span>
+                    <Users className="inline w-4 h-4 mr-1" />
+                    {currentTower.postCount} posts
+                  </span>
+                </div>
+                <button
+                  onClick={() => handleOpenChat(currentTower.towerId)}
+                  className={`w-full px-4 py-2 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all ${
+                    selectedTowerId === currentTower.towerId
+                      ? 'bg-cyan-500 text-white'
+                      : 'bg-gray-800 text-white hover:bg-gray-700'
+                  }`}
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  {selectedTowerId === currentTower.towerId ? 'Chatting Now' : 'Open Chat'}
+                </button>
+              </div>
+            )}
+
+            {/* Nearby Towers List */}
+            <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">
+              <h3 className="text-lg font-semibold text-gray-100 mb-3">
+                Nearby Towers ({nearbyTowers.length})
+              </h3>
+              
+              {nearbyTowers.length === 0 ? (
+                <div className="text-center py-8">
+                  <MapPin className="w-12 h-12 text-gray-700 mx-auto mb-3" />
+                  <p className="text-gray-500">No nearby towers found</p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Create the first post in your area!
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {nearbyTowers.map((tower) => (
+                    <div
+                      key={tower.towerId}
+                      className={`bg-gray-800/50 border rounded-lg p-3 transition-all cursor-pointer ${
+                        selectedTowerId === tower.towerId
+                          ? 'border-blue-500 bg-blue-900/20'
+                          : 'border-gray-700 hover:border-gray-600'
+                      }`}
+                      onClick={() => handleOpenChat(tower.towerId)}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-semibold text-white">{getTowerLabel(tower.towerId)}</h4>
+                        {selectedTowerId === tower.towerId && (
+                          <span className="px-2 py-1 bg-blue-500/20 text-blue-300 text-xs font-semibold rounded-full">
+                            Active
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-4 text-sm text-gray-400">
+                        <span>
+                          <MapPin className="inline w-3 h-3 mr-1" />
+                          {formatDistance(tower.distance)}
+                        </span>
+                        <span>
+                          <Users className="inline w-3 h-3 mr-1" />
+                          {tower.postCount} posts
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 

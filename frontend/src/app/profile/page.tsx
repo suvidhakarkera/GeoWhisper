@@ -65,19 +65,19 @@ export default function ProfilePage() {
     if (!user?.firebaseUid || !database) return;
     
     try {
-      // Get all towers (this is async and won't block the page load)
-      const towersResponse = await postService.getTowers();
+      // Get towers with reduced maxPosts for faster load
+      const towersResponse = await postService.getTowers(50, 200);
       const towers = towersResponse.data || [];
       
       // Map to track zone activity
       const zoneActivity = new Map<string, RecentZone>();
       let totalChatMessages = 0;
       
-      // Only check first 20 towers for better performance
-      const towersToCheck = towers.slice(0, 20);
+      // Only check first 10 towers for better performance
+      const towersToCheck = towers.slice(0, 10);
       
-      // Check each tower for user's posts and chats
-      for (const tower of towersToCheck) {
+      // Process towers in parallel for faster loading
+      const towerPromises = towersToCheck.map(async (tower) => {
         const towerId = tower.towerId;
         let postCount = 0;
         let chatCount = 0;
@@ -99,16 +99,21 @@ export default function ProfilePage() {
         
         // Count user's chat messages in this tower from Firebase Realtime Database
         try {
+          // Add timeout to prevent hanging
           const chatRef = ref(database, `chats/${towerId}/messages`);
-          const chatSnapshot = await get(chatRef);
+          const chatPromise = get(chatRef);
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Chat fetch timeout')), 3000)
+          );
           
-          if (chatSnapshot.exists()) {
+          const chatSnapshot = await Promise.race([chatPromise, timeoutPromise]) as any;
+          
+          if (chatSnapshot?.exists()) {
             const messages = chatSnapshot.val();
             const userMessages = Object.values(messages).filter(
               (msg: any) => msg.userId === user.firebaseUid && !msg.isPost // Exclude post messages
             );
             chatCount = userMessages.length;
-            totalChatMessages += chatCount;
             
             // Update last activity with latest chat message
             if (userMessages.length > 0) {
@@ -120,19 +125,23 @@ export default function ProfilePage() {
             }
           }
         } catch (chatError) {
-          console.error(`Failed to load chats for tower ${towerId}:`, chatError);
+          // Silently ignore chat errors to not block page load
+          console.warn(`Failed to load chats for tower ${towerId}:`, chatError);
         }
         
-        // If user has any activity in this zone, add it
-        if (postCount > 0 || chatCount > 0) {
-          zoneActivity.set(towerId, {
-            towerId,
-            postCount,
-            chatCount,
-            lastActivity,
-          });
+        return { towerId, postCount, chatCount, lastActivity };
+      });
+
+      // Wait for all tower processing to complete (with overall timeout)
+      const results = await Promise.all(towerPromises);
+      
+      // Build activity map from results
+      results.forEach(result => {
+        if (result.postCount > 0 || result.chatCount > 0) {
+          zoneActivity.set(result.towerId, result);
+          totalChatMessages += result.chatCount;
         }
-      }
+      });
       
       // Convert to array and sort by last activity
       const sortedZones = Array.from(zoneActivity.values())
